@@ -144,7 +144,16 @@ fly deploy
 go test ./...
 ```
 
-The tests in `api/` call the real provider APIs, so they need valid keys in `.env`.
+The tests stub provider APIs and do not need API keys. Run `go test -race ./...`
+to include the race detector.
+
+### Load testing
+
+The [k6 guide](loadtests/README.md) covers smoke, load and stress profiles against
+the real handlers with simulated providers and a temporary SQLite database.
+The [recorded local run](loadtests/validation.md) passed at up to 50 concurrent
+users: 22,759 requests and zero HTTP failures. This does not establish production
+capacity or measure external provider performance.
 
 ## Work in progress
 
