@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -461,4 +463,72 @@ func TestBuild_SameInputGivesTheSamePlan(t *testing.T) {
 	}
 
 	assert.Equal(t, plans[0], plans[1])
+}
+
+// dayStopIDSets is every day's stop IDs, sorted within the day and across days, so two plans
+// can be compared by which stops travel together without caring which day index they landed
+// on.
+func dayStopIDSets(days []Day) []string {
+	sets := make([]string, len(days))
+	for i, day := range days {
+		ids := make([]string, len(day.Stops))
+		for j, stop := range day.Stops {
+			ids[j] = stop.ID
+		}
+		sort.Strings(ids)
+		sets[i] = strings.Join(ids, ",")
+	}
+	sort.Strings(sets)
+	return sets
+}
+
+// TestBuild_LaterNowKeepsTheSameStopsAndGroupings pins the guarantee the whole shareable-link
+// feature depends on: a forecast that has refreshed by the time someone reopens a link must
+// not reshuffle which stops travel together. buildCity's two four-place clusters exactly fill
+// two days with nothing left over, so whichever cluster the rainy day pulls in keeps every one
+// of its four stops - only which day-index it lands on may move.
+func TestBuild_LaterNowKeepsTheSameStopsAndGroupings(t *testing.T) {
+	useTestPlaceTypes(t)
+	req := buildRequest(2)
+
+	// The two forecasts put the rain on a different day, as if the forecast had refreshed
+	// between an early planning and a later one for the very same request.
+	early, err := Build(context.Background(), req, &buildPlaces{places: buildCity()},
+		&buildForecast{forecast: cityForecast(t, lisbonTZ, req.Start, 12, 0)}, &buildStays{}, buildNow)
+	require.NoError(t, err)
+	require.NotNil(t, early)
+
+	later, err := Build(context.Background(), req, &buildPlaces{places: buildCity()},
+		&buildForecast{forecast: cityForecast(t, lisbonTZ, req.Start, 0, 12)}, &buildStays{}, buildNow.AddDate(0, 0, 1))
+	require.NoError(t, err)
+	require.NotNil(t, later)
+
+	assert.Equal(t, dayStopIDSets(early.Days), dayStopIDSets(later.Days),
+		"the same groupings of stops should exist, whichever day each lands on")
+}
+
+// TestBuild_ReorderingDaysAddsANote checks the other half of the guarantee: when the forecast
+// really did move a grouping to a different day than the one GroupDays gave it, the plan says
+// so. Built from the same two mirrored forecasts as the test above, exactly one of the two
+// plans pulls its sheltered grouping away from its natural day - the other leaves the natural
+// order alone - so this also proves the note only appears when order actually changed.
+func TestBuild_ReorderingDaysAddsANote(t *testing.T) {
+	useTestPlaceTypes(t)
+	req := buildRequest(2)
+	const reorderedNote = "Days reordered for the latest forecast."
+
+	early, err := Build(context.Background(), req, &buildPlaces{places: buildCity()},
+		&buildForecast{forecast: cityForecast(t, lisbonTZ, req.Start, 12, 0)}, &buildStays{}, buildNow)
+	require.NoError(t, err)
+	require.NotNil(t, early)
+
+	later, err := Build(context.Background(), req, &buildPlaces{places: buildCity()},
+		&buildForecast{forecast: cityForecast(t, lisbonTZ, req.Start, 0, 12)}, &buildStays{}, buildNow.AddDate(0, 0, 1))
+	require.NoError(t, err)
+	require.NotNil(t, later)
+
+	earlyReordered := strings.Contains(early.Note, reorderedNote)
+	laterReordered := strings.Contains(later.Note, reorderedNote)
+	assert.NotEqual(t, earlyReordered, laterReordered,
+		"exactly one of the two mirrored forecasts pulls a grouping out of its natural day order")
 }

@@ -40,6 +40,13 @@
     {{ with .Plan }}
     {{ if .Note }}<p class="trip-note">{{ .Note }}</p>{{ end }}
 
+    {{ if or .ICSURL .KMLURL }}
+    <div class="trip-export">
+        {{ if .ICSURL }}<a class="btn btn-outline-secondary trip-export-link" href="{{ .ICSURL }}"><i class="bi bi-calendar-plus"></i> Add to calendar</a>{{ end }}
+        {{ if .KMLURL }}<a class="btn btn-outline-secondary trip-export-link" href="{{ .KMLURL }}"><i class="bi bi-map"></i> Download for Google My Maps</a>{{ end }}
+    </div>
+    {{ end }}
+
     <ol class="trip-days">
         {{ range .Days }}
         <li class="trip-day{{ if .Rainy }} trip-day-rainy{{ end }}">
@@ -52,6 +59,11 @@
                     {{ else if not .Certain }}<span class="trip-badge trip-badge-soft">Forecast is less certain this far ahead</span>{{ end }}
                     <span class="trip-badge"><i class="bi bi-signpost-split"></i> {{ .WalkKM }} km walk</span>
                 </div>
+                {{ if .MapsURL }}
+                <a class="trip-day-maps" href="{{ .MapsURL }}" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-map"></i> Open Day {{ .Number }} in Google Maps
+                </a>
+                {{ end }}
             </div>
 
             <ul class="trip-stops">

@@ -13,6 +13,7 @@ working directory. Run the commands from the repository root, as before.
 | `internal/adapters/httpserver` | Fiber routes, sessions, HTML/HTMX rendering and request analytics | `application`, `planner` |
 | `internal/adapters/sqlite` | Database lifecycle, city/source caching, visit persistence and queries | `application`, `planner` |
 | `internal/placetypes` | Offline Wikimedia collection, classification rules and Go map generation | `adapters/api`, `planner` |
+| `internal/guides` | Offline Wikivoyage collection, a local Ollama call and generation of `guides/guides.json`. Used only by `cmd/guides`; nothing in `internal/adapters/httpserver` or `views/` reads its output yet | none of the above (standalone) |
 
 ```mermaid
 flowchart TD
@@ -39,6 +40,18 @@ Application services and planner logic do not import adapters. The HTTP adapter 
 databases or construct provider clients. `cmd/web` loads configuration, opens storage, constructs
 providers and passes them to services and handlers. `cmd/loadtest-server` follows the same
 wiring with fixture reporters. `cmd/placetypes` handles flags and calls `placetypes.Run`.
+`cmd/guides` is a separate command with no place in this dependency graph: it talks to
+Wikivoyage and a local Ollama server and writes `guides/guides.json`, and nothing else imports
+it or reads its output — deliberately, so a human reviews the generated text before anything
+wires it in.
+
+`internal/adapters/httpserver` also holds v2's shareable-link and export code: `slug.go`
+(`Slug`/`ParseSlug`, the `city-country` `/trip/:slug` path segment), `export_ics.go`/
+`export_kml.go` (the `.ics`/`.kml` routes), `googlemaps.go` (the per-day walking-directions
+link), `sitemap.go` (`/sitemap.xml`, built from cached cities only) and `ratelimit.go` (caps how
+many never-before-seen cities `/trip/:slug` will plan per minute). `sitemap.go` currently stores
+its city list under a reserved key in the existing city-cache table, because `application.Storage`
+has no dedicated "list cached cities" method — a real one would let it drop that workaround.
 
 ## Migration map
 
