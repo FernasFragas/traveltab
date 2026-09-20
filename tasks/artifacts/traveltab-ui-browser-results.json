@@ -1,0 +1,50 @@
+{
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "fixture": true,
+  "windy": "blanked in browser; not validated",
+  "initial": {
+    "width": 375,
+    "scrollWidth": 375,
+    "htmx": "object",
+    "overflow": []
+  },
+  "planned": {
+    "width": 375,
+    "scrollWidth": 375,
+    "htmx": "object",
+    "overflow": []
+  },
+  "network": [
+    {
+      "url": "http://127.0.0.1:8083/plan?city=Lisbon&country=Portugal&lat=38.7223&lon=-9.1393&start=2026-09-21&days=3",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8083/plan?city=Lisbon&country=Portugal&lat=NaN&lon=-9.1393&start=2026-09-21&days=3",
+      "status": 400
+    },
+    {
+      "url": "http://127.0.0.1:8083/plan?city=Lisbon&country=Portugal&lat=38.7223&lon=-9.1393&start=2026-09-21&days=5",
+      "status": 200
+    }
+  ],
+  "errors": [
+    {
+      "source": "network",
+      "level": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+      "timestamp": 1789917569448.391,
+      "url": "http://127.0.0.1:8083/plan?city=Lisbon&country=Portugal&lat=NaN&lon=-9.1393&start=2026-09-21&days=3",
+      "networkRequestId": "96899.512"
+    }
+  ],
+  "layout": {
+    "width": 375,
+    "scrollWidth": 375,
+    "htmx": "object",
+    "overflow": []
+  }
+}

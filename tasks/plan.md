@@ -1,6 +1,18 @@
 # Implementation Plan: Weather-aware trip planner (MVP)
 
+> **Package migration:** application code has moved under `internal/`. The file ownership,
+> paths and constructor signatures below record the original MVP implementation. For current
+> paths and dependency rules, use [architecture.md](../docs/architecture.md). In particular,
+> there is no root Go package or global database: `cmd/web` opens a SQLite store and injects
+> it into the HTTP adapter. Source-cache constructors are methods on that store.
+
 _Written 2026-09-19 from [the one-pager](../docs/ideas/weather-aware-trip-planner.md) and [its validation](../docs/ideas/weather-aware-trip-planner-validation.md). Tasks are in [todo.md](todo.md)._
+
+## Current status (2026-09-20)
+
+All 17 MVP tasks are implemented. Race tests, lint, native build, Docker image build and a
+375 px browser check pass. See [completion evidence](notes-completion.md). Human release review,
+commit/PR, remote CI and deployment remain separate; no deployment has been performed.
 
 ## Overview
 
@@ -244,47 +256,48 @@ Most tests are small. There's about one medium test per boundary and a few large
 Full details, acceptance criteria and verification steps are in [todo.md](todo.md).
 
 ### Phase 0: Foundation
-- [ ] Task 1: Planner contract and geo helpers
-- [ ] Task 2: Remove the old hotels and itinerary code
+- [x] Task 1: Planner contract and geo helpers
+- [x] Task 2: Remove the old hotels and itinerary code
 
 ### Checkpoint A: Foundation
-- [ ] `make test` and `make build` pass
-- [ ] The site still shows weather and videos, with no hotels card
+- [x] `make test` and `make build` pass
+- [x] The site still shows weather and videos, with no hotels card
 
 ### Phase 1: Parallel pieces
-- [ ] Task 3: Wikipedia + Wikidata place source
-- [ ] Task 4: Open-Meteo daily forecast source
-- [ ] Task 5: Overpass stay source with fallback servers
-- [ ] Task 6: SQLite source cache that keeps old data on errors
-- [ ] Task 7: Rank places, with the type filter and boost list
-- [ ] Task 8: Group places into days
-- [ ] Task 9: Schedule days around the forecast
-- [ ] Task 10: Pick places to stay and build the booking link
-- [ ] Task 11: Planner route and "Plan my trip" card (with a fake planner)
-- [ ] Task 12: Stay card, photo credits and data credits
+- [x] Task 3: Wikipedia + Wikidata place source
+- [x] Task 4: Open-Meteo daily forecast source
+- [x] Task 5: Overpass stay source with fallback servers
+- [x] Task 6: SQLite source cache that keeps old data on errors
+- [x] Task 7: Rank places, with the type filter and boost list
+- [x] Task 8: Group places into days
+- [x] Task 9: Schedule days around the forecast
+- [x] Task 10: Pick places to stay and build the booking link
+- [x] Task 11: Planner route and "Plan my trip" card (with a fake planner)
+- [x] Task 12: Stay card, photo credits and data credits
 
 ### Checkpoint B: Pieces
-- [ ] `make lint` and `make test` pass on `main` with all Phase 1 work merged
-- [ ] Every task noted its RED output, and no test is skipped or disabled
-- [ ] The card renders a fake plan on the real page
+- [x] `make lint` and `make test` pass in the combined working tree
+- [x] Default tests pass; historical RED notes and missing evidence are disclosed in notes-completion.md. Three live API checks remain explicitly opt-in
+- [x] The card renders a fake plan on the real page
 
 ### Phase 2: Joining the logic
-- [ ] Task 13: Place-type tool and the generated type list (human review)
-- [ ] Task 14: `Build`, which runs the whole planning chain
+- [x] Task 13: Place-type tool and the generated type list (human review)
+- [x] Task 14: `Build`, which runs the whole planning chain
 
 ### Phase 3: Integration
-- [ ] Task 15: Wire the real planner into the app
-- [ ] Task 16: City acceptance tests for Lisbon, Tavira and Kyoto (written before Task 13 lands)
+- [x] Task 15: Wire the real planner into the app
+- [x] Task 16: City acceptance tests for Lisbon, Tavira and Kyoto (written before Task 13 lands)
 
 ### Checkpoint C: End to end
-- [ ] Every "Done when" item from the one-pager passes on a local run
-- [ ] Human review before the docs task
+- [x] Recorded-city tests cover the one-pager’s planning cases; browser fixtures cover the UI, and cache checks cover outages and repeat requests
+- [ ] Human release review of the generated types and completed implementation
 
 ### Phase 4: Polish
-- [ ] Task 17: README "How the planner works" and CHANGELOG
+- [x] Task 17: README "How the planner works" and CHANGELOG
 
 ### Checkpoint D: Complete
-- [ ] All acceptance criteria met, CI green, ready to deploy
+- [x] Local automated acceptance, browser fixture and Docker checks pass
+- [ ] Commit/PR, remote CI and deployment approval
 
 ## Risks and Mitigations
 
@@ -298,6 +311,12 @@ Full details, acceptance criteria and verification steps are in [todo.md](todo.m
 | Merge conflicts in shared files | Medium | File-ownership table above; shared files edited in a fixed order |
 | Wikimedia rate limits | Low | `User-Agent` on every request, 30-day cache, split searches only when capped |
 | Tests that pass without testing anything | Medium | RED must be an assertion failure and noted per task; Checkpoint B checks the notes |
+
+## Decisions (2026-09-20)
+
+- ✅ **Rescue single-stop days when a nearby highlight exists.** A lone day may take from a day at exactly `MinStopsPerDay` (3 + 1 becomes 2 + 2), since the stop was already within reach. Remaining singletons can use unused top-20 candidates within 3 km (Kyoto’s bamboo grove). Truly isolated stops stay alone when no nearby candidate exists.
+- ✅ **A day may keep 2 stops rather than pull a stop from across town.** Balancing now has a 3 km reach limit, so `MinStopsPerDay` is a target rather than a guarantee. This follows the same "keep it walkable" call as the compactness fix.
+- ✅ **Short trips keep places close together.** When there are more places than slots, drop by fame *and* closeness, not fame alone. Dropping by fame alone gave Lisbon a 15.6 km walking day on a 2-day trip. Task 8's spec and tests are updated.
 
 ## Decisions (2026-09-19)
 

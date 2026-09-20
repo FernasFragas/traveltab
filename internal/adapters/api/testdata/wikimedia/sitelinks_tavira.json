@@ -1,0 +1,1041 @@
+{
+ "entities": {
+  "Q6809962": {
+   "type": "item",
+   "id": "Q6809962",
+   "sitelinks": {
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Ilha de Tavira"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Ilha de Tavira"
+    },
+    "dewikivoyage": {
+     "site": "dewikivoyage",
+     "title": "Ilha de Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Tavira Island"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Isla de Tavira"
+    },
+    "hawiki": {
+     "site": "hawiki",
+     "title": "Tsibirin Tavira"
+    },
+    "nnwiki": {
+     "site": "nnwiki",
+     "title": "Ilha de Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Ilha de Tavira"
+    }
+   }
+  },
+  "Q5015903": {
+   "type": "item",
+   "id": "Q5015903",
+   "sitelinks": {
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Cacela Island"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Praia da Fábrica"
+    }
+   }
+  },
+  "Q372840": {
+   "type": "item",
+   "id": "Q372840",
+   "sitelinks": {
+    "afwiki": {
+     "site": "afwiki",
+     "title": "Tavira"
+    },
+    "arwiki": {
+     "site": "arwiki",
+     "title": "طبيرة"
+    },
+    "bgwiki": {
+     "site": "bgwiki",
+     "title": "Тавира"
+    },
+    "cawiki": {
+     "site": "cawiki",
+     "title": "Tavira"
+    },
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Tavira (munisipyo)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Тавира"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Tavira"
+    },
+    "cswiki": {
+     "site": "cswiki",
+     "title": "Tavira"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Tavira"
+    },
+    "dewikivoyage": {
+     "site": "dewikivoyage",
+     "title": "Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Tavira"
+    },
+    "enwikivoyage": {
+     "site": "enwikivoyage",
+     "title": "Tavira"
+    },
+    "eowiki": {
+     "site": "eowiki",
+     "title": "Tavira"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Tavira"
+    },
+    "eswikivoyage": {
+     "site": "eswikivoyage",
+     "title": "Tavira"
+    },
+    "etwiki": {
+     "site": "etwiki",
+     "title": "Tavira"
+    },
+    "euwiki": {
+     "site": "euwiki",
+     "title": "Tavira"
+    },
+    "fawiki": {
+     "site": "fawiki",
+     "title": "تاویرا"
+    },
+    "fiwiki": {
+     "site": "fiwiki",
+     "title": "Tavira"
+    },
+    "frwiki": {
+     "site": "frwiki",
+     "title": "Tavira"
+    },
+    "glwiki": {
+     "site": "glwiki",
+     "title": "Tavira"
+    },
+    "hewiki": {
+     "site": "hewiki",
+     "title": "טבירה"
+    },
+    "huwiki": {
+     "site": "huwiki",
+     "title": "Tavira"
+    },
+    "idwiki": {
+     "site": "idwiki",
+     "title": "Tavira"
+    },
+    "itwiki": {
+     "site": "itwiki",
+     "title": "Tavira"
+    },
+    "itwikivoyage": {
+     "site": "itwikivoyage",
+     "title": "Tavira"
+    },
+    "jawiki": {
+     "site": "jawiki",
+     "title": "タヴィラ"
+    },
+    "kawiki": {
+     "site": "kawiki",
+     "title": "ტავირა"
+    },
+    "kowiki": {
+     "site": "kowiki",
+     "title": "타비라"
+    },
+    "ladwiki": {
+     "site": "ladwiki",
+     "title": "Tavira"
+    },
+    "lbwiki": {
+     "site": "lbwiki",
+     "title": "Tavira"
+    },
+    "lmowiki": {
+     "site": "lmowiki",
+     "title": "Tavira"
+    },
+    "ltwiki": {
+     "site": "ltwiki",
+     "title": "Tavira"
+    },
+    "mswiki": {
+     "site": "mswiki",
+     "title": "Tavira"
+    },
+    "mznwiki": {
+     "site": "mznwiki",
+     "title": "تاویرا"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Tavira"
+    },
+    "nnwiki": {
+     "site": "nnwiki",
+     "title": "Tavira"
+    },
+    "novwiki": {
+     "site": "novwiki",
+     "title": "Tavira"
+    },
+    "nowiki": {
+     "site": "nowiki",
+     "title": "Tavira"
+    },
+    "plwiki": {
+     "site": "plwiki",
+     "title": "Tavira"
+    },
+    "plwikivoyage": {
+     "site": "plwikivoyage",
+     "title": "Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Tavira"
+    },
+    "ptwikivoyage": {
+     "site": "ptwikivoyage",
+     "title": "Tavira"
+    },
+    "rowiki": {
+     "site": "rowiki",
+     "title": "Tavira"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Тавира"
+    },
+    "simplewiki": {
+     "site": "simplewiki",
+     "title": "Tavira"
+    },
+    "svwiki": {
+     "site": "svwiki",
+     "title": "Tavira"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Тавира"
+    },
+    "ukwiki": {
+     "site": "ukwiki",
+     "title": "Тавіра"
+    },
+    "urwiki": {
+     "site": "urwiki",
+     "title": "تاویرا"
+    },
+    "viwiki": {
+     "site": "viwiki",
+     "title": "Tavira"
+    },
+    "vowiki": {
+     "site": "vowiki",
+     "title": "Tavira"
+    },
+    "warwiki": {
+     "site": "warwiki",
+     "title": "Tavira"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Tavira"
+    },
+    "zhwiki": {
+     "site": "zhwiki",
+     "title": "戴維拉"
+    }
+   }
+  },
+  "Q2652869": {
+   "type": "item",
+   "id": "Q2652869",
+   "sitelinks": {
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Cabanas de Tavira (parokya)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Кабанаш-де-Тавира"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Cabanas de Tavira"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Cabanas de Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Cabanas de Tavira"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Cabanas de Tavira"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Кабанаш-де-Тавира"
+    },
+    "mswiki": {
+     "site": "mswiki",
+     "title": "Cabanas de Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Cabanas de Tavira"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Кабанаш-де-Тавира"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Cabanas de Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Кабанаш-де-Тавира"
+    },
+    "urwiki": {
+     "site": "urwiki",
+     "title": "کاباناس دے تاویرا"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Cabanas de Tavira"
+    }
+   }
+  },
+  "Q5562657": {
+   "type": "item",
+   "id": "Q5562657",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Gilão River"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Gilão River"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Río Séqua"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Rio Séqua"
+    }
+   }
+  },
+  "Q2687695": {
+   "type": "item",
+   "id": "Q2687695",
+   "sitelinks": {
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Santa Luzia (lungsod sa Portugal, Distrito de Faro, Tavira, lat 37,10, long -7,66)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Санта-Лузия (Тавира)"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Santa Luzia (Tavira)"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Santa Luzia (Tavira)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Santa Luzia (Tavira)"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Santa Luzia (Tavira)"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Санта-Лузия (Тавира)"
+    },
+    "mswiki": {
+     "site": "mswiki",
+     "title": "Santa Luzia (Tavira)"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Santa Luzia (Tavira)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Santa Luzia (Tavira)"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Санта-Лузия (Тавира)"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Santa Luzia, Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Санта-Лузия (Тавира)"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Santa Luzia (Tavira)"
+    }
+   }
+  },
+  "Q2881532": {
+   "type": "item",
+   "id": "Q2881532",
+   "sitelinks": {
+    "cawiki": {
+     "site": "cawiki",
+     "title": "Balsa (Lusitània)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Balsa (Roman town)"
+    },
+    "frwiki": {
+     "site": "frwiki",
+     "title": "Balsa (ville romaine)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Balsa (Lusitânia)"
+    }
+   }
+  },
+  "Q66813931": {
+   "type": "item",
+   "id": "Q66813931",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Cacela Velha"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Cacela Velha"
+    },
+    "euwiki": {
+     "site": "euwiki",
+     "title": "Cacela Velha"
+    },
+    "huwiki": {
+     "site": "huwiki",
+     "title": "Cacela Velha"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Cacela Velha"
+    }
+   }
+  },
+  "Q2181054": {
+   "type": "item",
+   "id": "Q2181054",
+   "sitelinks": {
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Tavira (parokya sa Portugal, Distrito de Faro, Tavira, lat 37,20, long -7,67)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Санта-Мария (Тавира)"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Santa Maria (Tavira)"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Santa Maria (Tavira)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Santa Maria (Tavira)"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Santa Maria (Tavira)"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Санта-Мария (Тавира)"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Santa Maria (Tavira)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Santa Maria (Tavira)"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Санта-Мария (Тавира)"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Santa Maria, Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Санта-Мария (Тавира)"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Santa Maria (Tavira)"
+    }
+   }
+  },
+  "Q2190908": {
+   "type": "item",
+   "id": "Q2190908",
+   "sitelinks": {
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Tavira (parokya sa Portugal, Distrito de Faro, Tavira, lat 37,13, long -7,66)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Сантьягу (Тавира)"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Santiago (Tavira)"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Santiago (Tavira)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Santiago (Tavira)"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Santiago (Tavira)"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Сантьягу (Тавира)"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Santiago (Tavira)"
+    },
+    "plwiki": {
+     "site": "plwiki",
+     "title": "Santiago (Tavira)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Santiago (Tavira)"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Сантьягу (Тавира)"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Santiago, Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Сантьягу (Тавира)"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Santiago (Tavira)"
+    }
+   }
+  },
+  "Q540357": {
+   "type": "item",
+   "id": "Q540357",
+   "sitelinks": {
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Conceição (parokya sa Portugal, Distrito de Faro, Tavira)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Консейсан (Тавира)"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Conceição (Tavira)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Conceição de Tavira"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Conceição (Tavira)"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Консейсан (Тавира)"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Conceição (Tavira)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Conceição de Tavira"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Консейсан (Тавира)"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Conceição, Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Консейсан (Тавира)"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Conceição (Tavira)"
+    }
+   }
+  },
+  "Q2994910": {
+   "type": "item",
+   "id": "Q2994910",
+   "sitelinks": {
+    "astwiki": {
+     "site": "astwiki",
+     "title": "Luz de Tavira"
+    },
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Luz (parokya sa Portugal, Distrito de Faro, Tavira, lat 37,09, long -7,72)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Луш-де-Тавира"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Luz de Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Luz de Tavira"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Luz de Tavira"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Луш-де-Тавира"
+    },
+    "mswiki": {
+     "site": "mswiki",
+     "title": "Luz de Tavira"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Luz de Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Luz de Tavira"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Луш-де-Тавира"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Luz de Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Луш-де-Тавира"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Luz de Tavira"
+    }
+   }
+  },
+  "Q2652639": {
+   "type": "item",
+   "id": "Q2652639",
+   "sitelinks": {
+    "arwiki": {
+     "site": "arwiki",
+     "title": "سانتو إستيفاو"
+    },
+    "cebwiki": {
+     "site": "cebwiki",
+     "title": "Santo Estêvão (parokya sa Portugal, Distrito de Faro)"
+    },
+    "cewiki": {
+     "site": "cewiki",
+     "title": "Санту-Эштеван (Тавира)"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Santo Estevão (Tavira)"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Santo Estêvão (Tavira)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Santo Estêvão (Tavira)"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Santo Estêvão (Tavira)"
+    },
+    "kkwiki": {
+     "site": "kkwiki",
+     "title": "Санту-Эштеван (Тавира)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Santo Estêvão (Tavira)"
+    },
+    "ruwiki": {
+     "site": "ruwiki",
+     "title": "Санту-Эштеван (Тавира)"
+    },
+    "trwiki": {
+     "site": "trwiki",
+     "title": "Santo Estêvão, Tavira"
+    },
+    "ttwiki": {
+     "site": "ttwiki",
+     "title": "Санту-Эштеван (Тавира)"
+    },
+    "zh_min_nanwiki": {
+     "site": "zh_min_nanwiki",
+     "title": "Santo Estêvão (Tavira)"
+    }
+   }
+  },
+  "Q1438891": {
+   "type": "item",
+   "id": "Q1438891",
+   "sitelinks": {
+    "arzwiki": {
+     "site": "arzwiki",
+     "title": "قلعة كاسيلا"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Fortaleza de Cacela"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "Fortaleza de Cacela"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Fortress of Cacela"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Castillo de Cacela"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Fortaleza de Cacela"
+    }
+   }
+  },
+  "Q3505418": {
+   "type": "item",
+   "id": "Q3505418",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Igreja da Misericórdia de Tavira"
+    },
+    "cswiki": {
+     "site": "cswiki",
+     "title": "Igreja da Misericórdia"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Igreja da Misericórdia de Tavira"
+    },
+    "frwiki": {
+     "site": "frwiki",
+     "title": "Église de la Miséricorde de Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Igreja da Misericórdia de Tavira"
+    }
+   }
+  },
+  "Q379447": {
+   "type": "item",
+   "id": "Q379447",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Igreja paroquial de Santa Maria (Tavira)"
+    },
+    "cswiki": {
+     "site": "cswiki",
+     "title": "Igreja de Santa Maria do Castelo"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Igreja de Santa Maria do Castelo (Tavira)"
+    },
+    "frwiki": {
+     "site": "frwiki",
+     "title": "Église de Santa Maria do Castelo"
+    },
+    "nlwiki": {
+     "site": "nlwiki",
+     "title": "Igreja de Santa Maria do Castelo"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Igreja de Santa Maria do Castelo (Tavira)"
+    }
+   }
+  },
+  "Q16742104": {
+   "type": "item",
+   "id": "Q16742104",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Cascata do Pego do Inferno"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Pego do Inferno"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Cascata do Pego do Inferno"
+    }
+   }
+  },
+  "Q25419162": {
+   "type": "item",
+   "id": "Q25419162",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Conceição e Cabanas de Tavira"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "União das Freguesias de Conceição e Cabanas de Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Conceição e Cabanas de Tavira"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Conceição e Cabanas de Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Conceição e Cabanas de Tavira"
+    }
+   }
+  },
+  "Q25419159": {
+   "type": "item",
+   "id": "Q25419159",
+   "sitelinks": {
+    "arwiki": {
+     "site": "arwiki",
+     "title": "لوز دي تافيرا إي سانتو إستيفاو"
+    },
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Luz de Tavira e Santo Estêvão"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "União das Freguesias de Luz de Tavira e Santo Estêvão"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Luz de Tavira e Santo Estêvão"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Luz de Tavira e Santo Estêvão"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Luz de Tavira e Santo Estêvão"
+    }
+   }
+  },
+  "Q25442489": {
+   "type": "item",
+   "id": "Q25442489",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Tavira (Santa Maria e Santiago)"
+    },
+    "dewiki": {
+     "site": "dewiki",
+     "title": "União das Freguesias de Tavira (Santa Maria e Santiago)"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Tavira (Santa Maria e Santiago)"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Tavira (Santa Maria e Santiago)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Tavira (Santa Maria e Santiago)"
+    }
+   }
+  },
+  "Q5049832": {
+   "type": "item",
+   "id": "Q5049832",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Castelo de Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Castle of Tavira"
+    },
+    "frwiki": {
+     "site": "frwiki",
+     "title": "Château de Tavira"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Castelo de Tavira"
+    }
+   }
+  },
+  "Q10283933": {
+   "type": "item",
+   "id": "Q10283933",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Fortaleza de Santo António de Tavira"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Fort Santo António (Tavira)"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Forte de Santo António de Tavira"
+    }
+   }
+  },
+  "Q10284021": {
+   "type": "item",
+   "id": "Q10284021",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Forte de São João da Barra"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Fort São João da Barra"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Forte de São João da Barra"
+    }
+   }
+  },
+  "Q8202399": {
+   "type": "item",
+   "id": "Q8202399",
+   "sitelinks": {
+    "commonswiki": {
+     "site": "commonswiki",
+     "title": "Category:Nora Halt"
+    },
+    "enwiki": {
+     "site": "enwiki",
+     "title": "Nora halt"
+    },
+    "eswiki": {
+     "site": "eswiki",
+     "title": "Apeadero de Nora"
+    },
+    "ptwiki": {
+     "site": "ptwiki",
+     "title": "Apeadeiro de Nora"
+    }
+   }
+  }
+ },
+ "success": 1
+}

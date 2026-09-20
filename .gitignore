@@ -10,6 +10,7 @@ pkg/
 *.exe
 *.test
 *.prof
+*.db
 
 # Handlebars
 *.hbs.cache

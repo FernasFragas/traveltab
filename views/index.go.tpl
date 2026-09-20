@@ -79,14 +79,16 @@
                         {{ template "weather_display" . }}
                     </div>
 
+                    <!-- Plan my trip -->
+                    {{ if .Trip }}
+                    <div class="col-12 mb-1">
+                        {{ template "trip_card" .Trip }}
+                    </div>
+                    {{ end }}
+
                     <!-- Videos Section -->
                     <div class="col-12 mb-1">
                         {{ template "video" . }}
-                    </div>
-
-                    <!-- Hotels Section -->
-                    <div class="col-12 mb-1">
-                        {{ template "hotels_card" . }}
                     </div> 
 
                     <!-- Footer Section -->
@@ -99,6 +101,9 @@
                             <a href="https://www.fernandofragateiro.com" target="_blank" aria-label="Personal Website"><i class="fas fa-globe"></i></a>
                             <!-- Add other social links as needed -->
                         </div>
+                        <p class="data-credits">
+                            Places: Wikipedia &amp; Wikidata · Photos: Wikimedia Commons · Weather: Open-Meteo (CC BY 4.0) · Map data © OpenStreetMap contributors
+                        </p>
                     </footer>
                     
                  </div> <!-- End of content-area -->

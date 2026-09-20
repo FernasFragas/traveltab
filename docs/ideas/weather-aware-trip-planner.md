@@ -7,7 +7,7 @@ _Idea one-pager, written 2026-09-19 and updated the same day with the validation
 - **What:** enter a city, a start date and a number of days. You get a **day-by-day plan that follows the forecast** (museums on the rainy day, viewpoints on the sunny one) and **the best area to stay for that plan**.
 - **Cost:** $0, forever. Only open data, with no API keys that can bill.
 - **Why it's worth building:** TravelTab is a weather app, and no other trip planner plans around the forecast. That's the portfolio story.
-- **Status:** all 5 key assumptions were tested against the real APIs. They hold, with changes: see [What the results changed](#what-the-results-changed). **Next step: build the place-type list** (see [Build order](#build-order)).
+- **Status:** all 5 key assumptions were tested against the real APIs. They hold, with changes: see [What the results changed](#what-the-results-changed). **MVP implementation is complete**; local tests, Docker build and mobile browser checks pass. See [completion evidence](../../tasks/notes-completion.md). Human release review and deployment remain.
 - **Next (v2):** shareable trip links, calendar and map export, and city intros written ahead of time by a local AI. See [Next Iteration (v2)](#next-iteration-v2).
 
 ## Problem Statement
@@ -66,15 +66,15 @@ Tested against the real APIs for Lisbon, Porto, Tavira, Funchal and Kyoto. Detai
 
 **In:**
 
-- [ ] One **"Plan my trip"** card on the main page, right under the weather, with a start date and **number of days (1–5)**. **No category checkboxes**, because they cluttered the old form.
-- [ ] Places within 10 km from Wikipedia geosearch, ranked by how many Wikipedia languages cover them. Keep the top ~60, each with a photo and an indoor/outdoor label.
-- [ ] **Big cities:** if the 10 km search returns the maximum of 500 results, run **7 smaller searches** (a 5 km circle in the middle and 6 around it, which together cover the 10 km circle) and merge them. Only Lisbon needed this in the validation.
-- [ ] **A hand-made list of place types** in Go, mapping each Wikidata type to indoor, outdoor or skip. Build it once, offline, from the types found in about 20 cities. **No class-tree lookups at runtime.** Rules learned from the validation:
+- [x] One **"Plan my trip"** card on the main page, right under the weather, with a start date and **number of days (1–5)**. **No category checkboxes**, because they cluttered the old form.
+- [x] Places within 10 km from Wikipedia geosearch, ranked by how many Wikipedia languages cover them. Keep the top ~60, each with a photo and an indoor/outdoor label.
+- [x] **Big cities:** if the 10 km search returns the maximum of 500 results, run **7 smaller searches** (a 5 km circle in the middle and 6 around it, which together cover the 10 km circle) and merge them. Only Lisbon needed this in the validation.
+- [x] **A hand-made list of place types** in Go, mapping each Wikidata type to indoor, outdoor or skip. Build it once, offline, from the types found in about 20 cities. **No class-tree lookups at runtime.** Rules learned from the validation:
   - Keep a bridge only if it's also a monument.
   - Skip libraries and a short list of exact types (city or ward of Japan, capital of Japan, former capital, government building).
   - Include mountains, islands and bookstores; add markets and lifts next.
   - Never skip broad categories like "administrative area". In Wikidata, that removes Belém Tower and nature parks too.
-- [ ] **A small hand-made boost list** in Go for popular places that fame alone ranks too low, or that the type list misses. Each entry is a Wikidata ID plus indoor/outdoor. A boosted place skips the type filter and ranks as if it had as many Wikipedia languages as the city's 10th place. Keep it to about 5 per city. Starting list:
+- [x] **A small hand-made boost list** in Go for popular places that fame alone ranks too low, or that the type list misses. Each entry is a Wikidata ID plus indoor/outdoor. A boosted place skips the type filter and ranks as if it had as many Wikipedia languages as the city's 10th place. Keep it to about 5 per city. Starting list:
 
   | Place | Wikidata ID | City | Indoor or outdoor | Why it needs a boost |
   |---|---|---|---|---|
@@ -84,34 +84,34 @@ Tested against the real APIs for Lisbon, Porto, Tavira, Funchal and Kyoto. Detai
   | Arashiyama Bamboo Grove | `Q23579173` | Kyoto | outdoor | "Bamboo grove" isn't in the type list |
   | Nishiki Market | `Q11650434` | Kyoto | indoor | Ranks #93. It's also a covered street, so good for Kyoto's rainy days |
 
-- [ ] Grouping into days: 3–4 stops per day, ordered as a walking loop, with the walking distance shown. Sunny days draw from the top ~20; **rainy days pick indoor stops from the top ~60**, because some cities (like Kyoto) have few indoor places near the top.
-- [ ] **Small towns:** if there aren't enough good places for the days asked (3 per day), plan fewer days and say so, for example "Tavira has enough highlights for 3 days, so here's a 3-day plan." (In the validation, Tavira had 12 places, 9 of them good.)
-- [ ] Weather rule: if the day's total rain (Open-Meteo `precipitation_sum`) is **≥ 5 mm**, make it an indoor day; otherwise an outdoor day. Keep the 5 mm in one constant so it's easy to adjust. **Only rearrange days within the next 7 days**, where the forecast is reliable. Days 8–16 show the forecast marked "less certain" but keep their order. Further out, show "Forecast appears closer to your trip". Treat missing (`null`) forecast values as "no data".
-- [ ] Stay card: up to 6 places to stay within 1 km of the plan center (the place in the plan with the shortest total distance to the others). Show the website, the stars when there are any, and a "Check prices" link with the dates filled in. Skip places with no name, and use the English name when there is one.
-- [ ] **Overpass fallback chain:** try `overpass-api.de`, then `overpass.private.coffee`, each with a short timeout and one retry. If both fail, **keep showing the old cached hotels** (hotels rarely change). With no cache at all, show the plan without the stay card: "Places to stay are unavailable right now". Keep the server list in an environment variable (`OVERPASS_URLS`) so it can change without a code change.
-- [ ] SQLite cache: places and hotels kept 30 days per city, the forecast kept 3 hours. **If a refresh fails, keep serving the old data** instead of showing nothing.
-- [ ] A credits line in the footer for OpenStreetMap, Wikidata/Commons and Open-Meteo.
-- [ ] Tests with stubbed APIs, like the existing ones, running in CI.
-- [ ] Remove the Google Places and Foursquare code and keys.
+- [x] Grouping into days: aiming for 3–4 stops per day (2 when needed to stay compact), ordered as a walking loop, with the walking distance shown. Sunny days draw from the top ~20; **rainy days pick indoor stops from the top ~60**, because some cities (like Kyoto) have few indoor places near the top.
+- [x] **Small towns:** if there aren't enough good places for the days asked (3 per day), plan fewer days and say so, for example "Tavira has enough highlights for 3 days, so here's a 3-day plan." (In the validation, Tavira had 12 places, 9 of them good.)
+- [x] Weather rule: if the day's total rain (Open-Meteo `precipitation_sum`) is **≥ 5 mm**, make it an indoor day; otherwise an outdoor day. Keep the 5 mm in one constant so it's easy to adjust. **Only rearrange days within the next 7 days**, where the forecast is reliable. Days 8–16 show the forecast marked "less certain" but keep their order. Further out, show "Forecast appears closer to your trip". Treat missing (`null`) forecast values as "no data".
+- [x] Stay card: up to 6 places to stay within 1 km of the plan center (the place in the plan with the shortest total distance to the others). Show the website, the stars when there are any, and a "Check prices" link with the dates filled in. Skip places with no name, and use the English name when there is one.
+- [x] **Overpass fallback chain:** try `overpass-api.de`, then `overpass.private.coffee`, each with a short timeout and one retry. If both fail, **keep showing the old cached hotels** (hotels rarely change). With no cache at all, show the plan without the stay card: "Places to stay are unavailable right now". Keep the server list in an environment variable (`OVERPASS_URLS`) so it can change without a code change.
+- [x] SQLite cache: places and hotels kept 30 days per city, the forecast kept 3 hours. **If a refresh fails, keep serving the old data** instead of showing nothing.
+- [x] A credits line in the footer for OpenStreetMap, Wikidata/Commons and Open-Meteo.
+- [x] Tests with stubbed APIs pass locally, and CI is configured to run them; the next remote run follows the human-managed commit/PR.
+- [x] Remove the Google Places and Foursquare code and keys.
 
-**Done when:**
+**Done when** (verified with recorded city data, cache tests and a separate mobile browser fixture; see completion evidence):
 
-- [ ] "Lisbon, 3 days, next week" gives a sensible plan, and the rainy day really does get the museums.
-- [ ] "Tavira, 5 days" gives a shorter plan with a clear message instead of padding with weak places.
-- [ ] "Kyoto, 3 days" with a rainy day still gets 3+ indoor stops that day.
-- [ ] A cached city loads in under 2 seconds.
-- [ ] Monthly API bill: **$0**.
-- [ ] The README has a short "how the planner works" section with a diagram, ready for a portfolio.
+- [x] "Lisbon, 3 days, next week" gives a sensible plan, and the rainy day really does get the museums.
+- [x] "Tavira, 5 days" gives a shorter plan with a clear message instead of padding with weak places.
+- [x] "Kyoto, 3 days" with a rainy day still gets 3+ indoor stops that day.
+- [x] A cached city loads in under 2 seconds.
+- [x] The planner uses only keyless sources; no billable provider is wired into it. This is an implementation check, not a billing-account audit.
+- [x] The README has a short "how the planner works" section with a diagram, ready for a portfolio.
 
 ### Build order
 
 Each step can be tested before the next one starts. **Broken down into 17 tasks for parallel agents in [tasks/plan.md](../../tasks/plan.md) and [tasks/todo.md](../../tasks/todo.md).**
 
-1. [ ] **`cmd/placetypes`:** a small Go tool that fetches the places near ~20 cities, collects their Wikidata types, and writes a draft Go map of each type to indoor, outdoor or skip. You review it by hand once. It takes over from the throwaway Python used for the validation.
-2. [ ] **API clients with stubbed tests:** Wikipedia geosearch (including the 7-search split) and Wikidata entities, the Open-Meteo daily forecast, and Overpass hotels with retries and the fallback server. Save real responses for the 5 validation cities as test fixtures.
-3. [ ] **The planner:** rank, filter, group into days, apply the weather rules, and pick the place to stay. Plain Go with no network calls, so the unit tests run against the fixtures.
-4. [ ] **The UI:** the "Plan my trip" card and the stay card.
-5. [ ] **Clean up:** remove the Google Places and Foursquare code.
+1. [x] **`cmd/placetypes`:** a small Go tool that fetches the places near ~20 cities, collects their Wikidata types, and writes a draft Go map of each type to indoor, outdoor or skip. You review it by hand once. It takes over from the throwaway Python used for the validation.
+2. [x] **API clients with stubbed tests:** Wikipedia geosearch (including the 7-search split) and Wikidata entities, the Open-Meteo daily forecast, and Overpass hotels with retries and the fallback server. Recorded client fixtures and Lisbon, Tavira and Kyoto acceptance fixtures are checked in the working tree.
+3. [x] **The planner:** rank, filter, group into days, apply the weather rules, and pick the place to stay. Plain Go with no network calls, so the unit tests run against the fixtures.
+4. [x] **The UI:** the "Plan my trip" card and the stay card.
+5. [x] **Clean up:** remove the Google Places and Foursquare code.
 
 ## Not Doing (and Why)
 
