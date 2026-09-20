@@ -14,6 +14,7 @@ const (
 	farTripNote            = "Forecast appears closer to your trip"
 	weatherUnavailableNote = "Weather is unavailable right now, so the days are not ordered by the forecast."
 	staysUnavailableNote   = "Places to stay are unavailable right now"
+	daysReorderedNote      = "Days reordered for the latest forecast."
 )
 
 // Build runs the whole planning chain: it loads the places, ranks them, splits them into
@@ -67,9 +68,14 @@ func Build(ctx context.Context, req Request, places PlaceSource, forecast Foreca
 		notes = append(notes, farTripNote)
 	}
 
+	days := Schedule(groups, ranked, fc, req.Start, today)
+	if daysReordered(groups, days) {
+		notes = append(notes, daysReorderedNote)
+	}
+
 	plan := &Plan{
 		Request:    req,
-		Days:       Schedule(groups, ranked, fc, req.Start, today),
+		Days:       days,
 		Note:       strings.Join(notes, " "),
 		BookingURL: BookingURL(req.City, req.Country, req.Start, req.Days),
 	}
@@ -92,6 +98,49 @@ func shortTrip(city string, days int) string {
 		unit = "day"
 	}
 	return fmt.Sprintf(shortTripNote, city, days, unit, days)
+}
+
+// daysReordered reports whether the forecast pulled a grouping away from the day index
+// GroupDays naturally gave it. GroupDays never looks at the forecast, so groups[i] is always
+// the grouping that would land on day i with no weather-driven reordering; assignGroups may
+// move a grouping to a rainy day instead. A day is judged by whichever original grouping
+// shares the most of its stops, since a rainy day's own content can still change a little
+// (see topUpRainyDays) without that being a change of day order.
+func daysReordered(groups []Group, days []Day) bool {
+	for i, day := range days {
+		if origin := originGroup(groups, day.Stops); origin >= 0 && origin != i {
+			return true
+		}
+	}
+	return false
+}
+
+// originGroup is the index of the group sharing the most stops with stops, or -1 when none of
+// them share any - which Build never actually produces, since every day starts as a copy of
+// one group and only ever loses or gains a few stops after that.
+func originGroup(groups []Group, stops []Place) int {
+	best, bestShared := -1, 0
+	for i, g := range groups {
+		if shared := sharedStopCount(g.Stops, stops); shared > bestShared {
+			best, bestShared = i, shared
+		}
+	}
+	return best
+}
+
+// sharedStopCount is how many of b's places also appear in a, compared by Wikidata ID.
+func sharedStopCount(a, b []Place) int {
+	ids := make(map[string]bool, len(a))
+	for _, p := range a {
+		ids[p.ID] = true
+	}
+	shared := 0
+	for _, p := range b {
+		if ids[p.ID] {
+			shared++
+		}
+	}
+	return shared
 }
 
 // planStops is every stop of the plan, so the center can be measured against all of them.

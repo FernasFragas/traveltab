@@ -2,10 +2,12 @@ package httpserver
 
 import (
 	"context"
+	"encoding/xml"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 	"weatherservice/internal/application"
@@ -307,6 +309,270 @@ func TestMainPage_ShowsThePlannerCardWithCityAndCoordinates(t *testing.T) {
 	assert.Contains(t, body, `name="country" value="portugal"`)
 	assert.Contains(t, body, `name="lat" value="38.7223"`)
 	assert.Contains(t, body, `name="lon" value="-9.1393"`)
+}
+
+// --- A2: GET /trip/:slug ---
+
+func TestTripPage_RendersTheWeatherAndPlanFromASlug(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Sluglisbon")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "sluglisbon, pt").Return(createTestGeneralWeatherInfoFor("Sluglisbon"), nil)
+	expectFreshData(mockVideos, "Sluglisbon")
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/sluglisbon-pt?days=3&from=2026-03-11", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "<html", "a direct visit renders the full page, not a fragment")
+	for _, heading := range []string{"Day 1", "Day 2", "Day 3"} {
+		assert.Contains(t, body, heading)
+	}
+	assert.Contains(t, body, "Belem Tower")
+}
+
+func TestTripPage_WithNoDatesShowsThePrefilledFormOnly(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Slugporto")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "slugporto, pt").Return(createTestGeneralWeatherInfoFor("Slugporto"), nil)
+	expectFreshData(mockVideos, "Slugporto")
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugporto-pt", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "Plan my trip")
+	assert.Contains(t, body, `name="city" value="Slugporto"`)
+	assert.Contains(t, body, `name="country" value="portugal"`, "the fixture's GeneralWeatherInfo carries the country the weather API returned, not the slug's own")
+	assert.NotContains(t, body, "Day 1", "no click has happened yet, so there is no plan")
+}
+
+func TestTripPage_InvalidDatesFallBackToThePrefilledForm(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Slugfaro")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "slugfaro, pt").Return(createTestGeneralWeatherInfoFor("Slugfaro"), nil)
+	expectFreshData(mockVideos, "Slugfaro")
+
+	// A partial or malformed query never errors the page: it just falls back to the form.
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugfaro-pt?days=3", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "Plan my trip")
+	assert.NotContains(t, body, "Day 1")
+}
+
+func TestTripPage_UnknownSlugFallsBackToTheCityQueryFlow(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	forgetCity(t, "Slugunseen")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "slugunseen, pt").Return(createTestGeneralWeatherInfoFor("Slugunseen"), nil)
+	expectFreshData(mockVideos, "Slugunseen")
+
+	// A city that has never been searched before still renders, exactly like visiting "/"
+	// with a new city_name: a fresh fetch, then a cached row for next time.
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugunseen-pt", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "Test Video 1")
+	waitForCache(t, "Slugunseen")
+}
+
+func TestTripPage_MalformedSlugIs404(t *testing.T) {
+	server := planServer(t, fakeTripPlanner{})
+
+	status, _ := doRequest(t, server, httptest.NewRequest("GET", "/trip/not-a-country-code", nil))
+
+	assert.Equal(t, fiber.StatusNotFound, status)
+}
+
+func TestPlanRoute_SetsHXPushURLToTheShareableLink(t *testing.T) {
+	server := planServer(t, fakeTripPlanner{})
+
+	resp, err := server.app.Test(planRequest(map[string]string{"country": "pt"}), 5000)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+	assert.Equal(t, "/trip/lisbon-pt?days=3&from=2026-03-11", resp.Header.Get("HX-Push-Url"))
+}
+
+func TestPlanRoute_PushURLOmitsTheDateWhenThePlanFailed(t *testing.T) {
+	server := planServer(t, fakeTripPlanner{err: errors.New("overpass is down")})
+
+	resp, err := server.app.Test(planRequest(map[string]string{"country": "pt"}), 5000)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
+	assert.Equal(t, "/trip/lisbon-pt", resp.Header.Get("HX-Push-Url"), "still shareable, but with no dates to a plan that failed")
+}
+
+func TestPlanRoute_PushURLIsEmptyWhenThereIsNoCityToShare(t *testing.T) {
+	server := planServer(t, fakeTripPlanner{})
+
+	resp, err := server.app.Test(planRequest(map[string]string{"city": ""}), 5000)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+	assert.Empty(t, resp.Header.Get("HX-Push-Url"))
+}
+
+// --- A3: title, canonical URL, sitemap, and a crawler limit ---
+
+func TestTripPage_HasATitleAndDescription(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Slugtitle")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "slugtitle, pt").Return(createTestGeneralWeatherInfoFor("Slugtitle"), nil)
+	expectFreshData(mockVideos, "Slugtitle")
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugtitle-pt?days=3&from=2026-03-11", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "<title>3 days in Slugtitle — TravelTab</title>")
+	assert.Contains(t, body, `<meta name="description" content="A day-by-day plan for a 3-day trip to Slugtitle, with weather-aware stops and places to stay.">`)
+}
+
+func TestTripPage_UnplannedPageStillHasATitle(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Slugnodate")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "slugnodate, pt").Return(createTestGeneralWeatherInfoFor("Slugnodate"), nil)
+	expectFreshData(mockVideos, "Slugnodate")
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugnodate-pt", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "<title>Plan a trip to Slugnodate — TravelTab</title>")
+	assert.NotContains(t, body, "<title>✈🌤️TravelTab</title>", "the slug page never falls back to the plain home-page title")
+}
+
+func TestMainPage_KeepsItsPlainTitle(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	forgetCity(t, "Titlecheck")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "Titlecheck").Return(createTestGeneralWeatherInfoFor("Titlecheck"), nil)
+	expectFreshData(mockVideos, "Titlecheck")
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/?city_name=Titlecheck", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, "<title>✈🌤️TravelTab</title>")
+	assert.NotContains(t, body, `<link rel="canonical"`)
+}
+
+func TestTripPage_CanonicalLinkExcludesDaysAndFrom(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Slugcanonical")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "slugcanonical, pt").Return(createTestGeneralWeatherInfoFor("Slugcanonical"), nil)
+	expectFreshData(mockVideos, "Slugcanonical")
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugcanonical-pt?days=3&from=2026-03-11", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Contains(t, body, `<link rel="canonical" href="/trip/slugcanonical-pt">`)
+	assert.NotContains(t, body, "canonical\" href=\"/trip/slugcanonical-pt?")
+}
+
+func TestSitemap_IsValidXML(t *testing.T) {
+	server := planServer(t, fakeTripPlanner{})
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/sitemap.xml", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	var doc struct {
+		XMLName xml.Name `xml:"urlset"`
+	}
+	require.NoError(t, xml.Unmarshal([]byte(body), &doc))
+}
+
+func TestSitemap_ListsOnlyCachedCities(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	forgetCity(t, "Sitemapcity")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "sitemapcity, pt").Return(createTestGeneralWeatherInfoFor("Sitemapcity"), nil)
+	expectFreshData(mockVideos, "Sitemapcity")
+
+	status, _ := doRequest(t, server, httptest.NewRequest("GET", "/trip/sitemapcity-pt", nil))
+	require.Equal(t, fiber.StatusOK, status)
+	waitForCache(t, "Sitemapcity")
+
+	require.Eventually(t, func() bool {
+		_, body := doRequest(t, server, httptest.NewRequest("GET", "/sitemap.xml", nil))
+		return strings.Contains(body, "/trip/sitemapcity-pt")
+	}, 2*time.Second, 10*time.Millisecond, "the sitemap index write is async, like every city_data save")
+
+	_, body := doRequest(t, server, httptest.NewRequest("GET", "/sitemap.xml", nil))
+	assert.NotContains(t, body, "/trip/never-searched-xx", "a city nobody has asked for is never listed")
+}
+
+func TestPlanRoute_LimitsNewCitiesPerMinute(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, mockVideos := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	server.newCityLimiter = newNewCityLimiter(1)
+
+	forgetCity(t, "Ratecity1")
+	forgetCity(t, "Ratecity2")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "ratecity1, pt").Return(createTestGeneralWeatherInfoFor("Ratecity1"), nil).Times(2)
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "ratecity2, pt").Return(createTestGeneralWeatherInfoFor("Ratecity2"), nil)
+	expectFreshData(mockVideos, "Ratecity1")
+	expectFreshData(mockVideos, "Ratecity2")
+
+	status1, body1 := doRequest(t, server, httptest.NewRequest("GET", "/trip/ratecity1-pt?days=3&from=2026-03-11", nil))
+	require.Equal(t, fiber.StatusOK, status1)
+	assert.Contains(t, body1, "Day 1", "the first new city of the minute is planned")
+	waitForCache(t, "Ratecity1")
+
+	status2, body2 := doRequest(t, server, httptest.NewRequest("GET", "/trip/ratecity2-pt?days=3&from=2026-03-11", nil))
+	require.Equal(t, fiber.StatusOK, status2)
+	assert.NotContains(t, body2, "Day 1", "a second new city inside the same minute is not planned")
+	assert.Contains(t, body2, "Plan my trip")
+	waitForCache(t, "Ratecity2")
+
+	// A repeat visit to the already-cached first city is never limited, even though the
+	// limiter's single slot for this minute is already used.
+	status3, body3 := doRequest(t, server, httptest.NewRequest("GET", "/trip/ratecity1-pt?days=3&from=2026-03-11", nil))
+	require.Equal(t, fiber.StatusOK, status3)
+	assert.Contains(t, body3, "Day 1", "revisiting a cached city is never rate-limited")
 }
 
 func TestMainPage_PlannerStartsTomorrowByDefault(t *testing.T) {

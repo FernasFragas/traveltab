@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>✈🌤️TravelTab</title>
+    {{ if .PageTitle }}<title>{{ .PageTitle }}</title>{{ else }}<title>✈🌤️TravelTab</title>{{ end }}
+    {{ if .PageDescription }}<meta name="description" content="{{ .PageDescription }}">{{ end }}
+    {{ if .CanonicalURL }}<link rel="canonical" href="{{ .CanonicalURL }}">{{ end }}
 
     <!-- Favicon -->
     <link rel="icon" href="/traveltab.png" type="image/png">

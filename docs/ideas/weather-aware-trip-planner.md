@@ -141,6 +141,11 @@ Each step can be tested before the next one starts. **Broken down into 17 tasks 
 
 ## Next Iteration (v2)
 
+**Status (2026-09-20): built.** Shareable links and export are live; AI city intros are
+generated but deliberately not shown on the page yet (see part 3). Full task breakdown and
+evidence: [`tasks/plan-v2.md`](../../tasks/plan-v2.md), [`tasks/todo-v2.md`](../../tasks/todo-v2.md),
+[`tasks/notes-export.md`](../../tasks/notes-export.md), [`tasks/notes-guides.md`](../../tasks/notes-guides.md).
+
 Three add-ons once the MVP works. **Build them in this order**, because each one uses the one before:
 
 1. **Shareable links** give every plan a stable URL.
@@ -153,57 +158,63 @@ Three add-ons once the MVP works. **Build them in this order**, because each one
 | Export | High: the plan ends up in your calendar or map | Low | Time zones |
 | AI city intros | Medium: nice to read, but the plan works without it | Medium | The model making things up |
 
-### 1. Shareable trip links
+### 1. Shareable trip links ✅ built
 
 `/trip/lisbon-pt?days=3&from=2026-10-02` always opens the same plan.
 
-- [ ] Add a `GET /trip/:city` route. It renders the normal page, with the weather on top and the plan below, with the planner already filled in. Submitting the planner puts this URL in the address bar (HTMX `hx-push-url`), so copying the address shares the plan.
-- [ ] Make the plan deterministic: the same input always gives the same stops on the same days. No randomness when grouping; break ties with the Wikidata ID.
-- [ ] Search basics: a page title and description ("3 days in Lisbon: …"), a canonical URL **without the date**, and a `sitemap.xml` that lists only cities already in the cache.
+- [x] Add a `GET /trip/:city` route. It renders the normal page, with the weather on top and the plan below, with the planner already filled in. Submitting the planner puts this URL in the address bar (HTMX `hx-push-url`), so copying the address shares the plan.
+- [x] Make the plan deterministic: the same input always gives the same stops on the same days. No randomness when grouping; break ties with the Wikidata ID.
+- [x] Search basics: a page title and description ("3 days in Lisbon: …"), a canonical URL **without the date**, and a `sitemap.xml` that lists only cities already in the cache.
 
 **Watch out:**
 
-- **The weather changes, so the plan can't be fully frozen.** The stops and how they're grouped into days stay the same. Only the order of the days follows the latest forecast, with a note saying "Days reordered for the latest forecast". A friend opening your link next week gets fresher weather, which is a feature, not a bug.
-- **Search engine crawlers** opening cities that aren't cached would hit Wikipedia, Wikidata and Overpass. Add a simple limit on how many uncached cities can be fetched per minute.
+- **The weather changes, so the plan can't be fully frozen.** ✅ Handled: the stops and how they're grouped into days stay the same. Only the order of the days follows the latest forecast, with a note saying "Days reordered for the latest forecast". A friend opening your link next week gets fresher weather, which is a feature, not a bug.
+- **Search engine crawlers** opening cities that aren't cached would hit Wikipedia, Wikidata and Overpass. ✅ Handled: a per-minute limit (5 by default) caps how many never-before-seen cities `/trip/:slug` will fully plan; a normal visitor using the search box is never affected by it. `/sitemap.xml` currently works around a gap in the storage layer to list cached cities — see `docs/architecture.md`.
 
-### 2. Export the trip
+### 2. Export the trip ✅ built
 
 Three buttons under the plan:
 
-- [ ] **Add to calendar (`.ics`):** one event per stop at default times (for example 10:00, 12:00, 15:00 and 17:00, 1.5 hours each), with the place's location and a link back to the trip. Only shown when the trip has a start date.
-- [ ] **Google My Maps (`.kml`):** one folder per day and one pin per stop. You import it at mymaps.google.com.
-- [ ] **Bonus: "Open Day 1 in Google Maps":** a plain Google Maps link with walking directions through that day's stops. It needs no key, costs nothing, and is the most useful of the three on a phone. With 3–4 stops a day, it stays within Google's mobile limit of 3 stops between the start and the end.
+- [x] **Add to calendar (`.ics`):** one event per stop at default times (10:00, 12:00, 15:00 and 17:00, 1.5 hours each), with the place's location and a link back to the trip. Only shown when the trip has a start date.
+- [x] **Google My Maps (`.kml`):** one folder per day and one pin per stop. You import it at mymaps.google.com.
+- [x] **Bonus: "Open Day N in Google Maps":** a plain Google Maps link with walking directions through that day's stops. It needs no key, costs nothing. With 3–4 stops a day, it stays within Google's documented mobile waypoint limit.
 
 The files are served at `/trip/lisbon-pt.ics?…` and `/trip/lisbon-pt.kml?…`: the same URL as the page, with a different extension.
 
 **Watch out:**
 
-- **Time zones.** Get the city's time zone from Open-Meteo (`timezone=auto`) and write event times in UTC. Import Go's `time/tzdata` so the slim Docker image doesn't need time zone files.
-- **`.ics` files have a few formatting rules** (escape commas and semicolons, wrap long lines). Test the file in Google Calendar, Apple Calendar and Outlook.
+- **Time zones.** ✅ Handled: each day already carries the forecast's IANA time zone internally, so no extra plumbing was needed. Event times are written in UTC with a trailing `Z`, exactly as planned, so no `VTIMEZONE` block is required. `time/tzdata` is imported blank so the Docker image needs no system time zone files.
+- **`.ics` files have a few formatting rules** (escape commas and semicolons, wrap long lines). ✅ Handled and test-covered, including a real bug the tests caught: a first draft's line folding was one byte over RFC 5545's 75-octet limit.
+- ⚠️ **Not done: real import testing.** The `.ics` and `.kml` files were validated structurally — RFC 5545/KML conformance, correct UTC offsets, UTF-8 place names — using independent parsing libraries, on files generated by a real running app with real data. They have **not** been imported into an actual Google Calendar, Apple Calendar, Outlook or Google My Maps. Do that before trusting this for a real trip.
 
-### 3. City intros, written ahead of time by a local AI
+### 3. City intros, written ahead of time by a local AI ⚠️ generated, not shown yet
 
 A short intro at the top of the trip page: why go, what each area is like, and how to get around. It's written on your laptop and costs nothing to serve.
 
-- [ ] Turn the empty `cmd/console` into `cmd/guides`. For each city in the list, it fetches the Wikivoyage page text and asks a small model in Ollama (7–8B is plenty) for a ~120-word intro **using only that text**.
-- [ ] **Check for made-up places:** reject and retry any intro that names a place that isn't in the Wikivoyage text.
-- [ ] Save the intros to `guides/guides.json` in the repo, embed the file in the app with `go:embed`, and load it at startup.
-- [ ] Store the Wikivoyage revision for each city, so a rerun only rewrites cities whose page changed.
-- [ ] Show "Based on Wikivoyage (CC BY-SA)" with a link under each intro. The license requires it.
+**Decided 2026-09-20: this stops at generation.** The intros are written and saved for review,
+but nothing wires them into the page yet, on purpose — a human reads `guides/guides.json` first.
+Wiring it in (`go:embed`, rendering, the licence credit) is a deliberate follow-up.
+
+- [x] Turn the empty `cmd/console` into `cmd/guides`. For each city in the list, it fetches the Wikivoyage page text and asks a small model in Ollama (`mistral:7b`) for a ~120-word intro **using only that text**.
+- [x] **Check for made-up places:** reject and retry any intro that names a place that isn't in the Wikivoyage text. Confirmed working live: it caught and rejected "Seville Airport", which the model invented and the source text never mentions.
+- [x] Save the intros to `guides/guides.json` in the repo.
+- [ ] Embed the file in the app with `go:embed`, and load it at startup. **Not started — deliberately.**
+- [x] Store the Wikivoyage revision for each city, so a rerun only rewrites cities whose page changed.
+- [ ] Show "Based on Wikivoyage (CC BY-SA)" with a link under each intro. **Not started** — nothing renders yet, so there's nothing to credit. Needed as soon as the intros go live; the licence requires it.
 
 **Why a JSON file in the repo instead of SQLite:** the database lives on the Fly volume, not on your laptop, so there's no simple way to copy rows into it. A file in git ships with every deploy, and **you can read every intro the AI wrote in the diff before it goes live.**
 
 **Watch out:**
 
-- **Write a general city intro, not "3 days in Lisbon".** The plan can be 1–5 days long, so a fixed "3 days" text would contradict it.
-- **Which 100 cities?** `/stats` only returns the top 10, and it only started counting recently. Start with a hand-picked list in `guides/cities.txt`, then add your most-searched cities over time.
+- **Write a general city intro, not "3 days in Lisbon".** The plan can be 1–5 days long, so a fixed "3 days" text would contradict it. ✅ The prompt asks for a general intro, and every generated one reads that way.
+- **Which 100 cities?** Decided down to **20**, the same sample used for the place-type list — see the open question below. `/stats` still only returns the top 10, so a data-driven list isn't practical yet; add your most-searched cities over time once it has more history.
 
 ### v2 assumptions to validate
 
-- [ ] **The plan comes out the same every time.** Test: build "Lisbon, 3 days" twice, a day apart and after a cache refresh, and compare the stops.
-- [ ] **The calendar file works everywhere.** Test: import it into Google Calendar, Apple Calendar and Outlook, and check that the times are right.
-- [ ] **A small local model sticks to the source text.** Test: generate 10 cities and read them all. Allow at most 1 wrong fact across the 10.
-- [ ] **Search engines index the trip pages.** Test: submit the sitemap in Google Search Console (free) and check back after 2–4 weeks.
+- [x] **The plan comes out the same every time.** Tested at the unit level with fakes rather than the literal "build it twice a day apart" manual check: `TestBuild_LaterNowKeepsTheSameStopsAndGroupings` proves the same request gives the same stops and day-groupings even when the forecast has refreshed in between; only day *order* may change, and only with a note.
+- [ ] **The calendar file works everywhere.** ⚠️ Not validated as specified. The `.ics`/`.kml` files were checked for RFC 5545/KML correctness with independent parsing libraries against real generated files, but never actually imported into Google Calendar, Apple Calendar or Outlook — no such accounts were available while building this. Do that before trusting it.
+- [ ] **A small local model sticks to the source text.** ⚠️ Partly validated. The automated validator (reject-on-invented-place) ran on all 20 cities and caught a real hallucination live. A human only hand-read 4 of the 20 (Lisbon, London, Seville, Vienna) against their Wikivoyage source, not all 20 as this line originally asked. The other 16 are backed only by the automated check.
+- [ ] **Search engines index the trip pages.** Can't be validated before a real deploy — it needs a live, publicly reachable site verified in Google Search Console, then a 2–4 week wait. Do this after shipping.
 
 ### v2 not doing
 
@@ -215,7 +226,7 @@ A short intro at the top of the trip page: why go, what each area is like, and h
 
 ### v2 open questions
 
-- [ ] City in the URL: `lisbon` or `lisbon-pt`? There's more than one Lisbon.
-- [ ] Default event times: are 10:00, 12:00, 15:00 and 17:00 sensible, or should days start later?
-- [ ] Which cities go in the first list of 100?
-- [ ] Will you read every AI intro before it ships, or spot-check some?
+- [x] City in the URL: `lisbon` or `lisbon-pt`? **`lisbon-pt`** — `city-country`, both lower-cased, hyphenated. Disambiguates same-named cities without a lookup table.
+- [x] Default event times: are 10:00, 12:00, 15:00 and 17:00 sensible, or should days start later? **Kept as proposed**: 10:00, 12:00, 15:00, 17:00, 1.5 hours each.
+- [x] Which cities go in the first list of 100? **Reduced to 20** — the same sample already used for the place-type list, so every one of them already had real place data to test against. Widen this once `/stats` has enough real search history to pick a data-driven list.
+- [x] Will you read every AI intro before it ships, or spot-check some? **Neither yet, by design**: the intros don't ship at all until a human reads them — see "City intros" above. When that follow-up happens, decide read-all vs. spot-check then.

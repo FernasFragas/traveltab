@@ -22,8 +22,9 @@ type Server struct {
 	weatherReporters     application.Reporter[application.GeneralWeatherInfo]
 	videoStreamReporters application.Reporter[application.VideosStream]
 
-	tripPlanner application.TripPlanner
-	now         func() time.Time
+	tripPlanner    application.TripPlanner
+	now            func() time.Time
+	newCityLimiter *newCityLimiter
 }
 
 type TemplateData struct {
@@ -63,6 +64,7 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 		weatherReporters:     weatherReporters,
 		videoStreamReporters: videoStreamReporters,
 		now:                  time.Now,
+		newCityLimiter:       newNewCityLimiter(defaultNewCitiesPerMinute),
 	}
 
 	// Serve static files from the "public" directory
@@ -75,6 +77,14 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 	app.Get("/stats", server.showStats)
 
 	app.Get("/plan", server.planTrip)
+
+	app.Get("/trip/:slug.ics", server.exportICS)
+
+	app.Get("/trip/:slug.kml", server.exportKML)
+
+	app.Get("/trip/:slug", server.trackVisit, server.tripPage)
+
+	app.Get("/sitemap.xml", server.sitemap)
 
 	return server
 }
