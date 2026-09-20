@@ -1,0 +1,1272 @@
+{
+ "entities": {
+  "Q6809962": {
+   "type": "item",
+   "id": "Q6809962",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 23442,
+         "id": "Q23442"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Beach Praia do Barril near Tavira Portugal 1.JPG",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Tavira Island"
+    }
+   }
+  },
+  "Q5015903": {
+   "type": "item",
+   "id": "Q5015903",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 23442,
+         "id": "Q23442"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Cacela Velha Fortress2.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Cacela Island"
+    }
+   }
+  },
+  "Q372840": {
+   "type": "item",
+   "id": "Q372840",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 13217644,
+         "id": "Q13217644"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Tavira - Praça da República.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Tavira"
+    }
+   }
+  },
+  "Q2652869": {
+   "type": "item",
+   "id": "Q2652869",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1131296,
+         "id": "Q1131296"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Vista cabanas salinas.png",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Freguesia de Cabanas de Tavira"
+    }
+   }
+  },
+  "Q5562657": {
+   "type": "item",
+   "id": "Q5562657",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 4022,
+         "id": "Q4022"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Gilão River, Tavira, Portugal.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Gilão River"
+    }
+   }
+  },
+  "Q2687695": {
+   "type": "item",
+   "id": "Q2687695",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1131296,
+         "id": "Q1131296"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Santa Luzia 2003 - Tavira.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Santa Luzia"
+    }
+   }
+  },
+  "Q2881532": {
+   "type": "item",
+   "id": "Q2881532",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 2202509,
+         "id": "Q2202509"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 515,
+         "id": "Q515"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Balsa"
+    }
+   }
+  },
+  "Q66813931": {
+   "type": "item",
+   "id": "Q66813931",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 676050,
+         "id": "Q676050"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 532,
+         "id": "Q532"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "CacelaCercaMoura.JPG",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Cacela Velha"
+    }
+   }
+  },
+  "Q2181054": {
+   "type": "item",
+   "id": "Q2181054",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Freguesia de Santa Maria"
+    }
+   }
+  },
+  "Q2190908": {
+   "type": "item",
+   "id": "Q2190908",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Freguesia de Santiago"
+    }
+   }
+  },
+  "Q540357": {
+   "type": "item",
+   "id": "Q540357",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1131296,
+         "id": "Q1131296"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Freguesia de Conceição"
+    }
+   }
+  },
+  "Q2994910": {
+   "type": "item",
+   "id": "Q2994910",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1131296,
+         "id": "Q1131296"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Igreja de Nossa Senhora da Luz (11952361644).jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Freguesia de Luz de Tavira"
+    }
+   }
+  },
+  "Q2652639": {
+   "type": "item",
+   "id": "Q2652639",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1131296,
+         "id": "Q1131296"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Freguesia de Santo Estêvão"
+    }
+   }
+  },
+  "Q1438891": {
+   "type": "item",
+   "id": "Q1438891",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1785071,
+         "id": "Q1785071"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 23413,
+         "id": "Q23413"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Cacela Velha Fortress.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Fortress of Cacela"
+    }
+   }
+  },
+  "Q3505418": {
+   "type": "item",
+   "id": "Q3505418",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 16970,
+         "id": "Q16970"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "TaviraMisericordia-CCBYSA.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Igreja da Misericórdia de Tavira"
+    }
+   }
+  },
+  "Q379447": {
+   "type": "item",
+   "id": "Q379447",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 16970,
+         "id": "Q16970"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "TaviraCasteloChurch-CCBY.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Igreja paroquial de Santa Maria"
+    }
+   }
+  },
+  "Q16742104": {
+   "type": "item",
+   "id": "Q16742104",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 34038,
+         "id": "Q34038"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "PegoInferno.JPG",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Pego do inferno"
+    }
+   }
+  },
+  "Q25419162": {
+   "type": "item",
+   "id": "Q25419162",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Igreja de Nossa Senhora de Conceição de Tavira - Portugal (44567661804).jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Conceição e Cabanas de Tavira"
+    }
+   }
+  },
+  "Q25419159": {
+   "type": "item",
+   "id": "Q25419159",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 56046844,
+         "id": "Q56046844"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Igreja de Nossa Senhora da Luz (11952361644).jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Luz de Tavira e Santo Estêvão"
+    }
+   }
+  },
+  "Q25442489": {
+   "type": "item",
+   "id": "Q25442489",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1131296,
+         "id": "Q1131296"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Palácio da Galeria em Tavira.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Tavira (Santa Maria e Santiago)"
+    }
+   }
+  },
+  "Q5049832": {
+   "type": "item",
+   "id": "Q5049832",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 23413,
+         "id": "Q23413"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "TaviraCastle-CCBY.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Castle of Tavira"
+    }
+   }
+  },
+  "Q10283933": {
+   "type": "item",
+   "id": "Q10283933",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1785071,
+         "id": "Q1785071"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Forte de Santo António de Tavira 4.JPG",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Fortaleza de Santo António de Tavira"
+    }
+   }
+  },
+  "Q10284021": {
+   "type": "item",
+   "id": "Q10284021",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 1785071,
+         "id": "Q1785071"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     },
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 210272,
+         "id": "Q210272"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Face sul do Forte de São João, visto da Ilha de Cabanas.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Forte de São João da Barra"
+    }
+   }
+  },
+  "Q8202399": {
+   "type": "item",
+   "id": "Q8202399",
+   "claims": {
+    "P31": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P31",
+       "datavalue": {
+        "value": {
+         "entity-type": "item",
+         "numeric-id": 55488,
+         "id": "Q55488"
+        },
+        "type": "wikibase-entityid"
+       },
+       "datatype": "wikibase-item"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ],
+    "P18": [
+     {
+      "mainsnak": {
+       "snaktype": "value",
+       "property": "P18",
+       "datavalue": {
+        "value": "Apeadeiro CP de Nora.jpg",
+        "type": "string"
+       },
+       "datatype": "commonsMedia"
+      },
+      "type": "statement",
+      "rank": "normal"
+     }
+    ]
+   },
+   "labels": {
+    "en": {
+     "language": "en",
+     "value": "Nora Halt"
+    }
+   }
+  }
+ },
+ "success": 1
+}

@@ -8,7 +8,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Weather-aware trip planner.** A "Plan my trip" card under the weather takes a start date and 1–5 days, and returns a day-by-day plan of the city's famous places: museums on rainy days, viewpoints on dry ones. Places come from Wikipedia and Wikidata, ranked by how many Wikipedia languages cover them, with photos from Wikimedia Commons. Rain comes from Open-Meteo, in mm per day, and only the next 7 days are rearranged, because forecasts aren't reliable further out.
+- **"Where to stay" card.** Places to stay from OpenStreetMap within 1 km of the middle of your plan, with a Booking search link carrying your dates. No prices: those need a paid API.
+- `GET /plan`, which returns the plan as an HTMX fragment.
+- **Source cache** (`source_cache` table): places and places to stay for 30 days, forecasts for 3 hours. When a refresh fails it keeps serving the old data, so a source being down doesn't break the page.
+- `OVERPASS_URLS` to override the Overpass servers, which are tried in order.
+- `cmd/placetypes`, an offline tool that generates the list of 421 Wikidata place types (indoor, outdoor or never) from 20 cities.
 - GitHub Actions CI workflow that runs gofmt, golangci-lint, the tests with the race detector, the build and the Docker image build on every push to `main` and every pull request.
+
+### Removed
+
+- **The Google Places hotels feature**, along with its photo fetching. It cost money per request.
+- **The Foursquare itinerary endpoint** (`POST /generate-itinerary`), its templates and its form. The new planner replaces it.
+- The `PLACES_API_NEW` and `FOURSQUARE_API_KEY` environment variables.
+
+### Changed
+
+- Moved application code into `internal/`, separating application services, planner logic,
+  configuration, offline generation, HTTP provider clients, Fiber handlers and SQLite persistence.
+- SQLite stores now own their connections and are passed to the HTTP adapter through an application
+  interface; command entry points compose the dependencies.
+
+- Every source the planner uses is free and needs no API key.
+- Forecast and place fetches overlap; Wikimedia batches run with at most four workers per lookup.
+- Isolated day groups can use nearby unused highlights from the top 20, keeping Kyoto’s bamboo grove with Arashiyama.
+
+### Fixed
+
+- Planner input rejects missing cities, non-finite coordinates and coordinates outside geographic bounds.
+- Forecast outages and missing daily values have explicit messages; stops show indoor/outdoor labels.
+- Planner card contrast on the light page background.
+- Docker’s Go toolchain matches the target architecture, including ARM hosts; local secrets and databases stay outside the build context.
 
 ## 2026-09-19
 

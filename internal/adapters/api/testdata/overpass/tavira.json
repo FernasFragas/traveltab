@@ -1,0 +1,1 @@
+{"elements":[{"type":"node","lat":37.126,"lon":-7.65,"tags":{"tourism":"hotel","name":"Hotel local","name:en":"English hotel","contact:website":"https://example.com","stars":"4S"}},{"type":"way","center":{"lat":37.125,"lon":-7.649},"tags":{"tourism":"guest_house","name":"Guest house"}},{"type":"node","lat":37.12,"lon":-7.65,"tags":{"tourism":"hostel"}}]}

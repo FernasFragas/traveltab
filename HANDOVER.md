@@ -1,0 +1,91 @@
+# TravelTab handover
+
+**Updated:** 2026-09-20. **The trip planner MVP is complete, and the follow-up round is done too.** Nothing is committed. Nothing is deployed.
+
+## What was built
+
+The weather-aware trip planner from `docs/ideas/weather-aware-trip-planner.md`, split into 17 tasks in `tasks/plan.md` and `tasks/todo.md`. All 17 are implemented, with evidence in `tasks/notes-*.md`. Original RED evidence is incomplete for some tasks; the completion pass documents this explicitly in `tasks/notes-completion.md`.
+
+Enter a city, a start date and 1–5 days, and `GET /plan` returns a day-by-day plan: museums on rainy days, viewpoints on dry ones, plus places to stay near the middle of the plan. Every source is free and keyless: Wikipedia, Wikidata, Wikimedia Commons, Open-Meteo, OpenStreetMap.
+
+## State: green
+
+```
+make build   ok
+make lint    0 issues
+make test    ok  internal adapters, config, placetypes and planner (race detector)
+docker build ok  native ARM image
+375 px UI    ok  HTMX, photos, stays, errors, no overflow, 7.41:1 subtitle contrast
+```
+
+The old Google Places hotels feature and the Foursquare itinerary are gone, along with their keys.
+
+## Verified by hand, with real data
+
+Lisbon, 3 days, from a real run of the app:
+
+- Day 1 — Belém Tower, Padrão dos Descobrimentos, Jerónimos Monastery, Belém Palace (3.4 km)
+- Day 2 — Alfama, São Vicente de Fora, Santa Engrácia, Castle of Saint George (1.7 km)
+- Day 3 — Cathedral, Baixa, Santa Justa Lift, Teatro Nacional de São Carlos (1.7 km)
+- Six real places to stay, with photos and Commons credits
+
+**Timing:** ~3 ms cached. A city's first plan was ~25 s before the concurrency work and is now dominated by whether Overpass answers (see below). **Fallback proven:** pointing `OVERPASS_URLS` at a dead address still planned Porto, with the stay card showing "Places to stay are unavailable right now".
+
+## Completion pass (2026-09-20)
+
+Three agents reviewed planner behavior, city tests and UI; the coordinating session completed
+remaining work when agent usage limits were reached. [Full evidence](tasks/notes-completion.md).
+
+- Completed interrupted bounded Wikimedia concurrency and parallel place/forecast fetches.
+- Added forecast outage/missing-data messages and indoor/outdoor labels.
+- Rejected invalid coordinates and empty cities; improved planner contrast.
+- Strengthened three vacuous city tests and verified they fail with an empty type map.
+- Paired Kyoto's Arashiyama with the nearby bamboo grove from the unused ranked pool.
+- Verified identical cached plans when all sources fail, including expired cache entries.
+- Fixed the Docker architecture mismatch; native ARM image builds.
+- Captured [mobile screenshots and browser results](tasks/notes-ui-validation.md).
+
+## Remaining release steps and limits
+
+- Human review of the generated place-type map and finished implementation, commit/PR, remote CI,
+  then deployment approval. Nothing was committed, pushed or deployed by this pass.
+- Browser validation used fixture providers. The map embed was deliberately blanked; production
+  maps and the external Booking landing page were not checked. Commons photos and CDN HTMX loaded.
+- Historical RED evidence is incomplete and cannot be reconstructed retroactively.
+- Cold requests still depend on public API latency, particularly Overpass. See the separate
+  performance notes; the completion pass did not repeat live timings.
+- Walking distances are straight-line estimates. Some spread-out city days are long; a genuinely
+  isolated stop may remain alone when no candidate is within the 3 km reach limit.
+- v2 (shareable links, exports and city intros) is in the idea document and deliberately deferred
+  until after the MVP ships.
+
+## Package reorganization
+
+All application Go code is now under `internal/`; `cmd/` retains entry points. The complete API
+folder and all source/city fixtures moved with their packages. SQLite connections are owned by
+stores and injected into the HTTP adapter through `application.Storage`.
+
+Validation: `make test`, `make lint`, `make build`, Docker build and the local fixture-server
+HTTP smoke passed. The generator's help confirms its new default output path. The smoke checked
+the full page, HTMX fragment, fixture cache reads and static CSS.
+
+## Where things live
+
+The code now lives under `internal/`, with command entry points under `cmd/`.
+See [architecture and migration map](docs/architecture.md) for the package boundaries.
+
+| What | Where |
+|---|---|
+| Planning rules | `internal/planner/` |
+| Reports and trip service | `internal/application/` |
+| Free API clients and fixtures | `internal/adapters/api/` |
+| SQLite cache and analytics persistence | `internal/adapters/sqlite/` |
+| Fiber routes and rendering | `internal/adapters/httpserver/` |
+| Templates and styles | `views/`, `public/` |
+| Environment configuration | `internal/config/` |
+| Generated place types (421) | `internal/planner/placetypes_gen.go`, regenerated by `go run ./cmd/placetypes` |
+| Offline generation logic | `internal/placetypes/` |
+| Production wiring | `cmd/web/main.go` |
+| Original per-task evidence | `tasks/notes-*.md` (historical paths; use the migration map) |
+
+Application and planner packages must not import adapters. Normal tests remain offline.

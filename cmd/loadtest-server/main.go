@@ -13,7 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	app "weatherservice"
+	"weatherservice/internal/adapters/httpserver"
+	"weatherservice/internal/adapters/sqlite"
+	app "weatherservice/internal/application"
 )
 
 type fixture[T any] struct {
@@ -71,15 +73,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	weather := weatherFixture{delay: *delay}
 	videos := fixture[app.VideosStream]{value: app.VideosStream{{Title: "Fixture city tour", VideoID: "fixture"}}, delay: *delay}
-	server := app.NewAppServer(weather, videos)
-	if err := server.InitializeDatabase(filepath.Join(dir, "fixture.db")); err != nil {
+	storage, err := sqlite.Open(filepath.Join(dir, "fixture.db"))
+	if err != nil {
 		return err
 	}
-	defer app.CloseDB()
+	defer func() { _ = storage.Close() }()
+	server := httpserver.NewAppServer(weather, videos, storage)
 	// Seed the working set synchronously, so the benchmark exercises warm cache
 	// reads and real visit writes without racing asynchronous cache population.
 	for _, city := range []string{"Lisbon", "Porto", "Faro"} {
@@ -87,7 +90,7 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		if err := app.SaveCityData(city, map[string]any{"GeneralInfo": info, "Videos": videos.value}); err != nil {
+		if err := storage.SaveCityData(city, map[string]any{"GeneralInfo": info, "Videos": videos.value}); err != nil {
 			return err
 		}
 	}

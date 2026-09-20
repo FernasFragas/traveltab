@@ -3,28 +3,25 @@ package main
 import (
 	"log"
 	"os"
-	"weatherservice"
-	"weatherservice/api"
+	"weatherservice/internal/adapters/api"
+	"weatherservice/internal/adapters/httpserver"
+	"weatherservice/internal/adapters/sqlite"
+	"weatherservice/internal/application"
+	"weatherservice/internal/config"
 )
 
 const port = ":8080"
 
 func main() {
 
-	weatherServiceSecrets := weatherservice.LoadEnvKey()
-	coordinatesReporter := weatherservice.NewCoordinatesReporter(api.NewFoursquareAPI(weatherServiceSecrets.FoursquareAPIKey))
+	weatherServiceSecrets := config.LoadEnvKey()
 
-	reporters := weatherservice.NewWeatherReporters(
+	reporters := application.NewWeatherReporters(
 		api.NewWeatherAPI(weatherServiceSecrets.OpenWeatherAPIKey),
 		api.NewOpenMateoAPI(),
 	)
 
-	hotelsApi := weatherservice.NewHotelsApi(
-		api.NewGooglePlacesAPI(weatherServiceSecrets.GooglePlacesAPIKey),
-		api.NewGooglePhotosAPI(weatherServiceSecrets.GooglePlacesAPIKey),
-	)
-
-	videoStreamReporters := weatherservice.NewVideoStreamReporters(
+	videoStreamReporters := application.NewVideoStreamReporters(
 		api.NewYoutubeAPI(weatherServiceSecrets.YoutubeAPIKey),
 	)
 
@@ -34,13 +31,36 @@ func main() {
 		dbPath = "weatherservice.db"
 	}
 
-	server := weatherservice.NewAppServer(reporters, videoStreamReporters, hotelsApi, coordinatesReporter)
-	if err := server.InitializeDatabase(dbPath); err != nil {
-		log.Fatal(err)
-	}
-
-	err := server.Listen(port)
+	storage, err := sqlite.Open(dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer func() {
+		if err := storage.Close(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
+	server := httpserver.NewAppServer(reporters, videoStreamReporters, storage)
+
+	// The trip planner reads free, keyless sources. Each one goes through the SQLite cache, so a
+	// city is fetched once and still plans when a source is down. The command wires adapters into application interfaces; application and planner packages stay independent of them.
+	server.SetTripPlanner(application.NewTripPlanner(
+		storage.NewCachedPlaceSource(api.NewWikimediaAPI(nil)),
+		storage.NewCachedForecastSource(api.NewOpenMeteoForecastAPI(nil)),
+		storage.NewCachedStaySource(api.NewOverpassAPI(nil, overpassURLs(weatherServiceSecrets))),
+	))
+
+	err = server.Listen(port)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// overpassURLs uses OVERPASS_URLS when it is set, and the public servers otherwise.
+func overpassURLs(secrets *config.WeatherServiceKeys) []string {
+	if len(secrets.OverpassURLs) > 0 {
+		return secrets.OverpassURLs
+	}
+
+	return api.DefaultOverpassURLs
 }
