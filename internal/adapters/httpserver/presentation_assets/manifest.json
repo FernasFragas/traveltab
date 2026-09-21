@@ -1,0 +1,24 @@
+{
+  "Destinations": [
+    {
+      "City": "Lisbon",
+      "Country": "Portugal",
+      "CountryLabel": "Portugal",
+      "Tagline": "Hillside streets, tiled facades, and life by the river.",
+      "PhotoCaption": "Above the rooftops of Alfama",
+      "Hero": {
+        "URL": "/images/destinations/lisbon-alfama.jpg",
+        "Alt": "Terracotta rooftops of Lisbon's Alfama district, the dome of Santa Engracia, and the Tagus River",
+        "Credit": "Qiqritiq",
+        "CreditURL": "https://commons.wikimedia.org/wiki/File:Alfama,_Lisboa_-_2006.jpg",
+        "Width": 1280,
+        "Height": 488,
+        "Source": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Alfama%2C_Lisboa_-_2006.jpg/1280px-Alfama%2C_Lisboa_-_2006.jpg",
+        "License": "CC BY-SA 3.0",
+        "LicenseURL": "https://creativecommons.org/licenses/by-sa/3.0/",
+        "Changes": "Wikimedia 1280px thumbnail, no local image edits; responsive CSS may crop the display."
+      }
+    }
+  ],
+  "Stays": []
+}

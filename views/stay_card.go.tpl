@@ -1,12 +1,14 @@
 <section class="stay-card">
     <div class="stay-card-head">
         <h4 class="stay-card-title"><i class="bi bi-house-door"></i> Where to stay</h4>
-        {{ if .BookingURL }}
+        {{ if and . .BookingURL }}
         <a class="btn btn-primary stay-prices" href="{{ .BookingURL }}" target="_blank" rel="noopener noreferrer">Check prices</a>
         {{ end }}
     </div>
 
-    {{ if .StaysNote }}
+    {{ if not . }}
+    <p class="stay-note">Generate a trip plan to find places to stay.</p>
+    {{ else if .StaysNote }}
     <p class="stay-note">{{ .StaysNote }}</p>
     {{ else }}
     <ul class="stay-list">

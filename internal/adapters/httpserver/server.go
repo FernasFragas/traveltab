@@ -102,7 +102,7 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 	generalInfo, err := s.weatherReporters.GenerateReport(ctx.Context(), cityAndCountry)
 	if err != nil {
 		log.Printf("Error Retriving New Weather data information with error %s", err)
-		return ctx.SendStatus(fiber.StatusInternalServerError)
+		return destinationSearchError(ctx)
 	}
 
 	city := generalInfo.City
@@ -125,20 +125,32 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 	if ctx.Get("HX-Request") == "true" {
 		// Render only the content fragment for HTMX requests
 		return ctx.Render("content_fragment", fiber.Map{
-			"Query":       city,
-			"GeneralInfo": data.GeneralInfo,
-			"Videos":      data.Videos,
-			"Trip":        s.tripCardFor(data.GeneralInfo),
+			"Presentation": newPresentation(data.GeneralInfo, data.Videos),
+			"Query":        city,
+			"GeneralInfo":  data.GeneralInfo,
+			"Videos":       data.Videos,
+			"Trip":         s.tripCardFor(data.GeneralInfo),
 		})
 	}
 
 	// Render the full page for regular requests
 	return ctx.Render("index", fiber.Map{
-		"Query":       city,
-		"GeneralInfo": data.GeneralInfo,
-		"Videos":      data.Videos,
-		"Trip":        s.tripCardFor(data.GeneralInfo),
+		"Presentation": newPresentation(data.GeneralInfo, data.Videos),
+		"Query":        city,
+		"GeneralInfo":  data.GeneralInfo,
+		"Videos":       data.Videos,
+		"Trip":         s.tripCardFor(data.GeneralInfo),
 	})
+}
+
+// Search errors swap only the persistent header message, retaining the last
+// useful destination. Navigation enables HTMX's error swap for this target.
+func destinationSearchError(ctx *fiber.Ctx) error {
+	if ctx.Get("HX-Request") == "true" {
+		ctx.Set("HX-Retarget", "#destination-search-error")
+		ctx.Set("HX-Reswap", "innerHTML")
+	}
+	return ctx.Status(fiber.StatusInternalServerError).SendString("We could not load that destination. Check the city name and try again.")
 }
 
 func (s *Server) checkDatabase(city string) (TemplateData, error) {

@@ -44,6 +44,7 @@ type tripCard struct {
 	Country    string
 	Lat, Lon   float64
 	Start      string
+	EndLabel   string
 	MinStart   string
 	Days       int
 	DayOptions []int
@@ -55,6 +56,7 @@ type tripPlanView struct {
 	Note       string
 	Days       []tripDayView
 	Stays      []planner.Stay
+	StayCards  []stayCardView
 	StaysNote  string
 	BookingURL string
 	ICSURL     string // "" when the plan can't be identified by a slug (e.g. no country)
@@ -88,7 +90,7 @@ func (s *Server) planTrip(ctx *fiber.Ctx) error {
 		card.Error = problem
 		s.setPushURL(ctx, req, false)
 		ctx.Status(fiber.StatusBadRequest)
-		return ctx.Render("trip_card", card)
+		return ctx.Render("plan_response", card)
 	}
 
 	plan, err := s.tripPlanner.Plan(ctx.Context(), req)
@@ -97,13 +99,13 @@ func (s *Server) planTrip(ctx *fiber.Ctx) error {
 		card.Error = planFailMessage
 		s.setPushURL(ctx, req, false)
 		ctx.Status(fiber.StatusInternalServerError)
-		return ctx.Render("trip_card", card)
+		return ctx.Render("plan_response", card)
 	}
 
 	card.Plan = newTripPlanView(plan)
 	s.setPushURL(ctx, req, true)
 
-	return ctx.Render("trip_card", card)
+	return ctx.Render("plan_response", card)
 }
 
 // setPushURL points the browser's address bar at the canonical /trip/:slug link for req, with
@@ -152,6 +154,7 @@ func (s *Server) tripPage(ctx *fiber.Ctx) error {
 	days, planned := s.slugPlanDays(ctx)
 
 	return ctx.Render("index", fiber.Map{
+		"Presentation":    newPresentation(data.GeneralInfo, data.Videos),
 		"Query":           data.GeneralInfo.City,
 		"GeneralInfo":     data.GeneralInfo,
 		"Videos":          data.Videos,
@@ -379,6 +382,7 @@ func (s *Server) newTripCard(req planner.Request) tripCard {
 		Lat:        req.Lat,
 		Lon:        req.Lon,
 		Start:      start.Format(tripDateLayout),
+		EndLabel:   start.AddDate(0, 0, days-1).Format(tripDateHeading),
 		MinStart:   today.Format(tripDateLayout),
 		Days:       days,
 		DayOptions: options,
@@ -390,6 +394,7 @@ func newTripPlanView(plan *planner.Plan) *tripPlanView {
 	view := &tripPlanView{
 		Note:       plan.Note,
 		Stays:      plan.Stays,
+		StayCards:  presentationStays(plan.Request, plan.Stays),
 		StaysNote:  plan.StaysNote,
 		BookingURL: plan.BookingURL,
 		Days:       make([]tripDayView, 0, len(plan.Days)),

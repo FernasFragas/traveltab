@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -176,8 +177,17 @@ func TestFooter_ShowsAllFourDataCredits(t *testing.T) {
 		status, body := doRequest(t, server, req)
 		require.Equal(t, fiber.StatusOK, status)
 
-		for _, credit := range credits {
-			assert.Contains(t, body, credit, "htmx=%v", htmx)
+		if htmx {
+			// Searches replace content only; the credited shell footer stays in place.
+			assert.NotContains(t, body, "<footer")
+			for _, credit := range credits {
+				assert.NotContains(t, body, credit)
+			}
+		} else {
+			assert.Equal(t, 1, strings.Count(body, "<footer"))
+			for _, credit := range credits {
+				assert.Contains(t, body, credit)
+			}
 		}
 	}
 }
