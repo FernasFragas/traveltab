@@ -1,3 +1,4 @@
+<h2 class="tt-section-title">Explore through video</h2>
 {{if .Videos}}
 <div class="video-container">
     {{range .Videos}}

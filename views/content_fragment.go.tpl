@@ -1,28 +1,43 @@
-<div class="col-12 mb-1">
-    {{ template "weather_display" . }}
-</div>
+{{ template "weather_display" . }}
 
-{{ if .Trip }}
-<div class="col-12 mb-1">
-    {{ template "trip_card" .Trip }}
-</div>
-{{ end }}
+<nav class="tt-section-navigation" aria-label="Destination sections">
+    {{ template "shell_section_links" . }}
+</nav>
 
-<div class="col-12 mb-1">
-    {{ template "video" . }}
-</div>
-
-<!-- Footer Section -->
-<footer class="col-12 site-footer">
-    <p>Made with ❤️ by Fernando Fragateiro</p>
-    <div class="social-links">
-        <a href="https://github.com/fernafrag" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
-        <a href="https://linkedin.com/in/your_linkedin" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
-        <a href="https://your_medium_blog.medium.com" target="_blank" aria-label="Medium Blog"><i class="fab fa-medium"></i></a>
-        <a href="https://your_personal_website.com" target="_blank" aria-label="Personal Website"><i class="fas fa-globe"></i></a>
-        <!-- Add other social links as needed -->
+<section id="overview" class="tt-section" tabindex="-1" aria-labelledby="overview-title">
+    <div class="tt-section-heading">
+        <div>
+            <h2 id="overview-title" class="tt-section-title">Overview</h2>
+            <p class="tt-section-subtitle">Get oriented and plan your next few days.</p>
+        </div>
     </div>
-        <p class="data-credits">
-            Places: Wikipedia &amp; Wikidata · Photos: Wikimedia Commons · Weather: Open-Meteo (CC BY 4.0) · Map data © OpenStreetMap contributors
-        </p>
-</footer> 
+    <div class="tt-overview-grid">
+        <div class="tt-overview-map">{{ template "map_card" . }}</div>
+        <div class="tt-overview-planner">
+            {{ if .Trip }}
+                {{ template "trip_card" .Trip }}
+            {{ else }}
+                <div class="tt-empty-state">
+                    <h3 class="tt-section-title">Plan your trip</h3>
+                    <p>Search for a destination to start planning. Trip planning is unavailable until we can locate your destination.</p>
+                </div>
+            {{ end }}
+        </div>
+    </div>
+</section>
+
+<section id="itinerary" class="tt-section" tabindex="-1" aria-label="Your itinerary">
+    {{ template "itinerary_body" .Trip }}
+</section>
+
+<section id="stays" class="tt-section" tabindex="-1" aria-label="Where to stay">
+    {{ if .Trip }}
+        {{ template "stay_card" .Trip.Plan }}
+    {{ else }}
+        {{ template "stay_card" .Trip }}
+    {{ end }}
+</section>
+
+<section id="videos" class="tt-section" tabindex="-1" aria-label="Explore through video">
+    {{ template "video" . }}
+</section>
