@@ -4,7 +4,7 @@
 
 TravelTab is a one-page travel dashboard. Search for a destination such as `Lisbon, Portugal` and it shows you:
 
-- **Current weather**: temperature, feels-like, humidity, wind and conditions
+- **Current weather**: temperature, humidity and conditions
 - **Wave height** for coastal destinations
 - **A live map** centred on the city
 - **Travel videos** from YouTube about what to see and do there
@@ -22,7 +22,7 @@ This started as a RESTful JSON weather API, a personal project for practising Go
 |------------|------------------------------------------------------------------------|
 | Language   | Go 1.23                                                                |
 | Web        | [Fiber v2](https://gofiber.io/) with `html/template` views (`views/*.go.tpl`) |
-| Frontend   | [HTMX](https://htmx.org/), Bootstrap 5, Font Awesome, flag-icons       |
+| Frontend   | [HTMX](https://htmx.org/), Bootstrap 5 utilities, Bootstrap Icons, custom CSS       |
 | Cache      | SQLite (`mattn/go-sqlite3`) storing gzip-compressed JSON per city      |
 | Hosting    | Docker on [Fly.io](https://fly.io/) (region `mad`)                     |
 
@@ -62,12 +62,12 @@ Browser ◀──── HTML fragment (content_fragment) ────┘
 ```
 
 - A full page load (`GET /`) renders `index.go.tpl`.
-- The search form uses HTMX. When a request has the `HX-Request: true` header, the server returns only `content_fragment.go.tpl`, and HTMX swaps it into `#content-area` without reloading the page.
+- The search form uses HTMX. When a request has the `HX-Request: true` header, the server returns only `content_fragment.go.tpl`, and HTMX swaps it into `#content-area` without reloading the page. The header, footer, and mobile navigation remain in place; failed searches display an error without clearing the destination.
 - Each provider is wrapped in a small generic interface (`Reporter[T]` / `ReporterProvider[T]` in `internal/application/reporters.go`). The server depends only on these interfaces, so you can swap or mock a provider without changing the handlers.
 
 ## How the planner works
 
-Pick a start date and 1–5 days in the **Plan my trip** card, and `GET /plan` returns a new fragment:
+Pick a start date and 1–5 days in the **Plan my trip** card. `GET /plan` replaces the form and updates the itinerary and stays through HTMX out-of-band swaps; failed plans clear obsolete results. The planner follows this pipeline:
 
 ```
 PlacesNear   Wikipedia geosearch within 10 km (7 smaller searches when it caps at 500),
@@ -114,7 +114,7 @@ When something is unavailable, the page degrades instead of failing:
 |--------|-----------------------|-----------------------------------------------------------------------------|
 | GET    | `/`                   | Full page. Optional `city_name` query parameter; defaults to `Lisbon, Portugal`. |
 | GET    | `/process-form/`      | Same handler as `/`. Returns only the HTML fragment for HTMX requests.      |
-| GET    | `/plan`               | The trip plan fragment. Takes `city`, `country`, `lat`, `lon`, `start` (`YYYY-MM-DD`) and `days` (1–5). |
+| GET    | `/plan`               | Form, itinerary, and stays fragments. Takes `city`, `country`, `lat`, `lon`, `start` (`YYYY-MM-DD`) and `days` (1–5). |
 | GET    | `/stats`              | Visit statistics as JSON. Hidden (404) unless `STATS_TOKEN` is set and matches `?token=`. |
 | GET    | `/trip/:slug`         | A shareable trip page (`slug` is `city-country`, e.g. `lisbon-pt`). With `?days=N&from=YYYY-MM-DD` the plan is built and shown on first load. |
 | GET    | `/trip/:slug.ics`     | The same trip as an iCalendar file. Needs `days` and `from`; 404 without a full plan. |
@@ -143,7 +143,7 @@ When something is unavailable, the page degrades instead of failing:
 │       ├── httpserver/   # Fiber routes, HTMX rendering, sessions, exports and request analytics
 │       └── sqlite/       # SQLite store, compressed city/source caches and visit queries
 ├── views/                # Go HTML templates (*.go.tpl)
-├── public/                # Static CSS, logo and weather backgrounds
+├── public/                # Styles, scripts, and local destination imagery
 ├── guides/                # Generated city intros (guides.json) — not read by the app yet, see below
 ├── Dockerfile            # Multi-stage build (CGO enabled for SQLite)
 └── fly.toml              # Fly.io app configuration
@@ -237,7 +237,7 @@ Fetches each starter city's Wikivoyage page, asks a local [Ollama](https://ollam
 (`mistral:7b` by default, needs `ollama serve` running) for a short intro, rejects any answer
 naming a place the source text doesn't mention, and writes the result to `guides/guides.json`.
 This is a **generate-only, human-in-the-loop step by design**: the file is meant to be read and
-reviewed before anything wires it into the page, so nothing in `internal/` or `views/` reads it
+reviewed before anything wires it into the page, so the HTTP server and templates do not read it
 yet. `-only=Lisbon,Porto` limits a run to specific cities; see `go run ./cmd/guides -h` for the
 rest.
 
@@ -249,6 +249,25 @@ The [recorded local run](loadtests/validation.md) passed at up to 50 concurrent
 users: 22,759 requests and zero HTTP failures. This does not establish production
 capacity or measure external provider performance.
 
+## Visit statistics
+
+Set `STATS_TOKEN` to enable `/stats?token=<your-token>&days=7`; otherwise the route returns 404.
+It reports unique visitor hashes, page views, searches, daily counts, and top searched cities.
+Tracking excludes recognized bots and stores a hash of IP/user agent rather than the raw IP.
+Counts start when tracking is deployed; earlier visits cannot be reconstructed.
+
+For Fly.io, generate a token with `openssl rand -hex 16`, save it, then set
+`fly secrets set STATS_TOKEN=<your-token>`. Setting the secret restarts the app.
+Visit the site in a browser, then open the stats URL to verify recording.
+
+## Documentation
+
+- [Architecture](docs/architecture.md): packages, dependency boundaries, and verification commands.
+- [Maintenance notes](docs/maintenance.md): planner decisions, known limits, and follow-ups.
+- [Redesign plan](docs/redesign-plan.md) and [task index](tasks/redesign/README.md): current UI work and shared contracts.
+- [Redesign preview and browser evidence](tasks/artifacts/redesign/milestone-01-03/README.md): runnable fixtures and screenshots.
+- [Load testing](loadtests/README.md): profiles and recorded measurements.
+
 ## Credits
 
 Place data from [Wikipedia](https://www.wikipedia.org/) and [Wikidata](https://www.wikidata.org/) ·
@@ -258,10 +277,10 @@ places to stay from [OpenStreetMap](https://www.openstreetmap.org/copyright) con
 
 ## Work in progress
 
-- **AI city intros are generated but not shown.** `guides/guides.json` has an intro for all 20 starter cities; embedding it into `/trip/:slug` (with `go:embed`) and rendering it is a deliberate next step, not started, so a human reads the generated text first.
-- **`application.Storage` has no way to list cached cities.** `/sitemap.xml` currently works around this with a reserved key in the existing cache table (see `docs/architecture.md`). A real `ListCachedCities()` method would replace it.
-- **First visit to a new city:** source lookups overlap where possible, but public API latency, especially Overpass retries, still affects cold requests.
-- **Very unusual local landmark types** may be under-represented in the generated place-type list (see the note in "Data sources"), which could leave a city with fewer stops than it deserves. Not observed in real testing so far — a 3-day Nairobi plan came back with 8 well-classified stops despite Nairobi being nowhere near the 20-city sample.
+Redesign tasks 01–03 are implemented; tasks 04–07 cover the remaining planner, stays, videos,
+and final verification. See the [task index](tasks/redesign/README.md) and
+[maintenance follow-ups](docs/maintenance.md#follow-ups). Offline city intros remain unconnected
+to the app, pending review and integration.
 
 ## Author
 

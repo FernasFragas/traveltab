@@ -1,22 +1,24 @@
 # Reference-led redesign: parallel implementation tasks
 
-Status: ready to assign; no implementation tasks have been started.
+Status: tasks 01–03 implemented and verified for this milestone. Tasks 04–07 remain pending. See [milestone evidence](../artifacts/redesign/milestone-01-03/README.md) and the individual handoffs.
 
 Read the [design plan](../../docs/redesign-plan.md), [shared contracts](contracts.md), and [reference image](../../goalimg.png) before implementing any task. The reference's central desktop page and phone screen define the visual target. The surrounding promotional poster is not website content.
 
 ## Assignment and order
 
-| Task | Ownership | Can begin | Completion dependency |
+| Task | Status | Ownership | Remaining dependency |
 | --- | --- | --- | --- |
-| [01 — Shell and visual foundation](01-shell-and-foundation.md) | Page composition, shared tokens, header, navigation, footer | Immediately | Final render needs 02–05 |
-| [02 — Presentation data and imagery](02-presentation-data-and-assets.md) | Go view models, handlers, curated image metadata | Immediately | Render tests need 01, 03–05 templates |
-| [03 — Destination banner and map](03-destination-and-map.md) | Hero, weather, map components | Immediately against contracts | 02 supplies presentation data |
-| [04 — Trip form and itinerary](04-planner-and-itinerary.md) | Form, accordion, plan response, planner behavior | Immediately against contracts | 02 wires responses; 05 supplies stay body |
-| [05 — Stays and videos](05-stays-and-videos.md) | Accommodation and video cards | Immediately against contracts | 02 supplies optional metadata |
-| [06 — Fixture preview and verification](06-preview-and-verification.md) | Fixture server, browser checks, evidence | Fixture preparation immediately | Final checks after 07 |
-| [07 — Integration and visual refinement](07-integration-and-refinement.md) | Cross-component wiring and final visual consistency | After 01–05 handoffs | 06 fixture available |
+| [01 — Shell and visual foundation](01-shell-and-foundation.md) | Implemented | Page composition, shared tokens, header, navigation, footer | Final visual integration after 04–05 |
+| [02 — Presentation data and imagery](02-presentation-data-and-assets.md) | Implemented | Go view models, handlers, curated image metadata | 04–05 consume the new view fields |
+| [03 — Destination banner and map](03-destination-and-map.md) | Implemented | Hero, weather, map components | Final live-provider verification |
+| [04 — Trip form and itinerary](04-planner-and-itinerary.md) | Pending | Form, accordion, plan response, planner behavior | Coordinate stay body with 05 |
+| [05 — Stays and videos](05-stays-and-videos.md) | Pending | Accommodation and video cards | Uses 02 metadata |
+| [06 — Fixture preview and verification](06-preview-and-verification.md) | Pending | Fixture server, browser checks, evidence | Final checks after 07 |
+| [07 — Integration and visual refinement](07-integration-and-refinement.md) | Pending | Cross-component wiring and final visual consistency | 04–05 complete; 06 fixture available |
 
-Suggested schedule with three implementers: run 01/02/04 together; as slots free, run 03/05/06. Then run 07, followed by the final verification portion of 06. These are separate assignments, not a requirement to launch all agents simultaneously.
+Tasks 04, 05, and fixture preparation for 06 can proceed independently. Then complete 07 and
+run the final checks in 06. The existing [milestone fixture](../artifacts/redesign/milestone-01-03/README.md)
+can be reused; its checks do not replace final whole-page verification.
 
 ```mermaid
 flowchart LR

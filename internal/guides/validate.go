@@ -7,8 +7,8 @@ import (
 )
 
 // properNoun finds runs of capitalized words, e.g. "Alfama" or "Bairro Alto". This is a
-// deliberately simple heuristic (per tasks/todo-v2.md: "don't over-engineer NLP") — it is the
-// thing ValidateIntro checks against the source text, not a general-purpose place extractor.
+// simple heuristic that ValidateIntro checks against the source text, not a general-purpose
+// place extractor.
 var properNoun = regexp.MustCompile(`\b([A-Z][a-zA-Z'-]*(?:\s+[A-Z][a-zA-Z'-]*)*)\b`)
 
 // commonSentenceStarters are capitalized words (and sentence-initial contractions) that show up

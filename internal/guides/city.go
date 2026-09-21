@@ -9,9 +9,8 @@ type City struct {
 	Country string
 }
 
-// Cities are the same 20 starter cities cmd/placetypes uses, per tasks/plan-v2.md's decisions
-// section. Order and names match internal/placetypes/generator.go's list exactly; the country
-// codes are added here since that list has none.
+// Cities are the same 20 starter cities cmd/placetypes uses. Order and names match
+// internal/placetypes/generator.go; country codes are added here for guide keys.
 var Cities = []City{
 	{"Lisbon", "pt"},
 	{"Porto", "pt"},

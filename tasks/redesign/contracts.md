@@ -1,6 +1,6 @@
 # Shared implementation contracts
 
-Read this before starting a task. These contracts allow independent implementation; they are proposed implementation interfaces, not descriptions of existing code.
+Read this before starting a task. These contracts allow independent implementation; tasks 01–03 implement the shell and data interfaces; tasks 04–05 still need to replace the compatibility component bodies.
 
 ## File and style boundaries
 
@@ -53,10 +53,11 @@ Full page and search fragment render maps gain `.Presentation` with:
 
 - `.Hero`: optional `*imageView`, nil for an unknown/unconfigured destination.
 - `.Tagline`, `.PhotoCaption`, `.CountryLabel`: optional strings, correctly keyed by city and country. Never reuse Lisbon copy for another city.
+- `.ConditionIcon`: Bootstrap Icons class derived from the current weather condition, with a thermometer fallback.
 - `.MapURL`: coordinate-based external map link; the existing `.GeneralInfo.EmbedURL` remains the iframe source.
 - `.Videos`: list of `{ Title, VideoID, ThumbnailURL, WatchURL }`, derived from the existing videos. No invented duration.
 
-`imageView` exposes `URL`, `Alt`, `Credit`, `CreditURL`, `Width`, `Height`. Curated manifest entries additionally record the source and license. A curated lookup happens locally; no new image API call on the request path. Image fields remain absent when there is no verified match.
+`imageView` exposes `URL`, `Alt`, `Credit`, `CreditURL`, `License`, `LicenseURL`, `Width`, and `Height`. Curated manifest entries additionally record the source and image changes. A curated lookup happens locally; no new image API call on the request path. Image fields remain absent when there is no verified match.
 
 `tripCard` gains `.EndLabel`, a human-readable inclusive final itinerary date (`start + days - 1`). Submit only existing `start` and `days` parameters. Display the end as a read-only part of the date group and update it when controls change. Do not confuse the last itinerary day with accommodation checkout.
 
