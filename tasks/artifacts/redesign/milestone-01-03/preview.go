@@ -55,7 +55,7 @@ func main() {
 	go func() {
 		log.Print(http.ListenAndServe("127.0.0.1:8088", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.Write([]byte(`<!doctype html><html lang="en"><title>Fixture map</title><body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#eeeadd;color:#666158;font:14px system-ui"><p>Fixture map — live provider not loaded</p></body></html>`))
+			_, _ = w.Write([]byte(`<!doctype html><html lang="en"><title>Fixture map</title><body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#eeeadd;color:#666158;font:14px system-ui"><p>Fixture map — live provider not loaded</p></body></html>`))
 		})))
 	}()
 
@@ -63,12 +63,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 	store, err := sqlite.Open(filepath.Join(dir, "fixture.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 	s := httpserver.NewAppServer(weather{}, videos{}, store)
 	s.SetTripPlanner(trips{})
 	log.Fatal(s.Listen("127.0.0.1:8087"))
