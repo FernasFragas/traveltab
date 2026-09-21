@@ -14,7 +14,7 @@ import (
 const (
 	// defaultOllamaURL is where a local Ollama server listens by default.
 	defaultOllamaURL = "http://localhost:11434"
-	// defaultModel is the model tasks/todo-v2.md names for this pipeline.
+	// defaultModel is the local model used unless the caller selects another.
 	defaultModel = "mistral:7b"
 	// ollamaTimeout is generous: a 7B model on CPU can take a while for a ~120-word answer.
 	ollamaTimeout = 2 * time.Minute

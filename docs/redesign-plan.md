@@ -1,6 +1,6 @@
 # TravelTab redesign — reference implementation plan
 
-Status: ready for implementation. This document replaces the earlier exploratory plan with a concrete visual target based on the user-supplied image. Website implementation has not started.
+Status: tasks 01–03 implemented; tasks 04–07 remain pending. This document defines the complete visual target based on the user-supplied image. See [milestone evidence](../tasks/artifacts/redesign/milestone-01-03/README.md) for verified behavior and remaining work.
 
 ## Source of truth
 

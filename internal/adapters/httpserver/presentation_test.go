@@ -55,7 +55,7 @@ func TestPresentationManifestAssets(t *testing.T) {
 		assert.True(t, strings.HasPrefix(asset.URL, "/images/destinations/"))
 		file, err := os.Open("public" + asset.URL)
 		require.NoError(t, err)
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		config, _, err := image.DecodeConfig(file)
 		require.NoError(t, err)
 		assert.Equal(t, asset.Width, config.Width)

@@ -45,7 +45,7 @@ Wikivoyage and a local Ollama server and writes `guides/guides.json`, and nothin
 it or reads its output — deliberately, so a human reviews the generated text before anything
 wires it in.
 
-`internal/adapters/httpserver` also holds v2's shareable-link and export code: `slug.go`
+`internal/adapters/httpserver` also holds shareable-link and export code: `slug.go`
 (`Slug`/`ParseSlug`, the `city-country` `/trip/:slug` path segment), `export_ics.go`/
 `export_kml.go` (the `.ics`/`.kml` routes), `googlemaps.go` (the per-day walking-directions
 link), `sitemap.go` (`/sitemap.xml`, built from cached cities only) and `ratelimit.go` (caps how
@@ -53,26 +53,23 @@ many never-before-seen cities `/trip/:slug` will plan per minute). `sitemap.go` 
 its city list under a reserved key in the existing city-cache table, because `application.Storage`
 has no dedicated "list cached cities" method — a real one would let it drop that workaround.
 
-## Migration map
+## Presentation and assets
 
-| Previous location/API | Current location/API |
-|---|---|
-| Root `reporters.go` | `internal/application/reporters.go` |
-| Root `tripplanner.go`, `TripPlanner` | `internal/application/tripplanner.go` |
-| Root `env.go` | `internal/config/env.go` |
-| Root `server.go`, `trip.go` | `internal/adapters/httpserver/` |
-| Root `database.go`, `sourcecache.go` | `internal/adapters/sqlite/` |
-| Root `analytics.go` | HTTP handling in `adapters/httpserver`, queries in `adapters/sqlite`, models in `application` |
-| `api/` including `testdata/` | `internal/adapters/api/` |
-| `planner/` including `testdata/` | `internal/planner/` |
-| `cmd/placetypes/rules.go` and generation implementation | `internal/placetypes/` |
-| `InitDB`, `CloseDB`, `Server.InitializeDatabase` | `sqlite.Open`, `Store.Close`; lifecycle belongs to the command |
-| `NewAppServer(weather, videos)` | `httpserver.NewAppServer(weather, videos, storage)` |
-| Global cache constructors | Methods on `*sqlite.Store` |
+`index.go.tpl` owns the document shell and calls `content_fragment.go.tpl` for the destination
+body. Search requests render that same fragment. `plan_response.go.tpl` replaces the trip form
+and uses out-of-band HTMX swaps for the itinerary and stays. All four section anchors exist
+before a plan is generated.
 
-Tests move with their owning packages. HTTP integration tests use a temporary SQLite store and
-render the root templates; source and city fixtures remain next to their packages. Historical task
-notes retain their original paths and command output rather than rewriting past evidence.
+`presentation.go` decorates HTTP views from an embedded image manifest. Images live in
+`public/images/`; destination matching includes city and country, and optional stay imagery
+also requires an unambiguous property identity. Decoration does not alter provider/domain types
+or cached JSON. The production Docker image includes templates and public assets.
+
+The [redesign contracts](../tasks/redesign/contracts.md) define component ownership, template
+inputs, and asset loading order. [Maintenance notes](maintenance.md) track remaining limits.
+
+Tests live with their packages. HTTP integration tests use a temporary SQLite store and real
+root templates; source and city fixtures remain next to their packages.
 
 ## Verification
 
@@ -88,8 +85,3 @@ RECORD_FIXTURES=1 go test -run Cities ./internal/planner/
 ```
 
 `go run ./cmd/placetypes` now writes `internal/planner/placetypes_gen.go` by default.
-
-Validated after the move: race tests, lint (0 issues), web build and native ARM Docker build all
-pass. A local fixture-server smoke test returned the full page, HTMX city fragment and stylesheet
-successfully. The added store-isolation test verifies that opening or closing one store does not
-replace another store's connection.
