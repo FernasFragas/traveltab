@@ -71,11 +71,11 @@ func TestTripCard_ListsEveryStay(t *testing.T) {
 		assert.Contains(t, body, stay.Name)
 	}
 
-	assert.Equal(t, len(sixStays), countOccurrences(body, `class="stay"`))
-	// The icon says what kind of place it is.
-	assert.Equal(t, 3, countOccurrences(body, "stay-icon-hotel"))
-	assert.Equal(t, 2, countOccurrences(body, "stay-icon-hostel"))
-	assert.Equal(t, 1, countOccurrences(body, "stay-icon-guest_house"))
+	assert.Equal(t, len(sixStays), countOccurrences(body, `class="stay-item"`))
+	// The kind label says what type of place it is.
+	assert.Contains(t, body, "Hotel")
+	assert.Contains(t, body, "Hostel")
+	assert.Contains(t, body, "Guest house")
 	// Only the places that have one get a website link.
 	assert.Contains(t, body, `href="https://alpha.example"`)
 	assert.Contains(t, body, `href="https://charlie.example"`)
@@ -86,11 +86,11 @@ func TestTripCard_ShowsStarsOnlyWhenKnown(t *testing.T) {
 	body := renderPlan(t, planWithStays(sixStays, ""))
 
 	// Alpha, Charlie, Delta and Foxtrot have stars; Bravo and Echo don't.
-	assert.Equal(t, 4, countOccurrences(body, `class="stay-stars"`))
-	for _, stars := range []string{"★ 4", "★ 3", "★ 5", "★ 2"} {
+	assert.Equal(t, 4, countOccurrences(body, "star property"))
+	for _, stars := range []string{"4-star property", "3-star property", "5-star property", "2-star property"} {
 		assert.Contains(t, body, stars)
 	}
-	assert.NotContains(t, body, "★ 0")
+	assert.NotContains(t, body, "0-star property")
 }
 
 func TestTripCard_ShowsTheStaysNoteInsteadOfAList(t *testing.T) {

@@ -1,10 +1,11 @@
 <div id="trip-card" class="trip-card">
     <div class="trip-card-head">
-        <h3 class="trip-card-title"><i class="bi bi-calendar2-week"></i> Plan my trip</h3>
+        <h3 class="trip-card-title">Plan your trip</h3>
         <p class="trip-card-subtitle">Famous places day by day, with museums saved for the rain.</p>
     </div>
 
     <form class="trip-form"
+          aria-describedby="trip-help"
           hx-get="/plan"
           hx-target="#trip-card"
           hx-swap="outerHTML"
@@ -14,14 +15,21 @@
         <input type="hidden" name="lat" value="{{ .Lat }}">
         <input type="hidden" name="lon" value="{{ .Lon }}">
 
-        <label class="trip-field">
-            <span class="trip-field-label">Starting</span>
-            <input type="date" name="start" value="{{ .Start }}" min="{{ .MinStart }}" class="form-control" required>
-        </label>
+        <div class="trip-date-group">
+            <label class="trip-field trip-start" for="trip-start">
+                <span class="trip-field-label">Start</span>
+                <input id="trip-start" class="trip-input" type="date" name="start" value="{{ .Start }}" min="{{ .MinStart }}" required autocomplete="off">
+            </label>
 
-        <label class="trip-field">
+            <div class="trip-field trip-end">
+                <span class="trip-field-label">Ends</span>
+                <output id="trip-end-value" class="trip-end" for="trip-start trip-days" data-trip-end aria-live="polite">{{ .EndLabel }}</output>
+            </div>
+        </div>
+
+        <label class="trip-field trip-days" for="trip-days">
             <span class="trip-field-label">Days</span>
-            <select name="days" class="form-select">
+            <select id="trip-days" class="trip-select" name="days">
                 {{- $selected := .Days }}
                 {{- range .DayOptions }}
                 <option value="{{ . }}"{{ if eq . $selected }} selected{{ end }}>{{ . }}</option>
@@ -29,29 +37,22 @@
             </select>
         </label>
 
-        <button type="submit" class="btn btn-primary trip-submit">Plan my trip</button>
-        <span id="trip-spinner" class="trip-spinner"><i class="bi bi-arrow-repeat" aria-hidden="true"></i><span class="tt-visually-hidden">Planning…</span></span>
+        <button type="submit" class="trip-submit">
+            Generate plan
+            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </button>
+
+        <p id="trip-help" class="trip-help">
+            Pick a start date and how many days to plan. The last itinerary day updates automatically.
+        </p>
+
+        <span id="trip-spinner" class="trip-spinner htmx-indicator" role="status" aria-live="polite">
+            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+            <span class="tt-visually-hidden">Planning…</span>
+        </span>
     </form>
 
     {{ if .Error }}
-    <p class="trip-error" role="alert"><i class="bi bi-exclamation-circle"></i> {{ .Error }}</p>
+    <p class="trip-error" role="alert"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> {{ .Error }}</p>
     {{ end }}
-
-    <script>
-        // HTMX only swaps successful answers, so let the card show its own problems too.
-        (function () {
-            if (window.tripCardErrorSwapWired) {
-                return;
-            }
-            window.tripCardErrorSwapWired = true;
-
-            document.body.addEventListener('htmx:beforeSwap', function (event) {
-                var target = event.detail.target;
-                if (target && target.id === 'trip-card' && event.detail.xhr.status >= 400) {
-                    event.detail.shouldSwap = true;
-                    event.detail.isError = false;
-                }
-            });
-        })();
-    </script>
 </div>
