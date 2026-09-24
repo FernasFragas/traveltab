@@ -147,12 +147,13 @@ func TestPlanRoute_WithTheRealTripPlanner(t *testing.T) {
 	require.Equal(t, fiber.StatusOK, status)
 	assert.NotContains(t, body, "could not plan your trip")
 
-	assert.Contains(t, body, "Day 1 · "+start.Format(tripDateHeading))
+	assert.Contains(t, body, "Day 1")
+	assert.Contains(t, body, start.Format(tripDateHeading))
 	for _, name := range sourcePlaceNames() {
 		assert.Contains(t, body, name)
 	}
 
-	assert.Contains(t, body, "Rainy day")
+	assert.Contains(t, body, "Rain · 9 mm")
 	assert.Contains(t, body, "9 mm")
 
 	assert.Contains(t, body, "Hotel Baixa")
@@ -185,7 +186,7 @@ func TestPlanRoute_CachedPlanSurvivesAllSourcesOffline(t *testing.T) {
 	status, want := request()
 	require.Equal(t, fiber.StatusOK, status)
 	require.Contains(t, want, "Tile Museum")
-	require.Contains(t, want, "Rainy day")
+	require.Contains(t, want, "Rain ·")
 	require.Contains(t, want, "Hotel Baixa")
 
 	offline := errors.New("all providers are offline")

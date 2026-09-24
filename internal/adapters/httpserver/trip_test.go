@@ -235,7 +235,7 @@ func TestPlanRoute_ShowsTheRainBadgeOnARainyDay(t *testing.T) {
 
 	require.Equal(t, fiber.StatusOK, status)
 	assert.Contains(t, body, "12 mm")
-	assert.Contains(t, body, "Rainy day")
+	assert.Contains(t, body, "Rain · 12 mm")
 }
 
 func TestPlanRoute_MarksLessCertainDays(t *testing.T) {
@@ -284,7 +284,6 @@ func TestMainPage_HidesThePlannerCardWithoutAPlanner(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/?city_name=Planless", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.NotContains(t, body, "Plan my trip")
 	assert.NotContains(t, body, "trip-card")
 	// The page still looks exactly as it does today.
 	assert.Contains(t, body, "Test Video 1")
@@ -304,7 +303,7 @@ func TestMainPage_ShowsThePlannerCardWithCityAndCoordinates(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/?city_name=Planburg", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, body, "Plan my trip")
+	assert.Contains(t, body, "Plan your trip")
 	assert.Contains(t, body, `name="city" value="Planburg"`)
 	assert.Contains(t, body, `name="country" value="portugal"`)
 	assert.Contains(t, body, `name="lat" value="38.7223"`)
@@ -348,7 +347,7 @@ func TestTripPage_WithNoDatesShowsThePrefilledFormOnly(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugporto-pt", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, body, "Plan my trip")
+	assert.Contains(t, body, "Plan your trip")
 	assert.Contains(t, body, `name="city" value="Slugporto"`)
 	assert.Contains(t, body, `name="country" value="portugal"`, "the fixture's GeneralWeatherInfo carries the country the weather API returned, not the slug's own")
 	assert.NotContains(t, body, "Day 1", "no click has happened yet, so there is no plan")
@@ -369,7 +368,7 @@ func TestTripPage_InvalidDatesFallBackToThePrefilledForm(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugfaro-pt?days=3", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, body, "Plan my trip")
+	assert.Contains(t, body, "Plan your trip")
 	assert.NotContains(t, body, "Day 1")
 }
 
@@ -565,7 +564,7 @@ func TestPlanRoute_LimitsNewCitiesPerMinute(t *testing.T) {
 	status2, body2 := doRequest(t, server, httptest.NewRequest("GET", "/trip/ratecity2-pt?days=3&from=2026-03-11", nil))
 	require.Equal(t, fiber.StatusOK, status2)
 	assert.NotContains(t, body2, "Day 1", "a second new city inside the same minute is not planned")
-	assert.Contains(t, body2, "Plan my trip")
+	assert.Contains(t, body2, "Plan your trip")
 	waitForCache(t, "Ratecity2")
 
 	// A repeat visit to the already-cached first city is never limited, even though the

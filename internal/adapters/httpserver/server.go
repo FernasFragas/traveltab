@@ -1,7 +1,6 @@
 package httpserver
 
 import (
-	"database/sql"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -164,23 +163,17 @@ func (s *Server) checkDatabase(city string) (TemplateData, error) {
 		return TemplateData{}, fmt.Errorf("database is not initialized")
 	}
 	cachedJSON, err := s.storage.GetCityData(city)
-	if err != nil && err != sql.ErrNoRows {
-		// Handle potential DB errors (other than not found)
-		log.Printf("Error checking cache for city %s: %v", city, err)
-		// Decide how to handle this - maybe proceed to fetch fresh data, or return an error
-		// For now, let's proceed to fetch fresh data, but log the error.
-	} else if err == nil {
-		// Cache hit!
-		log.Printf("Cache hit for city: %s", city)
-
-		if unmarshalErr := json.Unmarshal([]byte(cachedJSON), &data); unmarshalErr != nil {
-			log.Printf("Error unmarshaling cached data for city %s: %v", city, unmarshalErr)
-			// Data in DB is corrupted? Proceed to fetch fresh data.
-		}
-	} else {
-		return TemplateData{}, err
+	if err != nil {
+		return TemplateData{}, fmt.Errorf("read cache for city %q: %w", city, err)
 	}
 
+	if err := json.Unmarshal([]byte(cachedJSON), &data); err != nil {
+		// Decoding can populate fields before failing. Never expose that partial data
+		// as a cache hit; both destination handlers must fetch a fresh view instead.
+		return TemplateData{}, fmt.Errorf("decode cache for city %q: %w", city, err)
+	}
+
+	log.Printf("Cache hit for city: %s", city)
 	return data, nil
 }
 

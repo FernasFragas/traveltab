@@ -156,8 +156,8 @@ func createTestGeneralWeatherInfoFor(city string) *application.GeneralWeatherInf
 
 func createTestVideosStream() *application.VideosStream {
 	return &application.VideosStream{
-		{Title: "Test Video 1", VideoID: "abc123"},
-		{Title: "Test Video 2", VideoID: "def456"},
+		{Title: "Test Video 1", VideoID: "abc12345678"},
+		{Title: "Test Video 2", VideoID: "def45678901"},
 	}
 }
 
@@ -370,7 +370,7 @@ func TestCheckDatabase_CacheHit(t *testing.T) {
 
 	cached := map[string]any{
 		"GeneralInfo": createTestGeneralWeatherInfoFor("Madeira"),
-		"Videos":      application.VideosStream{{Title: "Cached Video", VideoID: "cached123"}},
+		"Videos":      application.VideosStream{{Title: "Cached Video", VideoID: "cached12345"}},
 		"Hotels":      createTestHotels(),
 	}
 	require.NoError(t, testStore.SaveCityData("Madeira", cached))
