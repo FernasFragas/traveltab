@@ -65,8 +65,10 @@ before a plan is generated.
 also requires an unambiguous property identity. Decoration does not alter provider/domain types
 or cached JSON. The production Docker image includes templates and public assets.
 
-The [redesign contracts](../tasks/redesign/contracts.md) define component ownership, template
-inputs, and asset loading order. [Maintenance notes](maintenance.md) track remaining limits.
+The [design reference](design.md) records template inputs, the planner response contract and
+style boundaries. The [credential-free preview](../tasks/redesign/preview.md) exercises real routes
+and templates. See [verification results](../tasks/project-fix-results.md) for tested behavior
+and [maintenance notes](maintenance.md) for remaining work.
 
 Tests live with their packages. HTTP integration tests use a temporary SQLite store and real
 root templates; source and city fixtures remain next to their packages.

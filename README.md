@@ -16,6 +16,8 @@ When no city is given, the page opens on Lisbon, Portugal.
 
 This started as a RESTful JSON weather API, a personal project for practising Go. It grew into a server-rendered web app that combines several third-party APIs into one page.
 
+The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Next up is a live destination photo for every city.
+
 ## Tech stack
 
 | Layer      | Choice                                                                 |
@@ -102,7 +104,7 @@ Google Maps, with no API key needed.
 
 When something is unavailable, the page degrades instead of failing:
 
-- **Any source fails** → the SQLite cache keeps serving what it already has (places and stays for 30 days, forecasts for 3 hours).
+- **A source refresh fails** → an existing cached place, stay, or forecast entry can still be served (places and stays for 30 days, forecasts for 3 hours). A cold request still depends on the provider. A failed city-cache read triggers a fresh fetch.
 - **Overpass fails** → a second public server is tried, then the old cached list, and only then does the stay card disappear with a short message.
 - **The forecast fails** → the plan still loads with an explanatory note. Missing rain data is labelled separately from an uncertain forecast.
 - **A cached city** previously measured about 3 ms. Cold requests now fetch the forecast alongside places and run up to four Wikimedia lookups concurrently; Overpass delays still affect the first request.
@@ -128,6 +130,7 @@ When something is unavailable, the page degrades instead of failing:
 .
 ├── cmd/
 │   ├── web/               # Production wiring and HTTP entry point
+│   ├── design-preview/    # Credential-free redesign fixture server
 │   ├── loadtest-server/   # Fixture-backed load-test entry point
 │   ├── placetypes/        # Offline place-type generator flags and entry point
 │   └── guides/            # Offline AI city-intro generator (see "City intros" below)
@@ -212,9 +215,11 @@ fly deploy
 go test ./...
 ```
 
-Every test runs offline: provider APIs are stubbed and the city tests replay recorded
-responses from `internal/planner/testdata/cities/`. No API keys are needed. Run
-`go test -race ./...` to include the race detector, or `make test`, which does both.
+Tests use stub providers and recorded city responses from `internal/planner/testdata/cities/`.
+The design-preview route tests open a temporary localhost listener, but need no internet or API
+keys. Run `go test -race -count=1 ./...` to include the race detector, or `make test`, which also
+loads a local `.env` when present. The [preview guide](tasks/redesign/preview.md) gives the HTTP
+and browser checks.
 
 Opt-in extras:
 
@@ -264,8 +269,10 @@ Visit the site in a browser, then open the stats URL to verify recording.
 
 - [Architecture](docs/architecture.md): packages, dependency boundaries, and verification commands.
 - [Maintenance notes](docs/maintenance.md): planner decisions, known limits, and follow-ups.
-- [Redesign plan](docs/redesign-plan.md) and [task index](tasks/redesign/README.md): current UI work and shared contracts.
-- [Redesign preview and browser evidence](tasks/artifacts/redesign/milestone-01-03/README.md): runnable fixtures and screenshots.
+- [Design reference](docs/design.md): visual target, template contracts, and data rules.
+- [Design preview](tasks/redesign/preview.md): deterministic fixtures and reproducible HTTP/browser checks.
+- [Verification results](tasks/project-fix-results.md): current test and browser evidence, and remaining limits.
+- [Destination photo plan](tasks/destination-photos-plan.md): **next feature**, a live city-photo lookup for every search.
 - [Load testing](loadtests/README.md): profiles and recorded measurements.
 
 ## Credits
@@ -274,13 +281,6 @@ Place data from [Wikipedia](https://www.wikipedia.org/) and [Wikidata](https://w
 photos from [Wikimedia Commons](https://commons.wikimedia.org/), each with its own licence ·
 weather from [Open-Meteo](https://open-meteo.com/) (CC BY 4.0) ·
 places to stay from [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL).
-
-## Work in progress
-
-Redesign tasks 01–03 are implemented; tasks 04–07 cover the remaining planner, stays, videos,
-and final verification. See the [task index](tasks/redesign/README.md) and
-[maintenance follow-ups](docs/maintenance.md#follow-ups). Offline city intros remain unconnected
-to the app, pending review and integration.
 
 ## Author
 
