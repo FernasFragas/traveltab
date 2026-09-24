@@ -113,6 +113,14 @@
         return element instanceof Element && element.classList.contains('trip-form');
     }
 
+    document.body.addEventListener('htmx:historyRestore', function () {
+        // HTMX can snapshot the form before afterRequest clears its loading state.
+        setPending(document.querySelector('.trip-form'), false);
+        pendingValues = null;
+        tripStatus = ensureStatusRegion();
+        announce('');
+    });
+
     document.addEventListener('submit', function (event) {
         if (!isTripForm(event.target)) return;
         if (event.target.dataset.tripPending === 'true') {

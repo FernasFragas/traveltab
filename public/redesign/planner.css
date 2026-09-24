@@ -292,8 +292,9 @@
 
 .itinerary-day-title {
     display: flex;
-    flex-direction: column;
-    gap: var(--tt-space-1);
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--tt-space-1);
     min-width: 0;
 }
 

@@ -18,7 +18,7 @@
             return;
         }
 
-        var videoID = button.dataset.videoID || '';
+        var videoID = button.dataset.videoId || '';
         if (!validVideoID.test(videoID)) {
             return;
         }
