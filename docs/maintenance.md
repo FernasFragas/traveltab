@@ -1,8 +1,10 @@
 # Maintenance notes
 
 Setup, routes, providers, and generator commands are in the [README](../README.md).
-Package boundaries are in [architecture.md](architecture.md). The active work is the
-[redesign](../tasks/redesign/README.md): tasks 01–03 are implemented; 04–07 remain pending.
+Package boundaries are in [architecture.md](architecture.md) and the UI contracts are in
+[design.md](design.md). The redesign is implemented, and the
+[September 2026 results](../tasks/project-fix-results.md) record its verification and limits.
+Open work is listed under [Next up](#next-up).
 
 ## Planner decisions and limits
 
@@ -23,22 +25,35 @@ Package boundaries are in [architecture.md](architecture.md). The active work is
 - Source cache refresh failures serve stale entries when available. Cold requests still depend on
   public API latency, particularly Overpass retries. Parallel Wikimedia lookups can also time out.
 
-## Follow-ups
+## Next up
 
-- Complete redesign tasks 04–07 before treating the reference design as finished. The current
-  [browser evidence](../tasks/artifacts/redesign/milestone-01-03/README.md) identifies the verified
-  flows and the remaining external-provider and visual checks.
-- Replace the sitemap's `__sitemap_index__` cache entry with a storage method for listing cities.
-- Guide generation remains separate from serving the site. Review `guides/guides.json` before
-  integration, and include the Wikivoyage source/revision and attribution required for publication.
-  The proper-name validator is a heuristic, not a factual review. The recorded manual review
-  covered Lisbon, London, Seville, and Vienna; the other starter cities had automated validation.
-- Guide and HTTP slug helpers implement the same format independently. A shared package could
-  remove duplication without making the generator depend on the HTTP adapter.
-- Import calendar/KML exports into actual calendar and map applications. Structural parsing
-  checks do not establish compatibility with every application's importer. Calendar event times
-  are assigned defaults, not real visit schedules.
-- Verify search-engine indexing after deployment; local route and sitemap tests cannot establish it.
+In priority order. Updated 2026-09-24.
+
+1. **Ship the redesign.** Commit the verification work (the preview checks, evidence and results)
+   and merge PR #7.
+2. **Destination photos for every search.** Today only Lisbon has a hero photo. The
+   [plan](../tasks/destination-photos-plan.md) is ready: a keyless Wikimedia lookup, an
+   identity-safe cache, and a fix for namesake cities (for example Paris, France and Paris, Texas)
+   sharing the city cache.
+3. **Close the verification gaps.** Still open from the
+   [final browser evidence](../tasks/artifacts/redesign/final-verification/README.md):
+   - a full contrast and accessibility audit;
+   - browser screenshots for every named preview scenario;
+   - live checks of the map embed, Wikimedia photos, YouTube playback and the Booking landing
+     page in a normal browser (see the [external checks](../tasks/artifacts/redesign/final-verification/external-results.md)).
+4. **Sitemap storage.** Replace the `__sitemap_index__` cache entry with a typed method for
+   listing cities, and keep existing URLs.
+5. **City guides.** Review `guides/guides.json`, then show reviewed intros on the page with
+   Wikivoyage source, revision and attribution. The proper-name validator is a heuristic, not a
+   factual review. Only Lisbon, London, Seville and Vienna had a manual review. Serving a page must
+   never call Ollama.
+6. **Slug helpers.** The guide and HTTP slug helpers implement the same format independently. Merge
+   them into a small shared package, keeping the generator independent of the HTTP adapter.
+7. **Export interoperability.** Import the ICS and KML exports into real calendar and map apps.
+   Parser checks don't prove importer compatibility. Event times are defaults, not real visit
+   schedules.
+8. **Indexing after deployment.** Check the public trip URLs, canonical tags and sitemap in
+   search-engine diagnostics. Local tests can't show this.
 
 ## Historical verification boundaries
 
