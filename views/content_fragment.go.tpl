@@ -24,6 +24,7 @@
             {{ end }}
         </div>
     </div>
+    {{ template "guide_card" .Presentation.Guide }}
 </section>
 
 <section id="itinerary" class="tt-section" tabindex="-1" aria-label="Your itinerary">

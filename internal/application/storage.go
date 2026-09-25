@@ -7,6 +7,10 @@ import "time"
 type Storage interface {
 	SaveCityData(city string, data map[string]any) error
 	GetCityData(city string) (string, error)
+	// RecordSitemapSlug persists a /trip/:slug slug for the sitemap; recording a slug twice is
+	// a no-op. ListSitemapSlugs returns all recorded slugs sorted, never calling a provider.
+	RecordSitemapSlug(slug string) error
+	ListSitemapSlugs() ([]string, error)
 	SaveVisit(visitor, path, city string) error
 	GetVisitStats(since time.Time) (*VisitStats, error)
 }

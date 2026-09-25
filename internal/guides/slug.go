@@ -1,15 +1,10 @@
 package guides
 
-import "strings"
+import "weatherservice/internal/slug"
 
-// Slug builds the "city-country" key guides.json is keyed by: both lower-cased ASCII, spaces in
-// the city name turned to hyphens, e.g. Slug("Mexico City", "MX") -> "mexico-city-mx".
-//
-// This matches the HTTP adapter's shareable trip format without depending on that adapter.
-// See docs/maintenance.md for the shared-helper follow-up.
+// Slug builds the "city-country" key guides.json is keyed by, e.g. Slug("Mexico City", "MX") ->
+// "mexico-city-mx". It is the same format as the HTTP adapter's shareable /trip/:slug segment;
+// both delegate to internal/slug, so the generator doesn't depend on the adapter.
 func Slug(city, country string) string {
-	c := strings.ToLower(strings.TrimSpace(city))
-	c = strings.Join(strings.Fields(c), "-")
-
-	return c + "-" + strings.ToLower(strings.TrimSpace(country))
+	return slug.Build(city, country)
 }

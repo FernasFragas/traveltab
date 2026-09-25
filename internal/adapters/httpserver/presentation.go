@@ -60,9 +60,11 @@ type videoView struct {
 
 type presentationView struct {
 	Hero                                *imageView
+	PhotoUnavailable                    bool // no photograph could be shown: say so instead of an empty frame
 	Tagline, PhotoCaption, CountryLabel string
 	MapURL, ConditionIcon               string
 	Videos                              []videoView
+	Guide                               guideView // reviewed city guide, or the explicit "no guide yet" state
 }
 
 type stayCardView struct {

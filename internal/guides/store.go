@@ -10,10 +10,26 @@ import (
 )
 
 // Entry is one city's row in guides/guides.json.
+//
+// The generator writes the first three fields, plus WikivoyageTitle. The rest record a human
+// review and are added by hand after reading the intro against its source (see
+// tasks/guides-review.md); the generator never sets them, so a regenerated entry is unreviewed
+// until someone reviews the new text.
 type Entry struct {
 	Intro              string    `json:"intro"`
 	WikivoyageRevision int64     `json:"wikivoyage_revision"`
 	GeneratedAt        time.Time `json:"generated_at"`
+
+	// WikivoyageTitle is the article title after redirects ("Marrakech" for the "Marrakesh"
+	// request). It is what the attribution links to.
+	WikivoyageTitle string `json:"wikivoyage_title,omitempty"`
+	// Reviewed is true only for an intro a person checked against WikivoyageRevision. Only
+	// reviewed entries are ever shown on the site.
+	Reviewed bool `json:"reviewed,omitempty"`
+	// ReviewedAt is the review date, YYYY-MM-DD.
+	ReviewedAt string `json:"reviewed_at,omitempty"`
+	// ReviewNote says what was checked and what was changed.
+	ReviewNote string `json:"review_note,omitempty"`
 }
 
 // LoadGuides reads guides/guides.json, or returns an empty map when the file doesn't exist yet.

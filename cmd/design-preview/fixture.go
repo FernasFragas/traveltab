@@ -22,7 +22,12 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 		return nil, err
 	}
 	raw := strings.TrimSpace(query)
-	city := strings.TrimSpace(strings.Split(raw, ",")[0])
+	parts := strings.Split(raw, ",")
+	city := strings.TrimSpace(parts[0])
+	region := ""
+	if len(parts) > 1 {
+		region = strings.ToLower(strings.TrimSpace(parts[1]))
+	}
 	switch strings.ToLower(city) {
 	case "":
 		return nil, errors.New("fixture: empty destination")
@@ -30,11 +35,34 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 		return nil, errors.New("fixture search failure")
 	}
 
-	if strings.EqualFold(city, "Lisbon") {
-		city = "Lisbon"
+	// Ordinary destinations share Lisbon's country and coordinates. The photo fixtures below have
+	// their own identities, because the photo source is asked about the resolved identity.
+	country, lat, lon := "pt", 38.7223, -9.1393
+	for _, name := range []string{"Lisbon", "Porto", "Nophoto", "Photoerror", "Brokenimage", "Longguide"} {
+		if strings.EqualFold(city, name) {
+			city = name
+		}
 	}
-	if strings.EqualFold(city, "Porto") {
-		city = "Porto"
+	// Real places with real coordinates, for the opt-in -live-photos run. The fixture photo
+	// source has no photograph for them.
+	for _, place := range []struct {
+		name, country string
+		lat, lon      float64
+	}{
+		{"Tokyo", "jp", 35.6895, 139.6917}, {"Tavira", "pt", 37.1264, -7.6506}, {"Porto", "pt", 41.1494, -8.6108},
+	} {
+		if strings.EqualFold(city, place.name) {
+			city, country, lat, lon = place.name, place.country, place.lat, place.lon
+		}
+	}
+	if strings.EqualFold(city, "Paris") {
+		city = "Paris"
+		switch region {
+		case "us", "usa", "texas", "tx", "united states":
+			country, lat, lon = "us", 33.6609, -95.5555 // Paris, Texas
+		default:
+			country, lat, lon = "fr", 48.8589, 2.3200
+		}
 	}
 	condition := "Clear"
 	if strings.EqualFold(city, "Porto") {
@@ -42,9 +70,9 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 	}
 	return &app.GeneralWeatherInfo{
 		City:     city,
-		Country:  "pt",
-		Lat:      38.7223,
-		Lon:      -9.1393,
+		Country:  country,
+		Lat:      lat,
+		Lon:      lon,
 		Weather:  app.Weather{Temperature: 22, FeelsLike: 22, Humidity: 60, Wind: 10, Condition: condition},
 		Waves:    app.Waves{Height: 1.2},
 		EmbedURL: f.mapURL,

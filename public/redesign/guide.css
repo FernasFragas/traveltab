@@ -1,0 +1,141 @@
+/* City guide card in the overview section. Selectors stay component-scoped (.guide-*). */
+.guide-card {
+    min-width: 0;
+    margin-top: var(--tt-space-4);
+    padding: var(--tt-space-6);
+    border: 1px solid var(--tt-border);
+    border-radius: var(--tt-radius);
+    background: var(--tt-surface);
+}
+
+.guide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--tt-space-2);
+}
+
+.guide-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tt-space-2);
+    margin: 0;
+    color: var(--tt-olive);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.guide-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tt-space-1);
+    padding: 2px 10px;
+    border: 1px solid var(--tt-olive);
+    border-radius: 999px;
+    color: var(--tt-olive);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.guide-title {
+    margin: var(--tt-space-2) 0 var(--tt-space-3);
+    color: var(--tt-ink);
+    font-family: var(--tt-font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.guide-body {
+    max-width: 72ch;
+}
+
+.guide-paragraph {
+    margin: 0 0 var(--tt-space-3);
+    color: var(--tt-ink);
+    font-size: 15px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+.guide-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+.guide-source {
+    margin-top: var(--tt-space-4);
+    padding-top: var(--tt-space-3);
+    border-top: 1px solid var(--tt-border);
+    color: var(--tt-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.guide-attribution,
+.guide-review {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.guide-review {
+    margin-top: var(--tt-space-1);
+}
+
+.guide-missing {
+    color: var(--tt-muted);
+}
+
+.guide-actions {
+    margin: var(--tt-space-3) 0 0;
+}
+
+.guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tt-space-2);
+    min-height: 44px;
+    font-weight: 600;
+}
+
+/* On wide screens the attribution sits beside the text instead of under it. */
+@media (min-width: 900px) {
+    .guide-card[data-guide-state="reviewed"] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        column-gap: var(--tt-space-8);
+    }
+
+    .guide-card[data-guide-state="reviewed"] > .guide-header,
+    .guide-card[data-guide-state="reviewed"] > .guide-title {
+        grid-column: 1 / -1;
+    }
+
+    .guide-card[data-guide-state="reviewed"] > .guide-body {
+        grid-column: 1;
+    }
+
+    .guide-card[data-guide-state="reviewed"] > .guide-source {
+        grid-column: 2;
+        grid-row: 3;
+        align-self: start;
+        margin-top: 0;
+        padding: 0 0 0 var(--tt-space-6);
+        border-top: 0;
+        border-left: 1px solid var(--tt-border);
+    }
+}
+
+@media (max-width: 640px) {
+    .guide-card {
+        padding: var(--tt-space-4);
+    }
+
+    .guide-title {
+        font-size: 20px;
+    }
+}

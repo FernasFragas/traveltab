@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="/redesign/destination.css">
     <link rel="stylesheet" href="/redesign/planner.css">
     <link rel="stylesheet" href="/redesign/discovery.css">
+    <link rel="stylesheet" href="/redesign/guide.css">
     <script defer src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
@@ -66,7 +67,7 @@
                     <a href="https://www.fernandofragateiro.com" target="_blank" rel="noopener noreferrer" aria-label="Fernando's website (opens in new tab)"><i class="bi bi-globe" aria-hidden="true"></i></a>
                 </nav>
             </div>
-            <p class="tt-credits">Places: Wikipedia &amp; Wikidata · Photos: Wikimedia Commons · Weather: Open-Meteo (CC BY 4.0) · Map data © OpenStreetMap contributors</p>
+            <p class="tt-credits">Places: Wikipedia &amp; Wikidata · City guides: Wikivoyage (CC BY-SA 4.0) · Photos: Wikimedia Commons · Weather: Open-Meteo (CC BY 4.0) · Map data © OpenStreetMap contributors</p>
         </footer>
     </div>
     <nav class="tt-bottom-navigation" aria-label="Quick section navigation">

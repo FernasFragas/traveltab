@@ -12,6 +12,7 @@ require (
 	github.com/valyala/fasthttp v1.60.0
 	go.uber.org/mock v0.5.2
 	golang.org/x/net v0.38.0
+	golang.org/x/text v0.23.0
 	google.golang.org/api v0.227.0
 )
 
@@ -47,7 +48,6 @@ require (
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
 	google.golang.org/grpc v1.71.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect

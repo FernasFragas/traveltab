@@ -105,6 +105,22 @@
         }
     });
 
+    // Keyboard focus that moves into the cross-origin map frame is invisible to the page: the browser
+    // neither scrolls the frame into view nor lets CSS style it. Do both, for keyboard focus only.
+    var keyboardFocus = false;
+    document.addEventListener('keydown', function (event) { if (event.key === 'Tab') keyboardFocus = true; }, true);
+    document.addEventListener('pointerdown', function () { keyboardFocus = false; }, true);
+    window.addEventListener('blur', function () {
+        var frame = document.activeElement;
+        if (!keyboardFocus || !frame || frame.tagName !== 'IFRAME' || !frame.classList.contains('map-embed')) return;
+        frame.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        var card = frame.closest('.map-card');
+        if (card) card.setAttribute('data-frame-focus', 'true');
+    });
+    window.addEventListener('focus', function () {
+        document.querySelectorAll('.map-card[data-frame-focus]').forEach(function (card) { card.removeAttribute('data-frame-focus'); });
+    });
+
     function isSearchEvent(event) {
         var detail = event.detail || {};
         var source = detail.requestConfig && detail.requestConfig.elt || detail.elt;

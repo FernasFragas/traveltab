@@ -70,7 +70,7 @@
     width: 100%;
     min-height: 44px;
     padding: 10px var(--tt-space-3);
-    border: 1px solid var(--tt-border);
+    border: 1px solid var(--tt-border-control);
     border-radius: var(--tt-radius);
     background: var(--tt-surface);
     color: var(--tt-ink);
@@ -272,6 +272,9 @@
 
 .itinerary-day-summary::-webkit-details-marker { display: none; }
 
+/* The accordion clips overflow, so an outside focus ring would be cut off at its edges. */
+.itinerary-day-summary:focus-visible { outline-offset: -3px; }
+
 .itinerary-day-summary:hover { background: #f8f3ea; }
 
 .itinerary-day[open] > .itinerary-day-summary { background: #f8f3ea; }
@@ -459,6 +462,9 @@
 }
 
 .itinerary-stop-credit a:hover { text-decoration: underline; }
+
+/* Credits sit on a dark overlay inside a clipping frame: a light, inset ring stays visible (3:1 or better). */
+.itinerary-stop-credit a:focus-visible { outline: 2px solid #fffdfa; outline-offset: -2px; }
 
 .itinerary-stop-media-failed .itinerary-stop-credit { display: none; }
 

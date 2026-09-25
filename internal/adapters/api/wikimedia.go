@@ -49,6 +49,7 @@ type EntityLabel struct {
 
 // EntityClaim is one statement about a Wikidata entity.
 type EntityClaim struct {
+	Rank     string `json:"rank"`
 	MainSnak struct {
 		DataValue struct {
 			Value json.RawMessage `json:"value"`
@@ -391,9 +392,17 @@ func (a *WikimediaAPI) entitiesBatch(ctx context.Context, ids []string, props st
 	}
 	var response struct {
 		Entities map[string]Entity `json:"entities"`
+		Error    *struct {
+			Code string `json:"code"`
+			Info string `json:"info"`
+		} `json:"error"`
 	}
 	if err := a.get(ctx, wikidataAPIURL, params, &response); err != nil {
 		return nil, fmt.Errorf("wikidata entities: %w", err)
+	}
+	// MediaWiki reports some failures, such as throttling, with a 200 and an error object.
+	if response.Error != nil {
+		return nil, fmt.Errorf("wikidata entities: %s: %s", response.Error.Code, response.Error.Info)
 	}
 	return response.Entities, nil
 }

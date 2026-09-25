@@ -1,7 +1,8 @@
 // Package guides fetches Wikivoyage city text, asks a local Ollama model for a short intro
 // grounded in that text, validates it names no place the source doesn't mention, and writes the
-// results to guides/guides.json for a human to review. It is used only by cmd/guides: nothing
-// under internal/ or views/ imports this package, and it is never wired into cmd/web.
+// results to guides/guides.json for a human to review. Generation is used only by cmd/guides and
+// never runs in the web server. cmd/web reads the reviewed result through Book, which answers
+// from memory and publishes only entries a person has marked reviewed.
 package guides
 
 import (
@@ -23,6 +24,7 @@ const (
 
 // WikivoyagePage is the plain text of one Wikivoyage article and the revision it was read at.
 type WikivoyagePage struct {
+	Title    string // the article title after redirects
 	Text     string
 	Revision int64
 }
@@ -125,7 +127,7 @@ func parseWikivoyageResponse(title string, body []byte) (WikivoyagePage, error) 
 			revision = page.Revisions[0].RevID
 		}
 
-		return WikivoyagePage{Text: page.Extract, Revision: revision}, nil
+		return WikivoyagePage{Title: page.Title, Text: page.Extract, Revision: revision}, nil
 	}
 
 	return WikivoyagePage{}, fmt.Errorf("wikivoyage page %q: no pages in response", title)
