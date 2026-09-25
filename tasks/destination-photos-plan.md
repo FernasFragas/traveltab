@@ -1,6 +1,6 @@
 # Destination photos for every city search
 
-Status: planned, not implemented. Updated 2026-09-24.
+Status: implemented 2026-09-24; see [results](destination-photos-results.md). Updated 2026-09-24.
 
 ## Objective and required behavior
 
@@ -82,10 +82,10 @@ MediaWiki documents [free page-image selection](https://www.mediawiki.org/wiki/E
 
 Files: new `internal/application/destinationphoto.go`; `internal/adapters/httpserver/server.go`, `trip.go`, and related cache tests.
 
-- [ ] Add the photo-source contract and identity normalization/validation.
-- [ ] Add `SetDestinationPhotoSource` to the HTTP server, following the planner injection pattern; a nil source remains valid for existing tests and fixture servers.
-- [ ] Validate page-cache hits against the freshly resolved destination. Refetch mismatched data and use the fresh `GeneralWeatherInfo` for displayed weather and photo lookup. Preserve compatible legacy cache entries and existing sitemap behavior; no destructive cache migration is needed.
-- [ ] Add regressions for Paris, France versus Paris, Texas, and same-country namesakes with different coordinates. Keep cache errors and old-cache compatibility covered.
+- [x] Add the photo-source contract and identity normalization/validation.
+- [x] Add `SetDestinationPhotoSource` to the HTTP server, following the planner injection pattern; a nil source remains valid for existing tests and fixture servers.
+- [x] Validate page-cache hits against the freshly resolved destination. Refetch mismatched data and use the fresh `GeneralWeatherInfo` for displayed weather and photo lookup. Preserve compatible legacy cache entries and existing sitemap behavior; no destructive cache migration is needed.
+- [x] Add regressions for Paris, France versus Paris, Texas, and same-country namesakes with different coordinates. Keep cache errors and old-cache compatibility covered.
 
 Exit: no previously cached namesake can replace the resolved destination's identity in either search or shared-page rendering.
 
@@ -93,10 +93,10 @@ Exit: no previously cached namesake can replace the resolved destination's ident
 
 Files: new `internal/adapters/api/destinationphoto.go` and `destinationphoto_test.go`; small shared Wikimedia helper changes only if necessary.
 
-- [ ] Implement bounded identity resolution, photo selection and attribution extraction using the contract above.
-- [ ] Inject the HTTP client so unit tests use recorded/stubbed responses without internet access.
-- [ ] Test city matches, aliases, disambiguation, wrong countries/coordinates, no image, malformed responses, timeout, 429/500 errors, metadata HTML, unsafe URLs and invalid image candidates.
-- [ ] Keep destination-photo requests independent of itinerary generation and API keys.
+- [x] Implement bounded identity resolution, photo selection and attribution extraction using the contract above.
+- [x] Inject the HTTP client so unit tests use recorded/stubbed responses without internet access.
+- [x] Test city matches, aliases, disambiguation, wrong countries/coordinates, no image, malformed responses, timeout, 429/500 errors, metadata HTML, unsafe URLs and invalid image candidates.
+- [x] Keep destination-photo requests independent of itinerary generation and API keys.
 
 Exit: an uncached destination resolves to a matching, attributed photograph or a clearly classified no-result/error.
 
@@ -104,9 +104,9 @@ Exit: an uncached destination resolves to a matching, attributed photograph or a
 
 Files: new `internal/adapters/sqlite/destinationphoto.go` and corresponding tests; reuse `source_cache` storage patterns without changing planner cache semantics.
 
-- [ ] Add `Store.NewCachedDestinationPhotoSource` with identity-aware keys and positive/negative TTLs.
-- [ ] Test live lookup on misses, expiry and corrupt entries; warm hits; stale retention; negative-cache expiry; country/coordinate isolation; and cache storage failure.
-- [ ] Verify an empty database works without prewarming and that an upstream error does not poison subsequent searches.
+- [x] Add `Store.NewCachedDestinationPhotoSource` with identity-aware keys and positive/negative TTLs.
+- [x] Test live lookup on misses, expiry and corrupt entries; warm hits; stale retention; negative-cache expiry; country/coordinate isolation; and cache storage failure.
+- [x] Verify an empty database works without prewarming and that an upstream error does not poison subsequent searches.
 
 Exit: caching improves repeat searches while cold searches fetch live and produce a photo in their first response.
 
@@ -114,12 +114,12 @@ Exit: caching improves repeat searches while cold searches fetch live and produc
 
 Files: `cmd/web/main.go`; `internal/adapters/httpserver/presentation.go`, `server.go`, `trip.go`; `views/weather_display.go.tpl`; `public/redesign/destination.css`; image-error behavior in the existing frontend code if needed.
 
-- [ ] Wire the cached live adapter in `cmd/web`. Keep provider construction out of HTTP handlers and application models.
-- [ ] Add one server-side presentation builder used by initial, HTMX-search and shared-trip responses. Resolve photos after destination identity is known, including page-cache hits. Construct it once per response.
-- [ ] Preserve Lisbon's override and merge live photo metadata for all other cities. Failed lookup must not fail weather, planning or destination search.
-- [ ] Keep the existing desktop/mobile hero dimensions, crop behavior and attribution links. Add useful alt text and an explicit photo-unavailable state.
-- [ ] On image load failure, hide the failed image's credit/caption with it and reveal the fallback. Ensure this works after HTMX swaps and history restoration without duplicate listeners.
-- [ ] Confirm a successful search replaces both the previous destination's photo and metadata. Keep lookup tied to the response being rendered; no detached update may paint an earlier city's photo over a later search.
+- [x] Wire the cached live adapter in `cmd/web`. Keep provider construction out of HTTP handlers and application models.
+- [x] Add one server-side presentation builder used by initial, HTMX-search and shared-trip responses. Resolve photos after destination identity is known, including page-cache hits. Construct it once per response.
+- [x] Preserve Lisbon's override and merge live photo metadata for all other cities. Failed lookup must not fail weather, planning or destination search.
+- [x] Keep the existing desktop/mobile hero dimensions, crop behavior and attribution links. Add useful alt text and an explicit photo-unavailable state.
+- [x] On image load failure, hide the failed image's credit/caption with it and reveal the fallback. Ensure this works after HTMX swaps and history restoration without duplicate listeners.
+- [x] Confirm a successful search replaces both the previous destination's photo and metadata. Keep lookup tied to the response being rendered; no detached update may paint an earlier city's photo over a later search.
 
 Exit: searching an uncached Paris renders a Paris photograph beside Paris weather immediately, and repeated city changes retain the correct association.
 
@@ -127,12 +127,12 @@ Exit: searching an uncached Paris renders a Paris photograph beside Paris weathe
 
 Files: `cmd/design-preview/` fixtures/tests; `tasks/redesign/checks/`; new evidence directory `tasks/artifacts/destination-photos/`; `README.md`, `docs/architecture.md`, `tasks/redesign/preview.md` and `CHANGELOG.md`.
 
-- [ ] Add deterministic Paris and another destination, an attributed photo result, no-photo response, provider failure and broken-image case. Test source calls with a counting stub; fixture tests must not call Wikimedia.
-- [ ] Update existing assumptions that every non-Lisbon city has an empty hero. Preserve a deliberately missing-photo scenario.
-- [ ] Exercise initial HTML, HTMX search, shared reload and browser Back/Forward. Test Lisbon → Paris → another city, a rapid search sequence, and an image failure at 375 px and 1440 px.
-- [ ] In the browser, assert the actual image loaded (`complete` and `naturalWidth > 0`), city identity, credits, stable layout and no horizontal overflow. A valid `src` alone is insufficient.
-- [ ] Run live cold lookups for Paris, Porto, Tokyo and a smaller town. Verify selected identity, image download and credit/license links; repeat with cache disabled/empty. Record failures honestly rather than counting fixture success as provider coverage.
-- [ ] Document the live lookup and TTL/failure behavior. Update the old local-manifest-only guidance, including the presentation-data section of `docs/design.md`. Link new verification separately from the historical September repair evidence.
+- [x] Add deterministic Paris and another destination, an attributed photo result, no-photo response, provider failure and broken-image case. Test source calls with a counting stub; fixture tests must not call Wikimedia.
+- [x] Update existing assumptions that every non-Lisbon city has an empty hero. Preserve a deliberately missing-photo scenario.
+- [x] Exercise initial HTML, HTMX search, shared reload and browser Back/Forward. Test Lisbon → Paris → another city, a rapid search sequence, and an image failure at 375 px and 1440 px.
+- [x] In the browser, assert the actual image loaded (`complete` and `naturalWidth > 0`), city identity, credits, stable layout and no horizontal overflow. A valid `src` alone is insufficient.
+- [x] Run live cold lookups for Paris, Porto, Tokyo and a smaller town. Verify selected identity, image download and credit/license links; repeat with cache disabled/empty. Record failures honestly rather than counting fixture success as provider coverage.
+- [x] Document the live lookup and TTL/failure behavior. Update the old local-manifest-only guidance, including the presentation-data section of `docs/design.md`. Link new verification separately from the historical September repair evidence.
 
 Exit: reproducible evidence covers both live discovery and UI behavior, with any provider coverage limits recorded.
 

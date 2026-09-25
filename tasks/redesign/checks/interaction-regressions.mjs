@@ -1,4 +1,4 @@
-// Run the default design preview (six Lisbon videos; empty Porto) and an isolated Chromium.
+// Run the default design preview (six Lisbon videos; Porto has a fixture photo and no videos) and an isolated Chromium.
 // HTMX_PATH is the exact pinned local script; external requests are blocked (no playback proof).
 // PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 HTMX_PATH=/tmp/htmx.js node <this file>
 // For negative-control runs, PLANNER_PATH and DISCOVERY_PATH can supply local JS variants.
@@ -180,11 +180,23 @@ try {
   await until('document.querySelector(".destination-title").textContent.trim() === "Porto"');
   assert.equal(await evaluate('document.querySelectorAll("[data-video-activate]").length'), 0);
   assert.match(await evaluate('document.querySelector(".video-note").textContent'), /No travel videos/);
+  await until('document.querySelector(".destination-image")?.complete');
+  assert.match(await evaluate('document.querySelector(".destination-image").src'), /\/fixture-photos\/porto\.png$/, 'Porto swaps in its fixture photo');
+  assert.ok(await evaluate('document.querySelector(".destination-image").naturalWidth') > 0);
+  assert.equal(await evaluate('document.querySelector(".guide-card").dataset.guideState'), 'reviewed', 'Porto has a reviewed guide');
+  assert.match(await evaluate('document.querySelector(".guide-title").textContent'), /About Porto/);
+  assert.equal(await evaluate('document.querySelectorAll(".guide-card").length'), 1, 'One guide card after the swap');
+  assert.equal(await evaluate('document.querySelector("#overview .guide-card") !== null'), true, 'The guide sits in the overview section');
   await evaluate(`document.querySelector('#city_name').value = 'Coimbra'; document.querySelector('#destination-search').requestSubmit()`);
   await until('document.querySelector(".destination-title").textContent.trim() === "Coimbra"');
   assert.equal(await evaluate('document.querySelector(".trip-form").elements.city.value'), 'Coimbra');
   assert.equal(await evaluate('document.querySelectorAll(".itinerary-day").length'), 0);
   assert.equal(await evaluate('document.querySelectorAll(".stay-item").length'), 0);
+  assert.equal(await evaluate('document.querySelector(".destination-photo").dataset.photoState'), 'unavailable', 'Coimbra has no photo');
+  assert.equal(await evaluate('document.querySelectorAll(".destination-image").length'), 0, 'No previous photo remains');
+  assert.equal(await evaluate('document.querySelector(".guide-card").dataset.guideState'), 'missing', 'Coimbra has no reviewed guide');
+  assert.match(await evaluate('document.querySelector(".guide-missing").textContent'), /reviewed guide for Coimbra/);
+  assert.equal(await evaluate('document.querySelector(".guide-source")'), null, "Porto's attribution does not remain");
   assert.equal(await evaluate(`(() => {
     const button = document.querySelector('[data-video-activate]');
     const original = button.dataset.videoId;

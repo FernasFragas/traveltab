@@ -16,7 +16,7 @@ When no city is given, the page opens on Lisbon, Portugal.
 
 This started as a RESTful JSON weather API, a personal project for practising Go. It grew into a server-rendered web app that combines several third-party APIs into one page.
 
-The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Next up is a live destination photo for every city.
+The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Every searched destination now gets a photograph looked up live on Wikimedia (see [destination photos](#destination-photos)); the [results](tasks/destination-photos-results.md) record what was verified.
 
 ## Tech stack
 
@@ -38,6 +38,8 @@ The redesigned interface and September 2026 repairs are implemented. [Verificati
 | Map            | Waze embed iframe                                                                          | No         |
 | Places to visit | [Wikipedia geosearch](https://www.mediawiki.org/wiki/API:Geosearch) + the [Wikidata entity API](https://www.wikidata.org/w/api.php): landmarks within 10 km, ranked by how many Wikipedia languages cover them | No |
 | Place photos   | [Wikimedia Commons](https://commons.wikimedia.org/)                                        | No         |
+| Destination photo | [Wikidata](https://www.wikidata.org/w/api.php) (city entity, coordinates, country) + [Wikimedia Commons](https://commons.wikimedia.org/) (image, author, license), looked up on every search | No |
+| City guide     | Reviewed intros adapted from [Wikivoyage](https://en.wikivoyage.org/) (CC BY-SA 4.0), compiled into the binary; generated offline, never at request time | No         |
 | Trip forecast  | [Open-Meteo Forecast API](https://open-meteo.com/en/docs): daily rain in mm, 16 days       | No         |
 | Places to stay | [OpenStreetMap](https://www.openstreetmap.org/) via the [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API) | No |
 | Booking hand-off | A plain Booking.com search link with your dates                                          | No         |
@@ -55,7 +57,10 @@ Browser ──HTMX GET /process-form/?city_name=…──▶ Fiber server
                                                    │
                         1. OpenWeather: geocode city + current weather
                         2. Open-Meteo: wave height at those coordinates
-                        3. SQLite cache lookup by city
+                        3. Destination photo lookup starts (Wikidata + Commons, via
+                           its own cache), in parallel with step 4
+                        4. SQLite cache lookup by city, accepted only when its country and
+                           coordinates match step 1 (Paris, FR is not Paris, TX)
                              ├─ hit  → use the cached page data
                              └─ miss → YouTube videos
                                        → saved to SQLite in the background
@@ -66,6 +71,31 @@ Browser ◀──── HTML fragment (content_fragment) ────┘
 - A full page load (`GET /`) renders `index.go.tpl`.
 - The search form uses HTMX. When a request has the `HX-Request: true` header, the server returns only `content_fragment.go.tpl`, and HTMX swaps it into `#content-area` without reloading the page. The header, footer, and mobile navigation remain in place; failed searches display an error without clearing the destination.
 - Each provider is wrapped in a small generic interface (`Reporter[T]` / `ReporterProvider[T]` in `internal/application/reporters.go`). The server depends only on these interfaces, so you can swap or mock a provider without changing the handlers.
+
+## Destination photos
+
+Every successful search shows a photograph of the resolved destination beside its weather, on the
+initial page, in the HTMX fragment and on shared `/trip/:slug` pages. The lookup is keyless and
+runs live in the request that needs it:
+
+1. The weather step resolves the destination's name, ISO country code and coordinates.
+2. Lisbon keeps its verified local photo (`presentation_assets/manifest.json`). Everything else
+   goes to the photo source, a cache in front of the Wikimedia adapter.
+3. The adapter searches Wikidata for entities with that name (or alias, in any language), and
+   accepts one only if it is a populated place within 25 km of the coordinates and in the same
+   country. Two equally plausible entities far apart are refused as ambiguous, and a nearby-article
+   search covers namesakes the name search ranks too low. At most five entities and three images
+   are examined, within a four-second deadline.
+4. Commons supplies a 1280 px thumbnail, its author, license and file page. Flags, logos, maps,
+   non-bitmap, portrait, tiny, non-free or unattributed files are rejected, and the page shows the
+   credit and license with the photo. Provider HTML is reduced to plain text and every URL checked.
+5. The page shows the photo, or an explicit "Photo unavailable" state if the lookup found none,
+   failed, or the image itself fails to load. Weather, planning and search never depend on it.
+
+**Cache:** a photo's metadata is kept 30 days per name, country and coordinates (rounded to
+3 decimals) in `source_cache`, and refreshed live when it expires; an old photo is kept if the
+refresh fails or finds nothing. "No photo found" is kept for one hour. Errors are never cached.
+Only metadata is cached: the browser loads the image from Commons.
 
 ## How the planner works
 
@@ -133,13 +163,13 @@ When something is unavailable, the page degrades instead of failing:
 │   ├── design-preview/    # Credential-free redesign fixture server
 │   ├── loadtest-server/   # Fixture-backed load-test entry point
 │   ├── placetypes/        # Offline place-type generator flags and entry point
-│   └── guides/            # Offline AI city-intro generator (see "City intros" below)
+│   └── guides/            # Offline AI city-intro generator (see "City guides" below)
 ├── internal/
 │   ├── application/      # Report services, shared data, trip service and storage interfaces
 │   ├── planner/          # Ranking, grouping, weather scheduling, geo helpers and stays
 │   │   └── testdata/      # Recorded city acceptance fixtures
 │   ├── placetypes/       # Offline type classification and generation
-│   ├── guides/           # Wikivoyage + Ollama city-intro generation (used only by cmd/guides)
+│   ├── guides/           # Wikivoyage + Ollama city-intro generation, and the reviewed-guide book the site reads
 │   ├── config/           # Environment and .env loading
 │   └── adapters/
 │       ├── api/          # External HTTP providers and their test fixtures
@@ -147,7 +177,7 @@ When something is unavailable, the page degrades instead of failing:
 │       └── sqlite/       # SQLite store, compressed city/source caches and visit queries
 ├── views/                # Go HTML templates (*.go.tpl)
 ├── public/                # Styles, scripts, and local destination imagery
-├── guides/                # Generated city intros (guides.json) — not read by the app yet, see below
+├── guides/                # Reviewed city intros (guides.json), embedded in the web binary; see below
 ├── Dockerfile            # Multi-stage build (CGO enabled for SQLite)
 └── fly.toml              # Fly.io app configuration
 ```
@@ -225,26 +255,40 @@ Opt-in extras:
 
 | Command | What it does |
 |---|---|
-| `LIVE_API_TESTS=1 go test -run Live ./internal/adapters/api/` | Calls the real Wikimedia, Open-Meteo and Overpass APIs |
+| `LIVE_API_TESTS=1 go test -run Live ./internal/adapters/api/` | Calls the real Wikimedia, Open-Meteo and Overpass APIs, including the destination photo lookup (`LIVE_RUNS=3` repeats each city to time it) |
+| `LIVE_API_TESTS=1 go test -run PhotoCacheLive ./internal/adapters/sqlite/` | Cold and warm destination photo lookups through an empty SQLite cache |
 | `RECORD_FIXTURES=1 go test -run Cities ./internal/planner/` | Re-records the Lisbon, Tavira and Kyoto fixtures |
 | `go run ./cmd/placetypes` | Regenerates `internal/planner/placetypes_gen.go` from 20 cities (~9 minutes) |
-| `go run ./cmd/guides` | Regenerates `guides/guides.json` from the same 20 cities; needs a local Ollama server |
+| `go run ./cmd/guides` | Regenerates `guides/guides.json` from the same 20 cities; needs a local Ollama server. A regenerated entry is unreviewed, so it is not shown until someone reviews it |
 
 **Not automatically checked:** the generated `.ics`/`.kml` files are validated structurally in tests (and by hand with independent libraries), but importing them into a real Google Calendar, Apple Calendar, Outlook or Google My Maps has not been done. Try it before relying on it for a real trip.
 
-### City intros (offline, not yet shown on the site)
+### City guides
+
+The destination page shows a short **reviewed** intro for a city, adapted from
+[Wikivoyage](https://en.wikivoyage.org/) under CC BY-SA 4.0, with its article, revision, authors and
+license linked. A city without a reviewed guide gets a plain "no reviewed guide yet" card with a
+Wikivoyage search link, never a generated or unreviewed text.
 
 ```bash
 go run ./cmd/guides
 ```
 
-Fetches each starter city's Wikivoyage page, asks a local [Ollama](https://ollama.com/) model
-(`mistral:7b` by default, needs `ollama serve` running) for a short intro, rejects any answer
-naming a place the source text doesn't mention, and writes the result to `guides/guides.json`.
-This is a **generate-only, human-in-the-loop step by design**: the file is meant to be read and
-reviewed before anything wires it into the page, so the HTTP server and templates do not read it
-yet. `-only=Lisbon,Porto` limits a run to specific cities; see `go run ./cmd/guides -h` for the
-rest.
+That command is the offline half. It fetches each starter city's Wikivoyage page, asks a local
+[Ollama](https://ollama.com/) model (`mistral:7b` by default, needs `ollama serve` running) for a
+short intro, rejects any answer naming a place the source text doesn't mention, and writes the
+result to `guides/guides.json`. `-only=Lisbon,Porto` limits a run to specific cities; see
+`go run ./cmd/guides -h` for the rest.
+
+- **Nothing generated is published.** The site shows only an entry marked `"reviewed": true`, with
+  a Wikivoyage article title, a revision, a review date and a non-empty intro. The generator never
+  sets that flag, so a regenerated entry stays hidden until a person reviews it.
+- **Serving a request never calls Ollama or the network.** `guides/guides.json` is compiled into
+  the web binary and looked up in memory by city *and* country, using the same `city-country`
+  slug as `/trip/:slug`.
+- All 20 starter cities were reviewed on 2026-09-24; the method, per-city findings and limits are
+  in [tasks/guides-review.md](tasks/guides-review.md), and the integration results in
+  [tasks/guides-results.md](tasks/guides-results.md).
 
 ### Load testing
 
@@ -272,13 +316,15 @@ Visit the site in a browser, then open the stats URL to verify recording.
 - [Design reference](docs/design.md): visual target, template contracts, and data rules.
 - [Design preview](tasks/redesign/preview.md): deterministic fixtures and reproducible HTTP/browser checks.
 - [Verification results](tasks/project-fix-results.md): current test and browser evidence, and remaining limits.
-- [Destination photo plan](tasks/destination-photos-plan.md): **next feature**, a live city-photo lookup for every search.
+- [Destination photos](tasks/destination-photos-plan.md): the plan, and the [results](tasks/destination-photos-results.md) with live samples, latency and remaining limits.
+- [City guides](tasks/guides-review.md): the review of every intro against Wikivoyage, and the [integration results](tasks/guides-results.md).
 - [Load testing](loadtests/README.md): profiles and recorded measurements.
 
 ## Credits
 
 Place data from [Wikipedia](https://www.wikipedia.org/) and [Wikidata](https://www.wikidata.org/) ·
 photos from [Wikimedia Commons](https://commons.wikimedia.org/), each with its own licence ·
+city guides adapted from [Wikivoyage](https://en.wikivoyage.org/) (CC BY-SA 4.0), each with its article, revision and authors linked ·
 weather from [Open-Meteo](https://open-meteo.com/) (CC BY 4.0) ·
 places to stay from [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors (ODbL).
 

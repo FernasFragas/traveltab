@@ -1,0 +1,256 @@
+{
+  "browser": "Chrome/153.0.8010.53",
+  "base": "http://127.0.0.1:18093",
+  "results": [
+    {
+      "width": 1440,
+      "query": "Paris",
+      "expected": "Paris/fr",
+      "searchMs": 1593,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/1280px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Paris",
+      "naturalWidth": 1280,
+      "naturalHeight": 800,
+      "credit": "Photo: Yann Caradec from Paris, France · CC BY-SA 2.0",
+      "links": [
+        {
+          "text": "Photo: Yann Caradec from Paris, France",
+          "href": "https://commons.wikimedia.org/wiki/File:La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques,_Paris_ao%C3%BBt_2014_%282%29.jpg"
+        },
+        {
+          "text": "CC BY-SA 2.0",
+          "href": "https://creativecommons.org/licenses/by-sa/2.0"
+        }
+      ],
+      "overflow": 1440
+    },
+    {
+      "width": 1440,
+      "query": "Paris, Texas",
+      "expected": "Paris/us",
+      "searchMs": 1699,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Main_Street_at_The_Plaza_Paris_Texas_DSC_0620_ad.jpg/1280px-Main_Street_at_The_Plaza_Paris_Texas_DSC_0620_ad.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Paris",
+      "naturalWidth": 1280,
+      "naturalHeight": 857,
+      "credit": "Photo: Adavyd · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Adavyd",
+          "href": "https://commons.wikimedia.org/wiki/File:Main_Street_at_The_Plaza_Paris_Texas_DSC_0620_ad.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 1440
+    },
+    {
+      "width": 1440,
+      "query": "Porto, Portugal",
+      "expected": "Porto/pt",
+      "searchMs": 1245,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/O_Porto_%28visto_da_Ponte_Dom_Luis_I%29.jpg/1280px-O_Porto_%28visto_da_Ponte_Dom_Luis_I%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Porto",
+      "naturalWidth": 1280,
+      "naturalHeight": 857,
+      "credit": "Photo: Rititaneves · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Rititaneves",
+          "href": "https://commons.wikimedia.org/wiki/File:O_Porto_%28visto_da_Ponte_Dom_Luis_I%29.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 1440
+    },
+    {
+      "width": 1440,
+      "query": "Tokyo",
+      "expected": "Tokyo/jp",
+      "searchMs": 1686,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dc/Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg/1280px-Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Tokyo",
+      "naturalWidth": 1280,
+      "naturalHeight": 699,
+      "credit": "Photo: Morio · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Morio",
+          "href": "https://commons.wikimedia.org/wiki/File:Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 1440
+    },
+    {
+      "width": 1440,
+      "query": "Tavira, Portugal",
+      "expected": "Tavira/pt",
+      "searchMs": 754,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Tavira_-_Pra%C3%A7a_da_Rep%C3%BAblica.jpg/1280px-Tavira_-_Pra%C3%A7a_da_Rep%C3%BAblica.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Tavira",
+      "naturalWidth": 1280,
+      "naturalHeight": 854,
+      "credit": "Photo: Digitalsignal · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Digitalsignal",
+          "href": "https://commons.wikimedia.org/wiki/File:Tavira_-_Pra%C3%A7a_da_Rep%C3%BAblica.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 1440
+    },
+    {
+      "width": 375,
+      "query": "Paris",
+      "expected": "Paris/fr",
+      "searchMs": 1149,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/1280px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Paris",
+      "naturalWidth": 1280,
+      "naturalHeight": 800,
+      "credit": "Photo: Yann Caradec from Paris, France · CC BY-SA 2.0",
+      "links": [
+        {
+          "text": "Photo: Yann Caradec from Paris, France",
+          "href": "https://commons.wikimedia.org/wiki/File:La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques,_Paris_ao%C3%BBt_2014_%282%29.jpg"
+        },
+        {
+          "text": "CC BY-SA 2.0",
+          "href": "https://creativecommons.org/licenses/by-sa/2.0"
+        }
+      ],
+      "overflow": 375
+    },
+    {
+      "width": 375,
+      "query": "Paris, Texas",
+      "expected": "Paris/us",
+      "searchMs": 1108,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Main_Street_at_The_Plaza_Paris_Texas_DSC_0620_ad.jpg/1280px-Main_Street_at_The_Plaza_Paris_Texas_DSC_0620_ad.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Paris",
+      "naturalWidth": 1280,
+      "naturalHeight": 857,
+      "credit": "Photo: Adavyd · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Adavyd",
+          "href": "https://commons.wikimedia.org/wiki/File:Main_Street_at_The_Plaza_Paris_Texas_DSC_0620_ad.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 375
+    },
+    {
+      "width": 375,
+      "query": "Porto, Portugal",
+      "expected": "Porto/pt",
+      "searchMs": 955,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/O_Porto_%28visto_da_Ponte_Dom_Luis_I%29.jpg/1280px-O_Porto_%28visto_da_Ponte_Dom_Luis_I%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Porto",
+      "naturalWidth": 1280,
+      "naturalHeight": 857,
+      "credit": "Photo: Rititaneves · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Rititaneves",
+          "href": "https://commons.wikimedia.org/wiki/File:O_Porto_%28visto_da_Ponte_Dom_Luis_I%29.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 375
+    },
+    {
+      "width": 375,
+      "query": "Tokyo",
+      "expected": "Tokyo/jp",
+      "searchMs": 997,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dc/Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg/1280px-Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Tokyo",
+      "naturalWidth": 1280,
+      "naturalHeight": 699,
+      "credit": "Photo: Morio · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Morio",
+          "href": "https://commons.wikimedia.org/wiki/File:Skyscrapers_of_Shinjuku_2009_January_%28revised%29.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 375
+    },
+    {
+      "width": 375,
+      "query": "Tavira, Portugal",
+      "expected": "Tavira/pt",
+      "searchMs": 767,
+      "swapped": true,
+      "imageLoaded": true,
+      "state": "ready",
+      "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Tavira_-_Pra%C3%A7a_da_Rep%C3%BAblica.jpg/1280px-Tavira_-_Pra%C3%A7a_da_Rep%C3%BAblica.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "alt": "View of Tavira",
+      "naturalWidth": 1280,
+      "naturalHeight": 854,
+      "credit": "Photo: Digitalsignal · CC BY-SA 3.0",
+      "links": [
+        {
+          "text": "Photo: Digitalsignal",
+          "href": "https://commons.wikimedia.org/wiki/File:Tavira_-_Pra%C3%A7a_da_Rep%C3%BAblica.jpg"
+        },
+        {
+          "text": "CC BY-SA 3.0",
+          "href": "https://creativecommons.org/licenses/by-sa/3.0"
+        }
+      ],
+      "overflow": 375
+    }
+  ]
+}

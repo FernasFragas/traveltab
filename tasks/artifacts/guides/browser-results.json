@@ -1,0 +1,885 @@
+{
+  "browser": "Chrome/153.0.8010.53",
+  "htmx": "1.9.11",
+  "base": "http://127.0.0.1:8087",
+  "fallbackBase": "http://127.0.0.1:8089",
+  "results": [
+    {
+      "width": 375,
+      "height": 812,
+      "steps": {
+        "lisbon": {
+          "title": "Lisbon",
+          "country": "pt",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Lisbon",
+          "paragraphs": [
+            "Lisbon (Portuguese: Lisboa) is the capital of Portugal, built on seven hills at the wide mouth of the Tagus (Tejo), where the river meets the Atlantic Ocean. It is known for its white limestone buildings, intimate alleyways and an easy-going charm.",
+            "The slopes are one of Lisbon's trademarks, so getting around can be a workout. The elegant squares and broad avenues of the lower town give way to the narrow, winding streets of districts such as Alfama and Bairro Alto, and old trams run alongside an efficient metro network. Most points of interest lie in a compact area around Praça do Comércio on the river, where the pedestrianised grid of Baixa begins; Baixa borders the historic quarters of Alfama, Chiado and Bairro Alto.",
+            "Greater Lisbon includes Sintra, a UNESCO World Heritage Site, and the seaside resorts of Estoril and Cascais. The climate is Subtropical-Mediterranean, with mild winters and very warm summers. The ocean makes the weather windy and fast-changing, so bring a jacket or umbrella in winter, spring and autumn."
+          ],
+          "attribution": "Adapted from Wikivoyage: Lisbon (revision 5364237), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Lisbon",
+              "href": "https://en.wikivoyage.org/wiki/Lisbon",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5364237",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5364237&title=Lisbon",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Lisbon",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "contrast": {
+          ".guide-eyebrow": 5.81,
+          ".guide-badge": 5.81,
+          ".guide-title": 15.63,
+          ".guide-paragraph": 15.63,
+          ".guide-source": 6.06,
+          ".guide-attribution a": 6.11
+        },
+        "paris": {
+          "title": "Paris",
+          "country": "fr",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Paris",
+          "paragraphs": [
+            "Paris, the cosmopolitan capital of France, has the reputation of being the most beautiful and romantic of all cities, and remains vastly influential in culture, art, fashion, food and design. It sits on the River Seine in north-central France, and about 2 million people live in the city proper, inside the Boulevard Périphérique. A large part of the city, including the banks of the Seine, is a UNESCO World Heritage Site, and its landmarks include the Eiffel Tower, the Arc de Triomphe, Notre-Dame de Paris, the Louvre, the Moulin Rouge and the Basilique du Sacré-Cœur.",
+            "The city is divided into 20 arrondissements, numbered from 1 to 20 in a clockwise spiral from the centre. The 12th and 16th arrondissements contain the large parks Bois de Vincennes and Bois de Boulogne. Tourist information centres and hotels provide free city and Métro maps.",
+            "Make realistic plans: there are so many attractions that visiting only the famous ones is time-consuming, and they are crowded during major holidays. Leave time for a calm stroll along the back streets, and save some attractions for your next visit."
+          ],
+          "attribution": "Adapted from Wikivoyage: Paris (revision 5354829), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Paris",
+              "href": "https://en.wikivoyage.org/wiki/Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5354829",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5354829&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "texas": {
+          "title": "Paris",
+          "country": "us",
+          "cards": 1,
+          "state": "missing",
+          "heading": "About Paris",
+          "paragraphs": [
+            "We don't have a reviewed guide for Paris yet. Guides appear here only after a person has checked them against their source."
+          ],
+          "attribution": null,
+          "review": null,
+          "links": [],
+          "searchLink": {
+            "href": "https://en.wikivoyage.org/w/index.php?search=Paris",
+            "text": "Search Wikivoyage for Paris",
+            "height": 44
+          },
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "porto": {
+          "title": "Porto",
+          "country": "pt",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Porto",
+          "paragraphs": [
+            "Porto is Portugal's second-largest city and the capital of the Northern region, a busy industrial and commercial centre. It is built on high ground overlooking the north side of the Douro estuary. Its historical centre was declared a UNESCO World Heritage Site in 1996, and the site has been inhabited since at least the 4th century BC.",
+            "The city is architecturally varied, with medieval and modern buildings side by side, and the ground is very uneven: hard on the feet, but pleasant to the eye. Across the Douro at Vila Nova de Gaia are the warehouses of well-known Port wine companies.",
+            "The Porto Metro, a modern light rail and subway system, crosses the centre and reaches surrounding municipalities. It is probably the most efficient way to get around, although some major areas of the city are not well served by it."
+          ],
+          "attribution": "Adapted from Wikivoyage: Porto (revision 5355253), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Porto",
+              "href": "https://en.wikivoyage.org/wiki/Porto",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5355253",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5355253&title=Porto",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Porto",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "coimbra": {
+          "title": "Coimbra",
+          "country": "pt",
+          "cards": 1,
+          "state": "missing",
+          "heading": "About Coimbra",
+          "paragraphs": [
+            "We don't have a reviewed guide for Coimbra yet. Guides appear here only after a person has checked them against their source."
+          ],
+          "attribution": null,
+          "review": null,
+          "links": [],
+          "searchLink": {
+            "href": "https://en.wikivoyage.org/w/index.php?search=Coimbra",
+            "text": "Search Wikivoyage for Coimbra",
+            "height": 44
+          },
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "missingContrast": {
+          ".guide-eyebrow": 5.81,
+          ".guide-title": 15.63,
+          ".guide-paragraph": 6.06,
+          ".guide-link": 6.11
+        },
+        "rapid": {
+          "observations": 10,
+          "settled": "Porto/pt"
+        },
+        "paris-fr": {
+          "title": "Paris",
+          "country": "fr",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Paris",
+          "paragraphs": [
+            "Paris, the cosmopolitan capital of France, has the reputation of being the most beautiful and romantic of all cities, and remains vastly influential in culture, art, fashion, food and design. It sits on the River Seine in north-central France, and about 2 million people live in the city proper, inside the Boulevard Périphérique. A large part of the city, including the banks of the Seine, is a UNESCO World Heritage Site, and its landmarks include the Eiffel Tower, the Arc de Triomphe, Notre-Dame de Paris, the Louvre, the Moulin Rouge and the Basilique du Sacré-Cœur.",
+            "The city is divided into 20 arrondissements, numbered from 1 to 20 in a clockwise spiral from the centre. The 12th and 16th arrondissements contain the large parks Bois de Vincennes and Bois de Boulogne. Tourist information centres and hotels provide free city and Métro maps.",
+            "Make realistic plans: there are so many attractions that visiting only the famous ones is time-consuming, and they are crowded during major holidays. Leave time for a calm stroll along the back streets, and save some attractions for your next visit."
+          ],
+          "attribution": "Adapted from Wikivoyage: Paris (revision 5354829), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Paris",
+              "href": "https://en.wikivoyage.org/wiki/Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5354829",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5354829&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "paris-us": {
+          "title": "Paris",
+          "country": "us",
+          "cards": 1,
+          "state": "missing",
+          "heading": "About Paris",
+          "paragraphs": [
+            "We don't have a reviewed guide for Paris yet. Guides appear here only after a person has checked them against their source."
+          ],
+          "attribution": null,
+          "review": null,
+          "links": [],
+          "searchLink": {
+            "href": "https://en.wikivoyage.org/w/index.php?search=Paris",
+            "text": "Search Wikivoyage for Paris",
+            "height": 44
+          },
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "longguide": {
+          "title": "Longguide",
+          "country": "pt",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Longguide",
+          "paragraphs": [
+            "FIXTURE ONLY. UnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenToken wider than a phone screen, followed by <b>markup characters</b> & an ampersand.",
+            "A second paragraph, so the spacing between paragraphs is visible."
+          ],
+          "attribution": "Adapted from Wikivoyage: A very long article title used to check that attribution wraps on narrow screens without overflowing (revision 1234567890123), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "A very long article title used to check that attribution wraps on narrow screens without overflowing",
+              "href": "https://en.wikivoyage.org/wiki/A_very_long_article_title_used_to_check_that_attribution_wraps_on_narrow_screens_without_overflowing",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 1234567890123",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=1234567890123&title=A+very+long+article+title+used+to+check+that+attribution+wraps+on+narrow+screens+without+overflowing",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=A+very+long+article+title+used+to+check+that+attribution+wraps+on+narrow+screens+without+overflowing",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 347,
+            "left": 14,
+            "right": 361
+          },
+          "overflow": 375,
+          "viewport": 375,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        }
+      }
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "steps": {
+        "lisbon": {
+          "title": "Lisbon",
+          "country": "pt",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Lisbon",
+          "paragraphs": [
+            "Lisbon (Portuguese: Lisboa) is the capital of Portugal, built on seven hills at the wide mouth of the Tagus (Tejo), where the river meets the Atlantic Ocean. It is known for its white limestone buildings, intimate alleyways and an easy-going charm.",
+            "The slopes are one of Lisbon's trademarks, so getting around can be a workout. The elegant squares and broad avenues of the lower town give way to the narrow, winding streets of districts such as Alfama and Bairro Alto, and old trams run alongside an efficient metro network. Most points of interest lie in a compact area around Praça do Comércio on the river, where the pedestrianised grid of Baixa begins; Baixa borders the historic quarters of Alfama, Chiado and Bairro Alto.",
+            "Greater Lisbon includes Sintra, a UNESCO World Heritage Site, and the seaside resorts of Estoril and Cascais. The climate is Subtropical-Mediterranean, with mild winters and very warm summers. The ocean makes the weather windy and fast-changing, so bring a jacket or umbrella in winter, spring and autumn."
+          ],
+          "attribution": "Adapted from Wikivoyage: Lisbon (revision 5364237), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Lisbon",
+              "href": "https://en.wikivoyage.org/wiki/Lisbon",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5364237",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5364237&title=Lisbon",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Lisbon",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "contrast": {
+          ".guide-eyebrow": 5.81,
+          ".guide-badge": 5.81,
+          ".guide-title": 15.63,
+          ".guide-paragraph": 15.63,
+          ".guide-source": 6.06,
+          ".guide-attribution a": 6.11
+        },
+        "paris": {
+          "title": "Paris",
+          "country": "fr",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Paris",
+          "paragraphs": [
+            "Paris, the cosmopolitan capital of France, has the reputation of being the most beautiful and romantic of all cities, and remains vastly influential in culture, art, fashion, food and design. It sits on the River Seine in north-central France, and about 2 million people live in the city proper, inside the Boulevard Périphérique. A large part of the city, including the banks of the Seine, is a UNESCO World Heritage Site, and its landmarks include the Eiffel Tower, the Arc de Triomphe, Notre-Dame de Paris, the Louvre, the Moulin Rouge and the Basilique du Sacré-Cœur.",
+            "The city is divided into 20 arrondissements, numbered from 1 to 20 in a clockwise spiral from the centre. The 12th and 16th arrondissements contain the large parks Bois de Vincennes and Bois de Boulogne. Tourist information centres and hotels provide free city and Métro maps.",
+            "Make realistic plans: there are so many attractions that visiting only the famous ones is time-consuming, and they are crowded during major holidays. Leave time for a calm stroll along the back streets, and save some attractions for your next visit."
+          ],
+          "attribution": "Adapted from Wikivoyage: Paris (revision 5354829), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Paris",
+              "href": "https://en.wikivoyage.org/wiki/Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5354829",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5354829&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "texas": {
+          "title": "Paris",
+          "country": "us",
+          "cards": 1,
+          "state": "missing",
+          "heading": "About Paris",
+          "paragraphs": [
+            "We don't have a reviewed guide for Paris yet. Guides appear here only after a person has checked them against their source."
+          ],
+          "attribution": null,
+          "review": null,
+          "links": [],
+          "searchLink": {
+            "href": "https://en.wikivoyage.org/w/index.php?search=Paris",
+            "text": "Search Wikivoyage for Paris",
+            "height": 44
+          },
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "porto": {
+          "title": "Porto",
+          "country": "pt",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Porto",
+          "paragraphs": [
+            "Porto is Portugal's second-largest city and the capital of the Northern region, a busy industrial and commercial centre. It is built on high ground overlooking the north side of the Douro estuary. Its historical centre was declared a UNESCO World Heritage Site in 1996, and the site has been inhabited since at least the 4th century BC.",
+            "The city is architecturally varied, with medieval and modern buildings side by side, and the ground is very uneven: hard on the feet, but pleasant to the eye. Across the Douro at Vila Nova de Gaia are the warehouses of well-known Port wine companies.",
+            "The Porto Metro, a modern light rail and subway system, crosses the centre and reaches surrounding municipalities. It is probably the most efficient way to get around, although some major areas of the city are not well served by it."
+          ],
+          "attribution": "Adapted from Wikivoyage: Porto (revision 5355253), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Porto",
+              "href": "https://en.wikivoyage.org/wiki/Porto",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5355253",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5355253&title=Porto",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Porto",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "coimbra": {
+          "title": "Coimbra",
+          "country": "pt",
+          "cards": 1,
+          "state": "missing",
+          "heading": "About Coimbra",
+          "paragraphs": [
+            "We don't have a reviewed guide for Coimbra yet. Guides appear here only after a person has checked them against their source."
+          ],
+          "attribution": null,
+          "review": null,
+          "links": [],
+          "searchLink": {
+            "href": "https://en.wikivoyage.org/w/index.php?search=Coimbra",
+            "text": "Search Wikivoyage for Coimbra",
+            "height": 44
+          },
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "missingContrast": {
+          ".guide-eyebrow": 5.81,
+          ".guide-title": 15.63,
+          ".guide-paragraph": 6.06,
+          ".guide-link": 6.11
+        },
+        "rapid": {
+          "observations": 9,
+          "settled": "Porto/pt"
+        },
+        "paris-fr": {
+          "title": "Paris",
+          "country": "fr",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Paris",
+          "paragraphs": [
+            "Paris, the cosmopolitan capital of France, has the reputation of being the most beautiful and romantic of all cities, and remains vastly influential in culture, art, fashion, food and design. It sits on the River Seine in north-central France, and about 2 million people live in the city proper, inside the Boulevard Périphérique. A large part of the city, including the banks of the Seine, is a UNESCO World Heritage Site, and its landmarks include the Eiffel Tower, the Arc de Triomphe, Notre-Dame de Paris, the Louvre, the Moulin Rouge and the Basilique du Sacré-Cœur.",
+            "The city is divided into 20 arrondissements, numbered from 1 to 20 in a clockwise spiral from the centre. The 12th and 16th arrondissements contain the large parks Bois de Vincennes and Bois de Boulogne. Tourist information centres and hotels provide free city and Métro maps.",
+            "Make realistic plans: there are so many attractions that visiting only the famous ones is time-consuming, and they are crowded during major holidays. Leave time for a calm stroll along the back streets, and save some attractions for your next visit."
+          ],
+          "attribution": "Adapted from Wikivoyage: Paris (revision 5354829), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "Paris",
+              "href": "https://en.wikivoyage.org/wiki/Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 5354829",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=5354829&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=Paris",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "paris-us": {
+          "title": "Paris",
+          "country": "us",
+          "cards": 1,
+          "state": "missing",
+          "heading": "About Paris",
+          "paragraphs": [
+            "We don't have a reviewed guide for Paris yet. Guides appear here only after a person has checked them against their source."
+          ],
+          "attribution": null,
+          "review": null,
+          "links": [],
+          "searchLink": {
+            "href": "https://en.wikivoyage.org/w/index.php?search=Paris",
+            "text": "Search Wikivoyage for Paris",
+            "height": 44
+          },
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        },
+        "longguide": {
+          "title": "Longguide",
+          "country": "pt",
+          "cards": 1,
+          "state": "reviewed",
+          "heading": "About Longguide",
+          "paragraphs": [
+            "FIXTURE ONLY. UnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenUnbrokenToken wider than a phone screen, followed by <b>markup characters</b> & an ampersand.",
+            "A second paragraph, so the spacing between paragraphs is visible."
+          ],
+          "attribution": "Adapted from Wikivoyage: A very long article title used to check that attribution wraps on narrow screens without overflowing (revision 1234567890123), by Wikivoyage contributors, licensed under CC BY-SA 4.0.",
+          "review": "Summarised and reworded. Checked against that revision on 2026-09-24.",
+          "links": [
+            {
+              "text": "A very long article title used to check that attribution wraps on narrow screens without overflowing",
+              "href": "https://en.wikivoyage.org/wiki/A_very_long_article_title_used_to_check_that_attribution_wraps_on_narrow_screens_without_overflowing",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "revision 1234567890123",
+              "href": "https://en.wikivoyage.org/w/index.php?oldid=1234567890123&title=A+very+long+article+title+used+to+check+that+attribution+wraps+on+narrow+screens+without+overflowing",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "Wikivoyage contributors",
+              "href": "https://en.wikivoyage.org/w/index.php?action=history&title=A+very+long+article+title+used+to+check+that+attribution+wraps+on+narrow+screens+without+overflowing",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            },
+            {
+              "text": "CC BY-SA 4.0",
+              "href": "https://creativecommons.org/licenses/by-sa/4.0/",
+              "target": "_blank",
+              "rel": "noopener noreferrer"
+            }
+          ],
+          "searchLink": null,
+          "inOverview": true,
+          "afterGrid": true,
+          "visible": true,
+          "box": {
+            "width": 1130,
+            "left": 155,
+            "right": 1285
+          },
+          "overflow": 1440,
+          "viewport": 1440,
+          "sections": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "tripCards": 1,
+          "planner": true,
+          "weather": true
+        }
+      }
+    },
+    {
+      "fallback": 375,
+      "state": "missing"
+    },
+    {
+      "fallback": 1440,
+      "state": "missing"
+    }
+  ],
+  "errors": []
+}

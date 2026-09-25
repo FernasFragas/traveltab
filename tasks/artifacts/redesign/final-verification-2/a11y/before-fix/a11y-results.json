@@ -1,0 +1,4402 @@
+{
+  "browser": "Chrome/154.0.8037.58",
+  "generated": "2026-09-25T11:01:15.596Z",
+  "axe": "4.10.2",
+  "results": [
+    {
+      "id": "contrast.text",
+      "status": "pass",
+      "detail": "3827 text/control-value pairs measured across 41 states; 0 distinct failing (see findings)"
+    },
+    {
+      "id": "contrast.ui-components-and-icons",
+      "status": "fail",
+      "detail": "1638 icon/component pairs; 5 distinct failing (see findings)",
+      "advisory": [
+        ".video-expand 1.26:1 (border 1.26, fill 1.1)",
+        ".itinerary-action 1.26:1 (border 1.26, fill 1.1)",
+        ".itinerary-directions 1.39:1 (border 1.39, fill 1)",
+        ".itinerary-day-summary 1.08:1 (border 0, fill 1.08)",
+        ".itinerary-day-marker 1.28:1 (border 1.28, fill 1.01)",
+        ".itinerary-chip 1.15:1 (border 0, fill 1.15)",
+        ".itinerary-stop-number 1.2:1 (border 1.15, fill 1.2)"
+      ]
+    },
+    {
+      "id": "structure.headings-lang-ids-refs",
+      "status": "pass",
+      "detail": "39 states: one h1, no skipped levels, lang=en, no duplicate ids, no dangling ARIA references, no positive tabindex"
+    },
+    {
+      "id": "landmarks-and-names@375",
+      "status": "pass",
+      "detail": "13 landmarks (banner:(unnamed), main:(unnamed), contentinfo:(unnamed), navigation:Quick section navigation, search:(unnamed), region:Destination and current weather, navigation:Destination sections, region:Overview, region:Your itinerary, region:Where to stay, region:Explore through video, navigation:Creator links, form:(unnamed)); every link, button, field, image and frame has a name"
+    },
+    {
+      "id": "axe-core@375",
+      "status": "pass",
+      "detail": "axe-core 4.10.2: 0 violations, 51 passes, 2 incomplete (color-contrast, frame-tested)"
+    },
+    {
+      "id": "landmarks-and-names@1440",
+      "status": "pass",
+      "detail": "13 landmarks (banner:(unnamed), main:(unnamed), contentinfo:(unnamed), navigation:Main navigation, search:(unnamed), region:Destination and current weather, navigation:Destination sections, region:Overview, region:Your itinerary, region:Where to stay, region:Explore through video, navigation:Creator links, form:(unnamed)); every link, button, field, image and frame has a name"
+    },
+    {
+      "id": "axe-core@1440",
+      "status": "pass",
+      "detail": "axe-core 4.10.2: 0 violations, 51 passes, 2 incomplete (color-contrast, frame-tested)"
+    },
+    {
+      "id": "focus-order-matches-visual@375",
+      "status": "limitation",
+      "detail": "1 jumps against the visual order: a.map-action \"View larger map\" -> input#trip-start.trip-input \"2026-09-26\"",
+      "limitation": "Below 900px the planner is shown before the map through CSS order (the design puts the form first on phones), while the DOM keeps the map first for the two-column desktop reading order. Reordering the DOM would only move the mismatch to desktop."
+    },
+    {
+      "id": "focus-visible@375",
+      "status": "fail",
+      "detail": "9 problems: a \"Photo: Qiqritiq\" focus indicator contrast 2.87:1 | a \"CC BY-SA 3.0\" focus indicator contrast 2.87:1 | iframe.map-embed \"\" focused off screen | iframe.map-embed \"\" is covered by other content when focused | iframe.map-embed \"\" shows no visible change on focus (0 px) | summary.itinerary-day-summary \"1 Day 1 · Sat, 26 Sep under 1 mm rain 3.\" shows no visible change on focus (1 px)"
+    },
+    {
+      "id": "focus-order-matches-visual@1440",
+      "status": "pass",
+      "detail": "no tab stop moves backwards up the page without moving to a later column"
+    },
+    {
+      "id": "focus-visible@1440",
+      "status": "fail",
+      "detail": "2 problems: iframe.map-embed \"\" shows no visible change on focus (0 px) | a \"Photo: Wikimedia Commons\" focus indicator contrast 2.08:1"
+    },
+    {
+      "id": "skip-link",
+      "status": "pass",
+      "detail": "first Tab lands on it at 8..53px from the top, text contrast 15.63:1; Enter focuses #overview with its top at 69px"
+    },
+    {
+      "id": "accordion-keyboard",
+      "status": "pass",
+      "detail": "Enter opens/closes, Space opens/closes ([true,false,true,false]); day 1 open by default, days independent ([true,false,false]); 3 summaries exposed with expanded=[true,false,false]; names [\"Day 1 · Sat, 26 Sep under 1 mm\",\"Day 2 · Sun, 27 Sep Rain · 12 \",\"Day 3 · Mon, 28 Sep 2 mm rain \"]"
+    },
+    {
+      "id": "video-expand-keyboard",
+      "status": "pass",
+      "detail": "Enter expands (aria-expanded=true, \"Show fewer videos\"), Space collapses (aria-expanded=false, \"View all videos\")"
+    },
+    {
+      "id": "live-regions",
+      "status": "pass",
+      "detail": "announcements observed in order: [\"Destination updated. Your overview is ready.\",\"Planning your trip…\",\"Your itinerary has been updated.\",\"Planning your trip…\",\"We could not plan your trip right now. Please try again in a moment.\",\"\",\"We could not load that destination. Check the city name and try again.\"]; regions [\"span#destination-search-spinner.tt-search-spinner[status]\",\"p#destination-search-error.tt-error[alert]\",\"p#destination-search-status.tt-visually-hidden[status]\",\"output#trip-end-value.trip-end[polite]\",\"span#trip-spinner.trip-spinner[status]\",\"p.trip-error[alert]\",\"p#trip-status.tt-visually-hidden[status]\"]",
+      "observed": [
+        [
+          "destination-search-status",
+          "Destination updated. Your overview is ready."
+        ],
+        [
+          "trip-status",
+          "Planning your trip…"
+        ],
+        [
+          "trip-status",
+          "Your itinerary has been updated."
+        ],
+        [
+          "trip-status",
+          "Planning your trip…"
+        ],
+        [
+          "inserted-alert",
+          "We could not plan your trip right now. Please try again in a moment."
+        ],
+        [
+          "destination-search-status",
+          ""
+        ],
+        [
+          "destination-search-error",
+          "We could not load that destination. Check the city name and try again."
+        ]
+      ]
+    },
+    {
+      "id": "reduced-motion",
+      "status": "pass",
+      "detail": "normal: longest transition 0.16s, longest animation 0.8s, scroll-behavior smooth; with prefers-reduced-motion: reduce: transition 0.00001s, animation 0.00001s, scroll-behavior auto"
+    },
+    {
+      "id": "zoom-200-and-reflow",
+      "status": "pass",
+      "detail": "no horizontal scroll or clipped text at 640px (1280px at 200%: scrollWidth 625), 720px (1440px at 200%: scrollWidth 705), 360px (1440px at 400% (360 CSS px): scrollWidth 345), 320px (1280px at 400% (WCAG 1.4.10, 320 CSS px): scrollWidth 305), 188px (375px at 200% (188 CSS px, below the 320px WCAG 1.4.10 reflow width: informational): scrollWidth 274)",
+      "rows": [
+        {
+          "name": "1280px at 200%",
+          "cssWidth": 640,
+          "scrollWidth": 625,
+          "innerWidth": 640,
+          "clipped": [],
+          "dpr": 2,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "1440px at 200%",
+          "cssWidth": 720,
+          "scrollWidth": 705,
+          "innerWidth": 720,
+          "clipped": [],
+          "dpr": 2,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "1440px at 400% (360 CSS px)",
+          "cssWidth": 360,
+          "scrollWidth": 345,
+          "innerWidth": 360,
+          "clipped": [],
+          "dpr": 4,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "1280px at 400% (WCAG 1.4.10, 320 CSS px)",
+          "cssWidth": 320,
+          "scrollWidth": 305,
+          "innerWidth": 320,
+          "clipped": [],
+          "dpr": 4,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "375px at 200% (188 CSS px, below the 320px WCAG 1.4.10 reflow width: informational)",
+          "cssWidth": 188,
+          "scrollWidth": 274,
+          "innerWidth": 188,
+          "clipped": [],
+          "dpr": 2,
+          "submitVisible": true,
+          "overflowing": [
+            "a. right=212",
+            "span. right=209",
+            "a. right=274",
+            "i.bi bi-play-btn right=229",
+            "span. right=271"
+          ]
+        }
+      ],
+      "informational": [
+        "375px at 200% (188 CSS px, below the 320px WCAG 1.4.10 reflow width: informational): scrollWidth 274 vs 188 (a. right=212, span. right=209, a. right=274, i.bi bi-play-btn right=229, span. right=271)"
+      ]
+    },
+    {
+      "id": "touch-targets",
+      "status": "fail",
+      "detail": "8 standalone targets under 44px: 375: a.tt-brand \"TravelTab home\" 147.5x30 | 375: input#city_name. \"\" 260x42 | 375: button.tt-search-submit \"Search destination\" 38x38 | 375: a.tt-brand.tt-footer-brand \"TravelTab\" 123.9x30 | 1440: a.tt-brand \"TravelTab home\" 165.1x33.6 | 1440: input#city_name. \"\" 253x39 | 1440: button.tt-search-submit \"Search destination\" 38x38 | 1440: a.tt-brand.tt-footer-brand \"TravelTab\" 97.9x24",
+      "inlineUnder24": [
+        "375: a. \"Lisbon\" 37.7x15 (inline in a sentence)",
+        "375: a. \"revision 5364237\" 98.9x15 (inline in a sentence)",
+        "375: a. \"Wikivoyage contributors\" 137.8x15 (inline in a sentence)",
+        "1440: a. \"Lisbon\" 37.7x15 (inline in a sentence)",
+        "1440: a. \"Wikivoyage contributors\" 137.8x15 (inline in a sentence)",
+        "1440: a. \"CC BY-SA 4.0\" 78.6x15 (inline in a sentence)"
+      ],
+      "creditsUnder44": [
+        "375: \"Photo: Wikimedia Commons\" 48.9x37",
+        "1440: \"Photo: Wikimedia Commons\" 132.9x12"
+      ],
+      "videoTitleUnder24": [
+        "375: 233x18.9",
+        "1440: 129.5x37.8",
+        "1440: 129.5x18.9"
+      ]
+    },
+    {
+      "id": "hover-states",
+      "status": "pass",
+      "detail": "15 hovered controls: lowest text ratio 5.53:1 (photo credits are measured on the overlay in the pixel pass)",
+      "rows": [
+        {
+          "selector": ".tt-header-navigation a",
+          "hover": true,
+          "ratio": 5.53,
+          "color": [
+            166,
+            65,
+            38
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".tt-section-navigation a",
+          "hover": true,
+          "ratio": 5.53,
+          "color": [
+            166,
+            65,
+            38
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".tt-brand",
+          "hover": true,
+          "ratio": 14.24,
+          "color": [
+            36,
+            34,
+            31
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".trip-submit",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            254,
+            253,
+            251
+          ],
+          "bg": [
+            134,
+            50,
+            30
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".itinerary-action",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".itinerary-directions",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".itinerary-day-summary",
+          "hover": true,
+          "ratio": 14.39,
+          "color": [
+            36,
+            34,
+            31
+          ],
+          "bg": [
+            249,
+            243,
+            235
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".stay-prices",
+          "hover": true,
+          "ratio": 8.42,
+          "color": [
+            254,
+            255,
+            254
+          ],
+          "bg": [
+            134,
+            50,
+            30
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".stay-website",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".video-title",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".video-watch",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".map-action",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".tt-footer-links a",
+          "hover": true,
+          "ratio": 5.53,
+          "color": [
+            166,
+            65,
+            38
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".guide-attribution a",
+          "hover": true,
+          "ratio": 8.3,
+          "color": [
+            134,
+            50,
+            30
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".destination-photo-credit a",
+          "hover": true,
+          "ratio": 8.46,
+          "color": [
+            254,
+            253,
+            251
+          ],
+          "bg": [
+            78.19999999999999,
+            75.6,
+            71.6
+          ],
+          "overPhoto": true
+        }
+      ]
+    },
+    {
+      "id": "current-section-not-colour-only",
+      "status": "fail",
+      "detail": "1440px .tt-header-navigation, 375px .tt-header-navigation: current link differs only by colour",
+      "rows": [
+        {
+          "width": 1440,
+          "nav": ".tt-header-navigation",
+          "nonColourCues": [],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "none",
+            "borderTop": "none"
+          },
+          "other": {
+            "color": "rgb(36, 34, 31)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "none",
+            "borderTop": "none"
+          }
+        },
+        {
+          "width": 1440,
+          "nav": ".tt-section-navigation",
+          "nonColourCues": [
+            "borderBottom"
+          ],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "2px solid rgb(166, 64, 39)",
+            "borderTop": "none"
+          },
+          "other": {
+            "color": "rgb(36, 34, 31)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "2px solid rgba(0, 0, 0, 0)",
+            "borderTop": "none"
+          }
+        },
+        {
+          "width": 375,
+          "nav": ".tt-header-navigation",
+          "nonColourCues": [],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "none",
+            "borderTop": "none"
+          },
+          "other": {
+            "color": "rgb(36, 34, 31)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "none",
+            "borderTop": "none"
+          }
+        },
+        {
+          "width": 375,
+          "nav": ".tt-section-navigation",
+          "nonColourCues": [
+            "borderBottom"
+          ],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "2px solid rgb(166, 64, 39)",
+            "borderTop": "none"
+          },
+          "other": {
+            "color": "rgb(36, 34, 31)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "2px solid rgba(0, 0, 0, 0)",
+            "borderTop": "none"
+          }
+        },
+        {
+          "width": 375,
+          "nav": ".tt-bottom-navigation",
+          "nonColourCues": [
+            "borderTop"
+          ],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "none",
+            "weight": "400",
+            "borderBottom": "none",
+            "borderTop": "2px solid rgb(166, 64, 39)"
+          },
+          "other": {
+            "color": "rgb(102, 97, 88)",
+            "decoration": "none",
+            "weight": "400",
+            "borderBottom": "none",
+            "borderTop": "2px solid rgba(0, 0, 0, 0)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-menu-keyboard",
+      "status": "pass",
+      "detail": "375px: closed (aria-expanded=false, hidden=true); Enter opens it (aria-expanded=true, label \"Close section menu\"), the next Tab reaches \"Overview\"; Escape closes it and returns focus to the menu button"
+    },
+    {
+      "id": "end-date-output-named",
+      "status": "fail",
+      "detail": "the \"Ends\" read-only date is exposed as \"status\" named \"\" (aria-labelledby=null)"
+    },
+    {
+      "id": "focus-after-plan-error",
+      "status": "pass",
+      "detail": "after a keyboard-submitted failing plan focus is on <body> (inside the form card: false); the next Tab reaches a. \"Lisbon\" (inside #overview: true)"
+    },
+    {
+      "id": "text-spacing",
+      "status": "pass",
+      "detail": "with line-height 1.5, letter-spacing .12em, word-spacing .16em and 2em paragraph spacing: no horizontal scroll or clipped text ([[375,375],[1440,1425]])"
+    },
+    {
+      "id": "js-exceptions",
+      "status": "pass",
+      "detail": "no uncaught JavaScript exceptions during the audit"
+    }
+  ],
+  "findings": [
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "icon",
+      "el": "i.bi.bi-sun.bi-sun",
+      "text": "bi bi-sun weather-icon",
+      "size": 32,
+      "weight": 400,
+      "required": 3,
+      "ratio": 2.48,
+      "fg": [
+        217,
+        139,
+        9
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false,
+      "area": "contrast"
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ],
+      "area": "contrast"
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ],
+      "area": "contrast"
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ],
+      "area": "contrast"
+    },
+    {
+      "label": "porto-photo@1440",
+      "width": 1440,
+      "kind": "icon",
+      "el": "i.bi.bi-cloud-sun.bi-cloud-sun",
+      "text": "bi bi-cloud-sun weather-icon",
+      "size": 32,
+      "weight": 400,
+      "required": 3,
+      "ratio": 2.48,
+      "fg": [
+        217,
+        139,
+        9
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false,
+      "area": "contrast"
+    },
+    {
+      "area": "focus-order",
+      "width": 375,
+      "detail": "a.map-action \"View larger map\" -> input#trip-start.trip-input \"2026-09-26\""
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "a \"Photo: Qiqritiq\" focus indicator contrast 2.87:1"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "a \"CC BY-SA 3.0\" focus indicator contrast 2.87:1"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "iframe.map-embed \"\" focused off screen"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "iframe.map-embed \"\" is covered by other content when focused"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "iframe.map-embed \"\" shows no visible change on focus (0 px)"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "summary.itinerary-day-summary \"1 Day 1 · Sat, 26 Sep under 1 mm rain 3.\" shows no visible change on focus (1 px)"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "a \"Photo: Wikimedia Commons\" is covered by other content when focused"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "a \"Photo: Wikimedia Commons\" shows no visible change on focus (0 px)"
+    },
+    {
+      "area": "focus",
+      "width": 375,
+      "detail": "a.tt-button.stay-prices \"Check prices\" is covered by other content when focused"
+    },
+    {
+      "area": "focus",
+      "width": 1440,
+      "detail": "iframe.map-embed \"\" shows no visible change on focus (0 px)"
+    },
+    {
+      "area": "focus",
+      "width": 1440,
+      "detail": "a \"Photo: Wikimedia Commons\" focus indicator contrast 2.08:1"
+    },
+    {
+      "area": "targets",
+      "detail": "375: a.tt-brand \"TravelTab home\" 147.5x30"
+    },
+    {
+      "area": "targets",
+      "detail": "375: input#city_name. \"\" 260x42"
+    },
+    {
+      "area": "targets",
+      "detail": "375: button.tt-search-submit \"Search destination\" 38x38"
+    },
+    {
+      "area": "targets",
+      "detail": "375: a.tt-brand.tt-footer-brand \"TravelTab\" 123.9x30"
+    },
+    {
+      "area": "targets",
+      "detail": "1440: a.tt-brand \"TravelTab home\" 165.1x33.6"
+    },
+    {
+      "area": "targets",
+      "detail": "1440: input#city_name. \"\" 253x39"
+    },
+    {
+      "area": "targets",
+      "detail": "1440: button.tt-search-submit \"Search destination\" 38x38"
+    },
+    {
+      "area": "targets",
+      "detail": "1440: a.tt-brand.tt-footer-brand \"TravelTab\" 97.9x24"
+    },
+    {
+      "area": "colour-only",
+      "width": 1440,
+      "detail": ".tt-header-navigation shows the current section by colour only"
+    },
+    {
+      "area": "colour-only",
+      "width": 375,
+      "detail": ".tt-header-navigation shows the current section by colour only"
+    },
+    {
+      "area": "names",
+      "detail": "#trip-end-value has accessible name \"\"; its visible label is \"Ends\""
+    }
+  ],
+  "shots": [
+    "lisbon-planned-5d-open@375.png",
+    "coimbra-no-photo-no-guide@375.png",
+    "brokenimage-failed@375.png",
+    "plan-error-500@375.png",
+    "lisbon-planned-5d-open@1440.png",
+    "coimbra-no-photo-no-guide@1440.png",
+    "brokenimage-failed@1440.png",
+    "plan-error-500@1440.png",
+    "worst-case-white-photos@375.png",
+    "worst-case-white-photos@1440.png",
+    "focus-375-focus-skip-link.png",
+    "focus-1440-focus-skip-link.png",
+    "zoom-200-1440.png",
+    "reflow-320.png",
+    "text-spacing-375.png"
+  ],
+  "contrastLowest": [
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-summary",
+      "required": 3,
+      "ratio": 1.08,
+      "border": 0,
+      "fill": 1.08,
+      "fg": [
+        249,
+        243,
+        235
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-summary",
+      "required": 3,
+      "ratio": 1.08,
+      "border": 0,
+      "fill": 1.08,
+      "fg": [
+        249,
+        243,
+        235
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-chip",
+      "required": 3,
+      "ratio": 1.15,
+      "border": 0,
+      "fill": 1.15,
+      "fg": [
+        235,
+        228,
+        212
+      ],
+      "bgLight": [
+        249,
+        243,
+        235
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-chip",
+      "required": 3,
+      "ratio": 1.15,
+      "border": 0,
+      "fill": 1.15,
+      "fg": [
+        235,
+        228,
+        212
+      ],
+      "bgLight": [
+        249,
+        243,
+        235
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-stop-number",
+      "required": 3,
+      "ratio": 1.2,
+      "border": 1.15,
+      "fill": 1.2,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        238,
+        232,
+        221
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-stop-number",
+      "required": 3,
+      "ratio": 1.2,
+      "border": 1.15,
+      "fill": 1.2,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        238,
+        232,
+        221
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-action",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "plan-error-500@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "plan-error-500@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "submit-disabled@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "submit-disabled@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-action",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "plan-error-500@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "plan-error-500@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "submit-disabled@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "submit-disabled@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".video-expand",
+      "required": 3,
+      "ratio": 1.26,
+      "border": 1.26,
+      "fill": 1.1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-marker",
+      "required": 3,
+      "ratio": 1.28,
+      "border": 1.28,
+      "fill": 1.01,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        249,
+        243,
+        235
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-marker",
+      "required": 3,
+      "ratio": 1.28,
+      "border": 1.28,
+      "fill": 1.01,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        249,
+        243,
+        235
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-directions",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "plan-error-500@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "plan-error-500@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "submit-disabled@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "submit-disabled@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-directions",
+      "required": 3,
+      "ratio": 1.39,
+      "border": 1.39,
+      "fill": 1,
+      "fg": [
+        222,
+        217,
+        205
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    }
+  ],
+  "pairCount": 5465,
+  "states": [
+    "lisbon-initial@375",
+    "lisbon-planned-5d-open@375",
+    "porto-photo@375",
+    "porto-planned@375",
+    "coimbra-no-photo-no-guide@375",
+    "brokenimage-failed@375",
+    "photoerror@375",
+    "paris-texas@375",
+    "longguide@375",
+    "plan-error-500@375",
+    "plan-error-400@375",
+    "search-error@375",
+    "submit-disabled@375",
+    "fallback-planned@375",
+    "forecast-uncertain-planned@375",
+    "stays-6-planned@375",
+    "videos-10-expanded@375",
+    "video-activated@375",
+    "mobile-menu-open@375",
+    "images-blocked-planned@375",
+    "lisbon-initial@1440",
+    "lisbon-planned-5d-open@1440",
+    "porto-photo@1440",
+    "porto-planned@1440",
+    "coimbra-no-photo-no-guide@1440",
+    "brokenimage-failed@1440",
+    "photoerror@1440",
+    "paris-texas@1440",
+    "longguide@1440",
+    "plan-error-500@1440",
+    "plan-error-400@1440",
+    "search-error@1440",
+    "submit-disabled@1440",
+    "fallback-planned@1440",
+    "forecast-uncertain-planned@1440",
+    "stays-6-planned@1440",
+    "videos-10-expanded@1440",
+    "video-activated@1440",
+    "images-blocked-planned@1440",
+    "worst-case-white-photos@375",
+    "worst-case-white-photos@1440"
+  ],
+  "axResults": {
+    "375": {
+      "landmarks": [
+        "banner:(unnamed)",
+        "main:(unnamed)",
+        "contentinfo:(unnamed)",
+        "navigation:Quick section navigation",
+        "search:(unnamed)",
+        "region:Destination and current weather",
+        "navigation:Destination sections",
+        "region:Overview",
+        "region:Your itinerary",
+        "region:Where to stay",
+        "region:Explore through video",
+        "navigation:Creator links",
+        "form:(unnamed)"
+      ],
+      "unnamed": [],
+      "nodes": 503,
+      "names": {
+        "0:button": "Open section menu",
+        "1:searchbox": "Search destination, including country",
+        "2:button": "Search destination",
+        "3:Iframe": "Live Waze map of Lisbon",
+        "4:button": "Show fewer videos",
+        "5:DisclosureTriangle": "Day 1 · Sat, 26 Sep under 1 mm rain 3.1 km walk",
+        "6:DisclosureTriangle": "Day 2 · Sun, 27 Sep Rain · 12 mm 4.1 km walk",
+        "7:DisclosureTriangle": "Day 3 · Mon, 28 Sep 2 mm rain Forecast less certain 5.1 km walk",
+        "8:button": "Generate plan",
+        "9:combobox": "Days",
+        "10:button": "Play Fixture travel film on this page",
+        "11:button": "Play Fixture neighborhood walk on this page",
+        "12:button": "Play Fixture food tour on this page",
+        "13:button": "Play Fixture museum tour on this page",
+        "14:button": "Show date picker Show date picker",
+        "15:button": "Play Fixture evening view on this page",
+        "16:button": "Play Fixture harbor tour on this page"
+      },
+      "fields": [
+        "searchbox:Search destination, including country",
+        "Date:Start",
+        "combobox:Days"
+      ],
+      "endOutput": {
+        "text": "Mon, 28 Sep",
+        "name": null
+      },
+      "axe": {
+        "version": "4.10.2",
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 7
+          },
+          {
+            "id": "frame-tested",
+            "nodes": 1
+          }
+        ],
+        "passes": 51
+      }
+    },
+    "1440": {
+      "landmarks": [
+        "banner:(unnamed)",
+        "main:(unnamed)",
+        "contentinfo:(unnamed)",
+        "navigation:Main navigation",
+        "search:(unnamed)",
+        "region:Destination and current weather",
+        "navigation:Destination sections",
+        "region:Overview",
+        "region:Your itinerary",
+        "region:Where to stay",
+        "region:Explore through video",
+        "navigation:Creator links",
+        "form:(unnamed)"
+      ],
+      "unnamed": [],
+      "nodes": 491,
+      "names": {
+        "0:searchbox": "Search destination, including country",
+        "1:button": "Search destination",
+        "2:Iframe": "Live Waze map of Lisbon",
+        "3:button": "Show fewer videos",
+        "4:DisclosureTriangle": "Day 1 · Sat, 26 Sep under 1 mm rain 3.1 km walk",
+        "5:DisclosureTriangle": "Day 2 · Sun, 27 Sep Rain · 12 mm 4.1 km walk",
+        "6:DisclosureTriangle": "Day 3 · Mon, 28 Sep 2 mm rain Forecast less certain 5.1 km walk",
+        "7:button": "Generate plan",
+        "8:combobox": "Days",
+        "9:button": "Play Fixture travel film on this page",
+        "10:button": "Play Fixture neighborhood walk on this page",
+        "11:button": "Play Fixture food tour on this page",
+        "12:button": "Play Fixture museum tour on this page",
+        "13:button": "Show date picker Show date picker",
+        "14:button": "Play Fixture evening view on this page",
+        "15:button": "Play Fixture harbor tour on this page"
+      },
+      "fields": [
+        "searchbox:Search destination, including country",
+        "Date:Start",
+        "combobox:Days"
+      ],
+      "endOutput": {
+        "text": "Mon, 28 Sep",
+        "name": null
+      },
+      "axe": {
+        "version": "4.10.2",
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 7
+          },
+          {
+            "id": "frame-tested",
+            "nodes": 1
+          }
+        ],
+        "passes": 51
+      }
+    }
+  },
+  "focusResults": {
+    "375": [
+      {
+        "tid": 1,
+        "el": "a.tt-skip-link",
+        "text": "Skip to trip overview",
+        "rect": {
+          "x": 12,
+          "y": 8,
+          "w": 167.234375,
+          "h": 45
+        },
+        "page": {
+          "x": 12,
+          "y": 8
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 8785,
+        "indicatorContrast": 15.63
+      },
+      {
+        "tid": 2,
+        "el": "a.tt-brand",
+        "text": "TravelTab home",
+        "rect": {
+          "x": 14,
+          "y": 21.59375,
+          "w": 147.515625,
+          "h": 30
+        },
+        "page": {
+          "x": 14,
+          "y": 21.59375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1200,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 3,
+        "el": "button.tt-menu-button.tt-button",
+        "text": "Open section menu",
+        "rect": {
+          "x": 317,
+          "y": 12,
+          "w": 44,
+          "h": 49.1875
+        },
+        "page": {
+          "x": 317,
+          "y": 12
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 682,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 4,
+        "el": "input#city_name",
+        "text": "",
+        "rect": {
+          "x": 49,
+          "y": 70.1875,
+          "w": 260,
+          "h": 42
+        },
+        "page": {
+          "x": 49,
+          "y": 70.1875
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1748,
+        "indicatorContrast": 15.63
+      },
+      {
+        "tid": 5,
+        "el": "button.tt-search-submit",
+        "text": "Search destination",
+        "rect": {
+          "x": 317,
+          "y": 72.1875,
+          "w": 38,
+          "h": 38
+        },
+        "page": {
+          "x": 317,
+          "y": 72.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 792,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 6,
+        "el": "a",
+        "text": "Photo: Qiqritiq",
+        "rect": {
+          "x": 196.296875,
+          "y": 131.1875,
+          "w": 74.203125,
+          "h": 14
+        },
+        "page": {
+          "x": 196.296875,
+          "y": 131.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 488,
+        "indicatorContrast": 2.87
+      },
+      {
+        "tid": 7,
+        "el": "a",
+        "text": "CC BY-SA 3.0",
+        "rect": {
+          "x": 279.859375,
+          "y": 131.1875,
+          "w": 72.140625,
+          "h": 14
+        },
+        "page": {
+          "x": 279.859375,
+          "y": 131.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 473,
+        "indicatorContrast": 2.87
+      },
+      {
+        "tid": 8,
+        "el": "a",
+        "text": "Overview",
+        "rect": {
+          "x": 14,
+          "y": 378.359375,
+          "w": 86.75,
+          "h": 52
+        },
+        "page": {
+          "x": 14,
+          "y": 378.359375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 966,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 9,
+        "el": "a",
+        "text": "Itinerary",
+        "rect": {
+          "x": 100.75,
+          "y": 378.359375,
+          "w": 86.75,
+          "h": 52
+        },
+        "page": {
+          "x": 100.75,
+          "y": 378.359375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 960,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 10,
+        "el": "a",
+        "text": "Stays",
+        "rect": {
+          "x": 187.5,
+          "y": 378.359375,
+          "w": 86.75,
+          "h": 52
+        },
+        "page": {
+          "x": 187.5,
+          "y": 378.359375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 960,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 11,
+        "el": "a",
+        "text": "Videos",
+        "rect": {
+          "x": 274.25,
+          "y": 378.359375,
+          "w": 86.75,
+          "h": 52
+        },
+        "page": {
+          "x": 274.25,
+          "y": 378.359375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 966,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 12,
+        "el": "iframe.map-embed",
+        "text": "",
+        "rect": {
+          "x": 15,
+          "y": 978.828125,
+          "w": 345,
+          "h": 150
+        },
+        "page": {
+          "x": 15,
+          "y": 978.828125
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": false,
+        "obscured": true,
+        "tabindex": null,
+        "focusVisible": false,
+        "focus": false,
+        "withinCard": false,
+        "changedPixels": 0,
+        "indicatorContrast": 1
+      },
+      {
+        "tid": 13,
+        "el": "a.map-attribution",
+        "text": "Map by Waze",
+        "rect": {
+          "x": 27,
+          "y": 418.828125,
+          "w": 76.9375,
+          "h": 44
+        },
+        "page": {
+          "x": 27,
+          "y": 1128.828125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 537,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 14,
+        "el": "a.map-action",
+        "text": "View larger map",
+        "rect": {
+          "x": 234,
+          "y": 418.828125,
+          "w": 114,
+          "h": 44
+        },
+        "page": {
+          "x": 234,
+          "y": 1128.828125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 648,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 15,
+        "el": "input#trip-start.trip-input",
+        "text": "2026-09-26",
+        "rect": {
+          "x": 31,
+          "y": 418.25,
+          "w": 313,
+          "h": 44
+        },
+        "page": {
+          "x": 31,
+          "y": 637.25
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": "rgba(166, 64, 39, 0.18) 0px 0px 0px 2px",
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 4699,
+        "indicatorContrast": 6.11,
+        "segments": 4
+      },
+      {
+        "tid": 16,
+        "el": "select#trip-days.trip-select",
+        "text": "1 2 3 4 5",
+        "rect": {
+          "x": 31,
+          "y": 587.046875,
+          "w": 313,
+          "h": 44
+        },
+        "page": {
+          "x": 31,
+          "y": 806.046875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": "rgba(166, 64, 39, 0.18) 0px 0px 0px 2px",
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 4408,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 17,
+        "el": "button.trip-submit",
+        "text": "Generate plan",
+        "rect": {
+          "x": 31,
+          "y": 639.046875,
+          "w": 313,
+          "h": 44
+        },
+        "page": {
+          "x": 31,
+          "y": 858.046875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 15023,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 18,
+        "el": "a",
+        "text": "Lisbon",
+        "rect": {
+          "x": 184.390625,
+          "y": 432.515625,
+          "w": 37.671875,
+          "h": 15
+        },
+        "page": {
+          "x": 184.390625,
+          "y": 1975.515625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 450,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 19,
+        "el": "a",
+        "text": "revision 5364237",
+        "rect": {
+          "x": 229.828125,
+          "y": 432.515625,
+          "w": 98.890625,
+          "h": 15
+        },
+        "page": {
+          "x": 229.828125,
+          "y": 1975.515625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 816,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 20,
+        "el": "a",
+        "text": "Wikivoyage contributors",
+        "rect": {
+          "x": 48.234375,
+          "y": 451.703125,
+          "w": 137.765625,
+          "h": 15
+        },
+        "page": {
+          "x": 48.234375,
+          "y": 1994.703125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1047,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 21,
+        "el": "a",
+        "text": "CC BY-SA 4.0",
+        "rect": {
+          "x": 31,
+          "y": 451.703125,
+          "w": 306.515625,
+          "h": 34.1875
+        },
+        "page": {
+          "x": 31,
+          "y": 1994.703125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 896,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 22,
+        "el": "a.itinerary-action",
+        "text": "Calendar export",
+        "rect": {
+          "x": 14,
+          "y": 631.34375,
+          "w": 147.9375,
+          "h": 44
+        },
+        "page": {
+          "x": 14,
+          "y": 2174.34375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1277,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 23,
+        "el": "a.itinerary-action",
+        "text": "Map export",
+        "rect": {
+          "x": 169.9375,
+          "y": 631.34375,
+          "w": 118.671875,
+          "h": 44
+        },
+        "page": {
+          "x": 169.9375,
+          "y": 2174.34375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1102,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 24,
+        "el": "summary.itinerary-day-summary",
+        "text": "1 Day 1 · Sat, 26 Sep under 1 mm rain 3.",
+        "rect": {
+          "x": 15,
+          "y": 688.34375,
+          "w": 345,
+          "h": 72.5
+        },
+        "page": {
+          "x": 15,
+          "y": 2231.34375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1,
+        "indicatorContrast": 1.05
+      },
+      {
+        "tid": 25,
+        "el": "a",
+        "text": "Photo: Wikimedia Commons",
+        "rect": {
+          "x": 53.0625,
+          "y": 775.34375,
+          "w": 48.9375,
+          "h": 37
+        },
+        "page": {
+          "x": 53.0625,
+          "y": 2340.34375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": true,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 0,
+        "indicatorContrast": 1
+      },
+      {
+        "tid": 26,
+        "el": "a.itinerary-directions",
+        "text": "Walking directions",
+        "rect": {
+          "x": 31,
+          "y": 418.984375,
+          "w": 313,
+          "h": 44
+        },
+        "page": {
+          "x": 31,
+          "y": 2688.984375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2266,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 27,
+        "el": "summary.itinerary-day-summary",
+        "text": "2 Day 2 · Sun, 27 Sep Rain · 12 mm 4.1 k",
+        "rect": {
+          "x": 15,
+          "y": 479.984375,
+          "w": 345,
+          "h": 72.5
+        },
+        "page": {
+          "x": 15,
+          "y": 2749.984375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2070,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 28,
+        "el": "summary.itinerary-day-summary",
+        "text": "3 Day 3 · Mon, 28 Sep 2 mm rain Forecast",
+        "rect": {
+          "x": 15,
+          "y": 553.484375,
+          "w": 345,
+          "h": 100.890625
+        },
+        "page": {
+          "x": 15,
+          "y": 2823.484375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1035,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 29,
+        "el": "a.tt-button.stay-prices",
+        "text": "Check prices",
+        "rect": {
+          "x": 14,
+          "y": 734.46875,
+          "w": 145,
+          "h": 44
+        },
+        "page": {
+          "x": 14,
+          "y": 3004.46875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": true,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 575,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 30,
+        "el": "a.stay-website",
+        "text": "Website",
+        "rect": {
+          "x": 119,
+          "y": 418.96875,
+          "w": 74.046875,
+          "h": 44
+        },
+        "page": {
+          "x": 119,
+          "y": 3131.96875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 840,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 31,
+        "el": "button.video-activate",
+        "text": "Play Fixture travel film on this page",
+        "rect": {
+          "x": 23,
+          "y": 415.75,
+          "w": 88,
+          "h": 49.5
+        },
+        "page": {
+          "x": 23,
+          "y": 3647.75
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 954,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 32,
+        "el": "a.video-title",
+        "text": "Fixture travel film",
+        "rect": {
+          "x": 119,
+          "y": 407.0625,
+          "w": 233,
+          "h": 18.890625
+        },
+        "page": {
+          "x": 119,
+          "y": 3639.0625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1644,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 33,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 119,
+          "y": 429.953125,
+          "w": 233,
+          "h": 44
+        },
+        "page": {
+          "x": 119,
+          "y": 3661.953125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1794,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 34,
+        "el": "button.video-activate",
+        "text": "Play Fixture neighborhood walk on this p",
+        "rect": {
+          "x": 23,
+          "y": 516.640625,
+          "w": 88,
+          "h": 49.5
+        },
+        "page": {
+          "x": 23,
+          "y": 3748.640625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 954,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 35,
+        "el": "a.video-title",
+        "text": "Fixture neighborhood walk",
+        "rect": {
+          "x": 119,
+          "y": 507.953125,
+          "w": 233,
+          "h": 18.890625
+        },
+        "page": {
+          "x": 119,
+          "y": 3739.953125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1644,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 36,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 119,
+          "y": 530.84375,
+          "w": 233,
+          "h": 44
+        },
+        "page": {
+          "x": 119,
+          "y": 3762.84375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1794,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 37,
+        "el": "button.video-activate",
+        "text": "Play Fixture food tour on this page",
+        "rect": {
+          "x": 23,
+          "y": 617.53125,
+          "w": 88,
+          "h": 49.5
+        },
+        "page": {
+          "x": 23,
+          "y": 3849.53125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 954,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 38,
+        "el": "a.video-title",
+        "text": "Fixture food tour",
+        "rect": {
+          "x": 119,
+          "y": 608.84375,
+          "w": 233,
+          "h": 18.890625
+        },
+        "page": {
+          "x": 119,
+          "y": 3840.84375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1644,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 39,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 119,
+          "y": 631.734375,
+          "w": 233,
+          "h": 44
+        },
+        "page": {
+          "x": 119,
+          "y": 3863.734375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1794,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 40,
+        "el": "button.video-activate",
+        "text": "Play Fixture museum tour on this page",
+        "rect": {
+          "x": 23,
+          "y": 718.421875,
+          "w": 88,
+          "h": 49.5
+        },
+        "page": {
+          "x": 23,
+          "y": 3950.421875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 504,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 41,
+        "el": "a.video-title",
+        "text": "Fixture museum tour",
+        "rect": {
+          "x": 119,
+          "y": 709.734375,
+          "w": 233,
+          "h": 18.890625
+        },
+        "page": {
+          "x": 119,
+          "y": 3941.734375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1644,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 42,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 119,
+          "y": 732.625,
+          "w": 233,
+          "h": 44
+        },
+        "page": {
+          "x": 119,
+          "y": 3964.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 849,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 43,
+        "el": "button.video-expand",
+        "text": "View all videos",
+        "rect": {
+          "x": 14,
+          "y": 484.625,
+          "w": 347,
+          "h": 44
+        },
+        "page": {
+          "x": 14,
+          "y": 4057.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2470,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 44,
+        "el": "a.tt-brand.tt-footer-brand",
+        "text": "TravelTab",
+        "rect": {
+          "x": 14,
+          "y": 565.625,
+          "w": 123.90625,
+          "h": 30
+        },
+        "page": {
+          "x": 14,
+          "y": 4138.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1056,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 45,
+        "el": "a",
+        "text": "GitHub (opens in new tab)",
+        "rect": {
+          "x": 14,
+          "y": 599.625,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 14,
+          "y": 4172.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 46,
+        "el": "a",
+        "text": "LinkedIn (opens in new tab)",
+        "rect": {
+          "x": 62,
+          "y": 599.625,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 62,
+          "y": 4172.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 47,
+        "el": "a",
+        "text": "Medium blog (opens in new tab)",
+        "rect": {
+          "x": 110,
+          "y": 599.625,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 110,
+          "y": 4172.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 48,
+        "el": "a",
+        "text": "Fernando's website (opens in new tab)",
+        "rect": {
+          "x": 158,
+          "y": 599.625,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 158,
+          "y": 4172.625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 49,
+        "el": "a",
+        "text": "Overview",
+        "rect": {
+          "x": 12,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 12,
+          "y": 4325
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 681,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 50,
+        "el": "a",
+        "text": "Itinerary",
+        "rect": {
+          "x": 100.75,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 100.75,
+          "y": 4325
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 681,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 51,
+        "el": "a",
+        "text": "Stays",
+        "rect": {
+          "x": 189.5,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 189.5,
+          "y": 4325
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 672,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 52,
+        "el": "a",
+        "text": "Videos",
+        "rect": {
+          "x": 278.25,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 278.25,
+          "y": 4325
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 681,
+        "indicatorContrast": 6.11
+      }
+    ],
+    "1440": [
+      {
+        "tid": 1,
+        "el": "a.tt-skip-link",
+        "text": "Skip to trip overview",
+        "rect": {
+          "x": 12,
+          "y": 8,
+          "w": 167.234375,
+          "h": 45
+        },
+        "page": {
+          "x": 12,
+          "y": 8
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 8823,
+        "indicatorContrast": 14.34
+      },
+      {
+        "tid": 2,
+        "el": "a.tt-brand",
+        "text": "TravelTab home",
+        "rect": {
+          "x": 147.5,
+          "y": 42.203125,
+          "w": 165.125,
+          "h": 33.59375
+        },
+        "page": {
+          "x": 147.5,
+          "y": 42.203125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1326,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 3,
+        "el": "a",
+        "text": "Overview",
+        "rect": {
+          "x": 336.625,
+          "y": 37,
+          "w": 70.453125,
+          "h": 44
+        },
+        "page": {
+          "x": 336.625,
+          "y": 37
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 816,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 4,
+        "el": "a",
+        "text": "Itinerary",
+        "rect": {
+          "x": 411.078125,
+          "y": 37,
+          "w": 63.953125,
+          "h": 44
+        },
+        "page": {
+          "x": 411.078125,
+          "y": 37
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 780,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 5,
+        "el": "a",
+        "text": "Stays",
+        "rect": {
+          "x": 479.03125,
+          "y": 37,
+          "w": 47.890625,
+          "h": 44
+        },
+        "page": {
+          "x": 479.03125,
+          "y": 37
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 684,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 6,
+        "el": "a",
+        "text": "Videos",
+        "rect": {
+          "x": 530.921875,
+          "y": 37,
+          "w": 55.71875,
+          "h": 44
+        },
+        "page": {
+          "x": 530.921875,
+          "y": 37
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 732,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 7,
+        "el": "input#city_name",
+        "text": "",
+        "rect": {
+          "x": 972.5,
+          "y": 39.5,
+          "w": 253,
+          "h": 39
+        },
+        "page": {
+          "x": 972.5,
+          "y": 39.5
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1711,
+        "indicatorContrast": 15.63
+      },
+      {
+        "tid": 8,
+        "el": "button.tt-search-submit",
+        "text": "Search destination",
+        "rect": {
+          "x": 1233.5,
+          "y": 40,
+          "w": 38,
+          "h": 38
+        },
+        "page": {
+          "x": 1233.5,
+          "y": 40
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 798,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 9,
+        "el": "a",
+        "text": "Photo: Qiqritiq",
+        "rect": {
+          "x": 624.859375,
+          "y": 313,
+          "w": 80.953125,
+          "h": 15
+        },
+        "page": {
+          "x": 624.859375,
+          "y": 313
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 613,
+        "indicatorContrast": 5.71
+      },
+      {
+        "tid": 10,
+        "el": "a",
+        "text": "CC BY-SA 3.0",
+        "rect": {
+          "x": 716.03125,
+          "y": 313,
+          "w": 78.703125,
+          "h": 15
+        },
+        "page": {
+          "x": 716.03125,
+          "y": 313
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 603,
+        "indicatorContrast": 5.02
+      },
+      {
+        "tid": 11,
+        "el": "a",
+        "text": "Overview",
+        "rect": {
+          "x": 498.234375,
+          "y": 335,
+          "w": 107,
+          "h": 52
+        },
+        "page": {
+          "x": 498.234375,
+          "y": 335
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1086,
+        "indicatorContrast": 6.08
+      },
+      {
+        "tid": 12,
+        "el": "a",
+        "text": "Itinerary",
+        "rect": {
+          "x": 621.234375,
+          "y": 335,
+          "w": 99.953125,
+          "h": 52
+        },
+        "page": {
+          "x": 621.234375,
+          "y": 335
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1044,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 13,
+        "el": "a",
+        "text": "Stays",
+        "rect": {
+          "x": 737.1875,
+          "y": 335,
+          "w": 82.546875,
+          "h": 52
+        },
+        "page": {
+          "x": 737.1875,
+          "y": 335
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 942,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 14,
+        "el": "a",
+        "text": "Videos",
+        "rect": {
+          "x": 835.734375,
+          "y": 335,
+          "w": 91.03125,
+          "h": 52
+        },
+        "page": {
+          "x": 835.734375,
+          "y": 335
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 990,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 15,
+        "el": "iframe.map-embed",
+        "text": "",
+        "rect": {
+          "x": 148.5,
+          "y": 476.890625,
+          "w": 555,
+          "h": 244.484375
+        },
+        "page": {
+          "x": 148.5,
+          "y": 476.890625
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": false,
+        "focus": false,
+        "withinCard": false,
+        "changedPixels": 0,
+        "indicatorContrast": 1
+      },
+      {
+        "tid": 16,
+        "el": "a.map-attribution",
+        "text": "Map by Waze",
+        "rect": {
+          "x": 160.5,
+          "y": 721.375,
+          "w": 76.9375,
+          "h": 44
+        },
+        "page": {
+          "x": 160.5,
+          "y": 721.375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 531,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 17,
+        "el": "a.map-action",
+        "text": "View larger map",
+        "rect": {
+          "x": 577.5,
+          "y": 721.375,
+          "w": 114,
+          "h": 44
+        },
+        "page": {
+          "x": 577.5,
+          "y": 721.375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 645,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 18,
+        "el": "input#trip-start.trip-input",
+        "text": "2026-09-26",
+        "rect": {
+          "x": 745.5,
+          "y": 591.1875,
+          "w": 163,
+          "h": 44
+        },
+        "page": {
+          "x": 745.5,
+          "y": 591.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": "rgba(166, 64, 39, 0.18) 0px 0px 0px 2px",
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2896,
+        "indicatorContrast": 6.11,
+        "segments": 4
+      },
+      {
+        "tid": 19,
+        "el": "select#trip-days.trip-select",
+        "text": "1 2 3 4 5",
+        "rect": {
+          "x": 1091.5,
+          "y": 611.984375,
+          "w": 161,
+          "h": 44
+        },
+        "page": {
+          "x": 1091.5,
+          "y": 611.984375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": "rgba(166, 64, 39, 0.18) 0px 0px 0px 2px",
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2584,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 20,
+        "el": "button.trip-submit",
+        "text": "Generate plan",
+        "rect": {
+          "x": 745.5,
+          "y": 667.984375,
+          "w": 507,
+          "h": 44
+        },
+        "page": {
+          "x": 745.5,
+          "y": 667.984375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 24305,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 21,
+        "el": "a",
+        "text": "Lisbon",
+        "rect": {
+          "x": 1150.890625,
+          "y": 882.0625,
+          "w": 37.671875,
+          "h": 15
+        },
+        "page": {
+          "x": 1150.890625,
+          "y": 882.0625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 450,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 22,
+        "el": "a",
+        "text": "revision 5364237",
+        "rect": {
+          "x": 997.5,
+          "y": 882.0625,
+          "w": 243.09375,
+          "h": 34.1875
+        },
+        "page": {
+          "x": 997.5,
+          "y": 882.0625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1022,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 23,
+        "el": "a",
+        "text": "Wikivoyage contributors",
+        "rect": {
+          "x": 1077.203125,
+          "y": 901.25,
+          "w": 137.765625,
+          "h": 15
+        },
+        "page": {
+          "x": 1077.203125,
+          "y": 901.25
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1047,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 24,
+        "el": "a",
+        "text": "CC BY-SA 4.0",
+        "rect": {
+          "x": 1084.734375,
+          "y": 920.4375,
+          "w": 78.59375,
+          "h": 15
+        },
+        "page": {
+          "x": 1084.734375,
+          "y": 920.4375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 684,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 25,
+        "el": "a.itinerary-action",
+        "text": "Calendar export",
+        "rect": {
+          "x": 1002.890625,
+          "y": 512.703125,
+          "w": 147.9375,
+          "h": 44
+        },
+        "page": {
+          "x": 1002.890625,
+          "y": 1282.703125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1276,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 26,
+        "el": "a.itinerary-action",
+        "text": "Map export",
+        "rect": {
+          "x": 1158.828125,
+          "y": 512.703125,
+          "w": 118.671875,
+          "h": 44
+        },
+        "page": {
+          "x": 1158.828125,
+          "y": 1282.703125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1102,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 27,
+        "el": "summary.itinerary-day-summary",
+        "text": "1 Day 1 · Sat, 26 Sep under 1 mm rain 3.",
+        "rect": {
+          "x": 148.5,
+          "y": 569.703125,
+          "w": 1128,
+          "h": 50
+        },
+        "page": {
+          "x": 148.5,
+          "y": 1339.703125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 252,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 28,
+        "el": "a",
+        "text": "Photo: Wikimedia Commons",
+        "rect": {
+          "x": 289.578125,
+          "y": 802.453125,
+          "w": 132.921875,
+          "h": 12
+        },
+        "page": {
+          "x": 289.578125,
+          "y": 1572.453125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 538,
+        "indicatorContrast": 2.08
+      },
+      {
+        "tid": 29,
+        "el": "a.itinerary-directions",
+        "text": "Walking directions",
+        "rect": {
+          "x": 164.5,
+          "y": 933.90625,
+          "w": 1096,
+          "h": 44
+        },
+        "page": {
+          "x": 164.5,
+          "y": 1703.90625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 6964,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 30,
+        "el": "summary.itinerary-day-summary",
+        "text": "2 Day 2 · Sun, 27 Sep Rain · 12 mm 4.1 k",
+        "rect": {
+          "x": 148.5,
+          "y": 949.90625,
+          "w": 1128,
+          "h": 50
+        },
+        "page": {
+          "x": 148.5,
+          "y": 1764.90625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 3384,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 31,
+        "el": "summary.itinerary-day-summary",
+        "text": "3 Day 3 · Mon, 28 Sep 2 mm rain Forecast",
+        "rect": {
+          "x": 148.5,
+          "y": 509.90625,
+          "w": 1128,
+          "h": 50
+        },
+        "page": {
+          "x": 148.5,
+          "y": 1815.90625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 3384,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 32,
+        "el": "a.tt-button.stay-prices",
+        "text": "Check prices",
+        "rect": {
+          "x": 1132.5,
+          "y": 586.84375,
+          "w": 145,
+          "h": 44
+        },
+        "page": {
+          "x": 1132.5,
+          "y": 1892.84375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1258,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 33,
+        "el": "a.stay-website",
+        "text": "Website",
+        "rect": {
+          "x": 276.5,
+          "y": 724.296875,
+          "w": 74.046875,
+          "h": 44
+        },
+        "page": {
+          "x": 276.5,
+          "y": 2030.296875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 840,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 34,
+        "el": "button.video-activate",
+        "text": "Play Fixture travel film on this page",
+        "rect": {
+          "x": 156.5,
+          "y": 682.1875,
+          "w": 118,
+          "h": 66.375
+        },
+        "page": {
+          "x": 156.5,
+          "y": 2344.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1242,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 35,
+        "el": "a.video-title",
+        "text": "Fixture travel film",
+        "rect": {
+          "x": 282.5,
+          "y": 684.1875,
+          "w": 129.5,
+          "h": 37.78125
+        },
+        "page": {
+          "x": 282.5,
+          "y": 2346.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1134,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 36,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 282.5,
+          "y": 744.859375,
+          "w": 129.5,
+          "h": 44
+        },
+        "page": {
+          "x": 282.5,
+          "y": 2406.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1170,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 37,
+        "el": "button.video-activate",
+        "text": "Play Fixture neighborhood walk on this p",
+        "rect": {
+          "x": 442,
+          "y": 682.1875,
+          "w": 118,
+          "h": 66.375
+        },
+        "page": {
+          "x": 442,
+          "y": 2344.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1242,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 38,
+        "el": "a.video-title",
+        "text": "Fixture neighborhood walk",
+        "rect": {
+          "x": 568,
+          "y": 684.1875,
+          "w": 129.5,
+          "h": 56.671875
+        },
+        "page": {
+          "x": 568,
+          "y": 2346.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1254,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 39,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 568,
+          "y": 744.859375,
+          "w": 129.5,
+          "h": 44
+        },
+        "page": {
+          "x": 568,
+          "y": 2406.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1176,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 40,
+        "el": "button.video-activate",
+        "text": "Play Fixture food tour on this page",
+        "rect": {
+          "x": 727.5,
+          "y": 682.1875,
+          "w": 118,
+          "h": 66.375
+        },
+        "page": {
+          "x": 727.5,
+          "y": 2344.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1242,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 41,
+        "el": "a.video-title",
+        "text": "Fixture food tour",
+        "rect": {
+          "x": 853.5,
+          "y": 684.1875,
+          "w": 129.5,
+          "h": 18.890625
+        },
+        "page": {
+          "x": 853.5,
+          "y": 2346.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1020,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 42,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 853.5,
+          "y": 744.859375,
+          "w": 129.5,
+          "h": 44
+        },
+        "page": {
+          "x": 853.5,
+          "y": 2406.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1170,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 43,
+        "el": "button.video-activate",
+        "text": "Play Fixture museum tour on this page",
+        "rect": {
+          "x": 1013,
+          "y": 682.1875,
+          "w": 118,
+          "h": 66.375
+        },
+        "page": {
+          "x": 1013,
+          "y": 2344.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1242,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 44,
+        "el": "a.video-title",
+        "text": "Fixture museum tour",
+        "rect": {
+          "x": 1139,
+          "y": 684.1875,
+          "w": 129.5,
+          "h": 37.78125
+        },
+        "page": {
+          "x": 1139,
+          "y": 2346.1875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1140,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 45,
+        "el": "a.video-watch",
+        "text": "Watch on YouTube",
+        "rect": {
+          "x": 1139,
+          "y": 744.859375,
+          "w": 129.5,
+          "h": 44
+        },
+        "page": {
+          "x": 1139,
+          "y": 2406.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1176,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 46,
+        "el": "button.video-expand",
+        "text": "View all videos",
+        "rect": {
+          "x": 1130.296875,
+          "y": 811.859375,
+          "w": 147.203125,
+          "h": 44
+        },
+        "page": {
+          "x": 1130.296875,
+          "y": 2473.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1276,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 47,
+        "el": "a.tt-brand.tt-footer-brand",
+        "text": "TravelTab",
+        "rect": {
+          "x": 147.5,
+          "y": 902.859375,
+          "w": 97.875,
+          "h": 24
+        },
+        "page": {
+          "x": 147.5,
+          "y": 2564.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 858,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 48,
+        "el": "a",
+        "text": "GitHub (opens in new tab)",
+        "rect": {
+          "x": 1089.5,
+          "y": 892.859375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1089.5,
+          "y": 2554.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 49,
+        "el": "a",
+        "text": "LinkedIn (opens in new tab)",
+        "rect": {
+          "x": 1137.5,
+          "y": 892.859375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1137.5,
+          "y": 2554.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 50,
+        "el": "a",
+        "text": "Medium blog (opens in new tab)",
+        "rect": {
+          "x": 1185.5,
+          "y": 892.859375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1185.5,
+          "y": 2554.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 51,
+        "el": "a",
+        "text": "Fernando's website (opens in new tab)",
+        "rect": {
+          "x": 1233.5,
+          "y": 892.859375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1233.5,
+          "y": 2554.859375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      }
+    ],
+    "375order": [
+      "a.map-action \"View larger map\" -> input#trip-start.trip-input \"2026-09-26\""
+    ],
+    "1440order": []
+  },
+  "errors": []
+}
