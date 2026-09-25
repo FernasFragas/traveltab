@@ -42,7 +42,21 @@ func (api *WeatherAPI) FetchReportData(ctx context.Context, city ...string) (*ap
 	if err != nil {
 		return nil, err
 	}
+	return weatherReportData(weather), nil
+}
 
+// FetchReportDataForPlace reads the weather at the selected geocoder coordinates, so
+// namesake cities in one country do not collapse to the first city OpenWeather finds.
+func (api *WeatherAPI) FetchReportDataForPlace(ctx context.Context, place application.PlaceSelection) (*application.DataToReport[application.GeneralWeatherInfo], error) {
+	weather, err := api.fetchWeather(ctx, Coordinates{Las: place.Lat, Lon: place.Lon})
+	if err != nil {
+		return nil, err
+	}
+	weather.Name = place.Name
+	return weatherReportData(weather), nil
+}
+
+func weatherReportData(weather *weatherData) *application.DataToReport[application.GeneralWeatherInfo] {
 	var condition string
 	if len(weather.Weather) > 0 {
 		condition = weather.Weather[0].Description
@@ -62,7 +76,7 @@ func (api *WeatherAPI) FetchReportData(ctx context.Context, city ...string) (*ap
 				Condition:   condition,
 			},
 		},
-	}, nil
+	}
 }
 
 func (api *WeatherAPI) FetchGeneralInfo(ctx context.Context, city ...string) (*application.DataToReport[application.GeneralWeatherInfo], error) {

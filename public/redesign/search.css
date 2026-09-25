@@ -1,0 +1,7 @@
+.tt-search-area { position: relative; }
+.tt-suggestions { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none; border: 1px solid var(--tt-border-control); border-radius: 16px; background: var(--tt-surface); box-shadow: 0 12px 24px rgb(0 0 0 / 14%); max-height: min(350px, 55vh); overflow-y: auto; }
+.tt-suggestions[hidden] { display: none; }
+.tt-suggestions [role="option"] { display: flex; flex-direction: column; justify-content: center; min-height: 48px; padding: 7px 12px; border-radius: 10px; cursor: pointer; color: var(--tt-ink); }
+.tt-suggestions [role="option"]:hover, .tt-suggestions [role="option"][aria-selected="true"] { background: var(--tt-bg); }
+.tt-suggestion-name { font-size: 14px; font-weight: 600; }
+.tt-suggestion-region { color: var(--tt-muted); font-size: 12px; }

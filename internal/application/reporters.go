@@ -64,6 +64,25 @@ func (s *WeatherReporters) GenerateReport(ctx context.Context, city string) (*Ge
 	if err != nil {
 		return nil, err
 	}
+	return s.finishWeatherReport(ctx, weatherInfo)
+}
+
+// GenerateReportForPlace uses the chosen coordinates when the weather provider supports them.
+func (s *WeatherReporters) GenerateReportForPlace(ctx context.Context, place PlaceSelection) (*GeneralWeatherInfo, error) {
+	provider, ok := s.weatherApi.(interface {
+		FetchReportDataForPlace(context.Context, PlaceSelection) (*DataToReport[GeneralWeatherInfo], error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("weather provider does not support selected coordinates")
+	}
+	weatherInfo, err := provider.FetchReportDataForPlace(ctx, place)
+	if err != nil {
+		return nil, err
+	}
+	return s.finishWeatherReport(ctx, weatherInfo)
+}
+
+func (s *WeatherReporters) finishWeatherReport(ctx context.Context, weatherInfo *DataToReport[GeneralWeatherInfo]) (*GeneralWeatherInfo, error) {
 
 	cityCoordinates := fmt.Sprintf("%f,%f", weatherInfo.Data.Lat, weatherInfo.Data.Lon)
 
