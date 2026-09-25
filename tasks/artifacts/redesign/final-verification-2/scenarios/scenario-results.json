@@ -1,0 +1,313 @@
+{
+  "browser": "Chrome/154.0.8037.58",
+  "generated": "2026-09-25T13:05:43.131Z",
+  "tomorrow": "2026-09-26",
+  "assertions": 2744,
+  "scenarios": [
+    {
+      "scenario": "default",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "default",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "photos-missing",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "photos-missing",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "forecast-absent",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "forecast-absent",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "forecast-uncertain",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "forecast-uncertain",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-0",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-0",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-1",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-1",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-6",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-6",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-unavailable",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "stays-unavailable",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "videos-0",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "videos-0",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "videos-1",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "videos-1",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "videos-10",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "videos-10",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "fallback",
+      "width": 375,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    },
+    {
+      "scenario": "fallback",
+      "width": 1440,
+      "states": [
+        "initial",
+        "planned-3d"
+      ]
+    }
+  ],
+  "screenshots": [
+    "variants/default/375-initial-viewport.webp",
+    "variants/default/375-initial-full.webp",
+    "variants/default/375-planned-3d-viewport.webp",
+    "variants/default/375-planned-3d-full.webp",
+    "variants/default/375-planned-5d-full.webp",
+    "variants/default/375-planned-3d-third-party-images-failed-full.webp",
+    "variants/default/1440-initial-viewport.webp",
+    "variants/default/1440-initial-full.webp",
+    "variants/default/1440-planned-3d-viewport.webp",
+    "variants/default/1440-planned-3d-full.webp",
+    "variants/default/1440-planned-5d-full.webp",
+    "variants/default/1440-planned-3d-third-party-images-failed-full.webp",
+    "variants/photos-missing/375-initial-full.webp",
+    "variants/photos-missing/375-planned-3d-full.webp",
+    "variants/photos-missing/1440-initial-full.webp",
+    "variants/photos-missing/1440-planned-3d-full.webp",
+    "variants/forecast-absent/375-initial-full.webp",
+    "variants/forecast-absent/375-planned-3d-full.webp",
+    "variants/forecast-absent/1440-initial-full.webp",
+    "variants/forecast-absent/1440-planned-3d-full.webp",
+    "variants/forecast-uncertain/375-initial-full.webp",
+    "variants/forecast-uncertain/375-planned-3d-full.webp",
+    "variants/forecast-uncertain/1440-initial-full.webp",
+    "variants/forecast-uncertain/1440-planned-3d-full.webp",
+    "variants/stays-0/375-initial-full.webp",
+    "variants/stays-0/375-planned-3d-full.webp",
+    "variants/stays-0/1440-initial-full.webp",
+    "variants/stays-0/1440-planned-3d-full.webp",
+    "variants/stays-1/375-initial-full.webp",
+    "variants/stays-1/375-planned-3d-full.webp",
+    "variants/stays-1/1440-initial-full.webp",
+    "variants/stays-1/1440-planned-3d-full.webp",
+    "variants/stays-6/375-initial-full.webp",
+    "variants/stays-6/375-planned-3d-full.webp",
+    "variants/stays-6/1440-initial-full.webp",
+    "variants/stays-6/1440-planned-3d-full.webp",
+    "variants/stays-unavailable/375-initial-full.webp",
+    "variants/stays-unavailable/375-planned-3d-full.webp",
+    "variants/stays-unavailable/1440-initial-full.webp",
+    "variants/stays-unavailable/1440-planned-3d-full.webp",
+    "variants/videos-0/375-initial-full.webp",
+    "variants/videos-0/375-planned-3d-full.webp",
+    "variants/videos-0/1440-initial-full.webp",
+    "variants/videos-0/1440-planned-3d-full.webp",
+    "variants/videos-1/375-initial-full.webp",
+    "variants/videos-1/375-planned-3d-full.webp",
+    "variants/videos-1/1440-initial-full.webp",
+    "variants/videos-1/1440-planned-3d-full.webp",
+    "variants/videos-10/375-initial-full.webp",
+    "variants/videos-10/375-planned-3d-full.webp",
+    "variants/videos-10/375-planned-3d-videos-expanded-full.webp",
+    "variants/videos-10/1440-initial-full.webp",
+    "variants/videos-10/1440-planned-3d-full.webp",
+    "variants/videos-10/1440-planned-3d-videos-expanded-full.webp",
+    "variants/fallback/375-initial-full.webp",
+    "variants/fallback/375-planned-3d-full.webp",
+    "variants/fallback/1440-initial-full.webp",
+    "variants/fallback/1440-planned-3d-full.webp",
+    "table/porto-empty-videos/375-initial-full.webp",
+    "table/porto-empty-videos/375-planned-3d-full.webp",
+    "table/coimbra-no-photo/375-initial-full.webp",
+    "table/coimbra-no-photo/375-planned-3d-full.webp",
+    "table/paris-france/375-initial-full.webp",
+    "table/paris-france/375-planned-3d-full.webp",
+    "table/paris-texas/375-initial-full.webp",
+    "table/paris-texas/375-planned-3d-full.webp",
+    "table/shared-paris-fr/375-initial-full.webp",
+    "table/shared-paris-us/375-initial-full.webp",
+    "table/search-failure/375-error-viewport.webp",
+    "table/search-failure/375-error-full.webp",
+    "table/shared-three-day-plan/375-planned-3d-full.webp",
+    "table/calendar-and-map-downloads/375-export-links.webp",
+    "table/plan-error-500/375-error-full.webp",
+    "table/plan-error-400/375-error-full.webp",
+    "table/local-map-identity/375-map.webp",
+    "table/porto-empty-videos/1440-initial-full.webp",
+    "table/porto-empty-videos/1440-planned-3d-full.webp",
+    "table/coimbra-no-photo/1440-initial-full.webp",
+    "table/coimbra-no-photo/1440-planned-3d-full.webp",
+    "table/paris-france/1440-initial-full.webp",
+    "table/paris-france/1440-planned-3d-full.webp",
+    "table/paris-texas/1440-initial-full.webp",
+    "table/paris-texas/1440-planned-3d-full.webp",
+    "table/shared-paris-fr/1440-initial-full.webp",
+    "table/shared-paris-us/1440-initial-full.webp",
+    "table/search-failure/1440-error-viewport.webp",
+    "table/search-failure/1440-error-full.webp",
+    "table/shared-three-day-plan/1440-planned-3d-full.webp",
+    "table/calendar-and-map-downloads/1440-export-links.webp",
+    "table/plan-error-500/1440-error-full.webp",
+    "table/plan-error-400/1440-error-full.webp",
+    "table/local-map-identity/1440-map.webp",
+    "fixtures/nophoto-completed-lookup-none/375-initial-full.webp",
+    "fixtures/photoerror-provider-failure/375-planned-3d-full.webp",
+    "fixtures/brokenimage-image-404/375-initial-full.webp",
+    "fixtures/brokenimage-image-404/375-planned-3d-full.webp",
+    "fixtures/longguide-awkward-content/375-initial-full.webp",
+    "fixtures/tokyo-reviewed-guide-no-photo/375-initial-full.webp",
+    "fixtures/tavira-reviewed-guide-no-photo/375-initial-full.webp",
+    "fixtures/nophoto-completed-lookup-none/1440-initial-full.webp",
+    "fixtures/photoerror-provider-failure/1440-planned-3d-full.webp",
+    "fixtures/brokenimage-image-404/1440-initial-full.webp",
+    "fixtures/brokenimage-image-404/1440-planned-3d-full.webp",
+    "fixtures/longguide-awkward-content/1440-initial-full.webp",
+    "fixtures/tokyo-reviewed-guide-no-photo/1440-initial-full.webp",
+    "fixtures/tavira-reviewed-guide-no-photo/1440-initial-full.webp",
+    "slow/375-search-loading.webp",
+    "slow/375-plan-loading.webp",
+    "slow/1440-search-loading.webp",
+    "slow/1440-plan-loading.webp"
+  ],
+  "errors": []
+}
