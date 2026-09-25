@@ -18,11 +18,13 @@
     <link rel="stylesheet" href="/redesign/destination.css">
     <link rel="stylesheet" href="/redesign/planner.css">
     <link rel="stylesheet" href="/redesign/discovery.css">
+    <link rel="stylesheet" href="/redesign/search.css">
     <link rel="stylesheet" href="/redesign/guide.css">
     <script defer src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
     <script defer src="/redesign/discovery.js"></script>
+    <script defer src="/redesign/search.js"></script>
 </head>
 <body>
     <a class="tt-skip-link" href="#overview">Skip to trip overview</a>
@@ -43,10 +45,15 @@
                       hx-get="/process-form/" hx-target="#content-area" hx-swap="innerHTML" hx-indicator="#destination-search-spinner">
                     <label class="tt-visually-hidden" for="city_name">Search destination, including country</label>
                     <i class="bi bi-search" aria-hidden="true"></i>
-                    <input id="city_name" type="search" name="city_name" placeholder="Search destinations…" required autocomplete="off" aria-describedby="destination-search-error">
+                    <input id="city_name" type="search" name="city_name" placeholder="Search destinations…" required autocomplete="off" aria-describedby="destination-search-error" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="destination-suggestions"
+                           hx-get="/suggest" hx-trigger="input delay:250ms" hx-target="#destination-suggestions" hx-swap="innerHTML" hx-sync="this:replace" hx-params="city_name">
+                    <input id="country_code" type="hidden" name="country_code" value="">
+                    <input id="place_lat" type="hidden" name="place_lat" value="">
+                    <input id="place_lon" type="hidden" name="place_lon" value="">
                     <button type="submit" class="tt-search-submit" aria-label="Search destination"><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
                     <span id="destination-search-spinner" class="tt-search-spinner htmx-indicator" role="status"><span class="tt-spinner" aria-hidden="true"></span><span class="tt-visually-hidden">Finding destination…</span></span>
                 </form>
+                <ul id="destination-suggestions" class="tt-suggestions" role="listbox" aria-label="Suggested destinations" hidden></ul>
                 <p id="destination-search-error" class="tt-error" role="alert" aria-atomic="true"></p>
                 <p id="destination-search-status" class="tt-visually-hidden" role="status" aria-atomic="true"></p>
             </div>

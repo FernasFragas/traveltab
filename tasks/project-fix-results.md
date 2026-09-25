@@ -26,12 +26,12 @@ Date: 2026-09-24. Tested base commit: `a737cecd6cd80042e5237644720a2f8d25fe4e9a`
 
 The [interaction regression evidence](artifacts/redesign/final-verification/interaction-results.md) records the passing and deliberately failing controls. Four-width screenshots, a requirement matrix, and a section-by-section comparison with the reference are in the [final browser evidence](artifacts/redesign/final-verification/README.md). A CSS refinement puts the desktop day date beside its number, matching the reference hierarchy. [External reachability checks](artifacts/redesign/final-verification/external-results.md) are separate from fixture evidence. Waze, a sample Wikimedia image, and the YouTube privacy embed responded with HTTP 200; that does not verify browser map rendering or playback. Booking returned a robot challenge, leaving landing-page dates and search results unverified.
 
-Spot checks of design token color pairs give 15.63:1 for main ink on the warm surface, 6.06:1 for muted text, and 6.11:1 for terracotta. This does not replace a full contrast audit of image overlays or every state.
+Spot checks of design token color pairs give 15.63:1 for main ink on the warm surface, 6.06:1 for muted text, and 6.11:1 for terracotta. The later [full audit](artifacts/redesign/final-verification-2/README.md) measured 5,465 pixel-sampled pairs across 41 states, including image overlays, with no text below 4.5:1.
 
 ## Remaining limits
 
 - Fixture maps, photos, videos, and booking links do not establish the behavior of external services. The separate checks linked above verify endpoint reachability only; Booking results and browser playback remain unverified.
-- A full contrast/accessibility audit, browser rendering for every named data variant, and actual calendar/map application imports remain open. The final browser matrix names which checks were direct browser passes.
+- The full contrast/accessibility audit and browser rendering (with assertions) for every named preview scenario were completed offline on 2026-09-25; see the [final-verification-2 matrix](artifacts/redesign/final-verification-2/README.md). It fixed 11 defects and documents one focus-order limitation at phone width. Actual calendar/map application imports remain open.
 - The maintenance backlog (sitemap storage, reviewed city guides, slug helper consolidation, importer interoperability and deployment indexing) is tracked in [maintenance notes](../docs/maintenance.md#next-up).
 
 No commit, push, deployment, or production-database change is part of this repair run.

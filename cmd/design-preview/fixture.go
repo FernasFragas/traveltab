@@ -79,6 +79,16 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 	}, nil
 }
 
+func (f fixtureWeather) GenerateReportForPlace(ctx context.Context, place app.PlaceSelection) (*app.GeneralWeatherInfo, error) {
+	info, err := f.GenerateReport(ctx, place.Name+", "+place.CountryCode)
+	if err != nil {
+		return nil, err
+	}
+	info.Country = strings.ToLower(place.CountryCode)
+	info.Lat, info.Lon = place.Lat, place.Lon
+	return info, nil
+}
+
 type fixtureVideos struct{ scenario string }
 
 func (f fixtureVideos) GenerateReport(_ context.Context, query string) (*app.VideosStream, error) {

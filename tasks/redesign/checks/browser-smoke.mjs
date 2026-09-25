@@ -13,7 +13,8 @@ const htmx = await readFile(process.env.HTMX_PATH);
 const template = await readFile(new URL('../../../views/index.go.tpl', import.meta.url), 'utf8');
 const hash = template.match(/htmx.org@1\.9\.11" integrity="sha384-([^"]+)"/)?.[1];
 assert.equal(createHash('sha384').update(htmx).digest('base64'), hash);
-const output = new URL(`../../artifacts/redesign/final-verification/${scenario}/`, import.meta.url);
+// OUTPUT_DIR redirects the evidence, so a re-run need not overwrite the recorded September results.
+const output = process.env.OUTPUT_DIR ? new URL(`file://${process.env.OUTPUT_DIR.replace(/\/?$/, '/')}`) : new URL(`../../artifacts/redesign/final-verification/${scenario}/`, import.meta.url);
 await mkdir(output, { recursive: true });
 const tabs = await (await fetch(`http://127.0.0.1:${process.env.CDP_PORT || 9227}/json/list`, { signal: AbortSignal.timeout(5000) })).json();
 const tab = tabs.find(t => t.type === 'page');

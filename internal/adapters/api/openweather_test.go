@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"weatherservice/internal/application"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -73,6 +74,19 @@ func Test_GetWeather(t *testing.T) {
 	assert.Equal(t, 60.0, report.Data.Humidity)
 	assert.Equal(t, 3.6, report.Data.Wind)
 	assert.Equal(t, "clear sky", report.Data.Condition)
+}
+
+func Test_GetWeatherForSelectedPlaceSkipsNameGeocoding(t *testing.T) {
+	api, requests := newStubWeatherAPI(stubResponse{http.StatusInternalServerError, "should not be called"},
+		stubResponse{http.StatusOK, `{"coord":{"lon":-88.32671,"lat":36.302},"weather":[{"description":"clear sky"}],"main":{"temp":20},"sys":{"country":"US"}}`})
+	report, err := api.FetchReportDataForPlace(context.Background(), application.PlaceSelection{Name: "Paris", CountryCode: "US", Lat: 36.302, Lon: -88.32671})
+	require.NoError(t, err)
+	require.Len(t, *requests, 1)
+	assert.Equal(t, "/data/2.5/weather", (*requests)[0].URL.Path)
+	assert.Equal(t, "36.302000", (*requests)[0].URL.Query().Get("lat"))
+	assert.Equal(t, "-88.326710", (*requests)[0].URL.Query().Get("lon"))
+	assert.Equal(t, "Paris", report.Data.City)
+	assert.Equal(t, "US", report.Data.Country)
 }
 
 func Test_GetWeather_Errors(t *testing.T) {

@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
+	"strconv"
+	"strings"
 	"time"
 	"weatherservice/internal/application"
 
@@ -23,6 +26,8 @@ type Server struct {
 
 	tripPlanner    application.TripPlanner
 	photoSource    application.DestinationPhotoSource
+	placeSuggester application.PlaceSuggester
+	suggestions    *suggestionCache
 	guideSource    application.CityGuideSource
 	now            func() time.Time
 	newCityLimiter *newCityLimiter
@@ -66,6 +71,7 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 		videoStreamReporters: videoStreamReporters,
 		now:                  time.Now,
 		newCityLimiter:       newNewCityLimiter(defaultNewCitiesPerMinute),
+		suggestions:          newSuggestionCache(),
 	}
 
 	// Serve static files from the "public" directory
@@ -74,6 +80,7 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 	app.Get("/", server.trackVisit, server.listGeneralInfo)
 
 	app.Get("/process-form/", server.trackVisit, server.listGeneralInfo)
+	app.Get("/suggest", server.suggestPlaces)
 
 	app.Get("/stats", server.showStats)
 
@@ -96,11 +103,30 @@ func (s *Server) Listen(port string) error {
 
 func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 	cityAndCountry := ctx.FormValue("city_name") // retrieves the name passed in the form
+	var selected *application.PlaceSelection
+	if code := strings.ToUpper(strings.TrimSpace(ctx.FormValue("country_code"))); validCountryCode(code) {
+		city := strings.TrimSpace(strings.SplitN(cityAndCountry, ",", 2)[0])
+		if city != "" {
+			cityAndCountry = city + ", " + code
+			lat, latErr := strconv.ParseFloat(ctx.FormValue("place_lat"), 64)
+			lon, lonErr := strconv.ParseFloat(ctx.FormValue("place_lon"), 64)
+			if latErr == nil && lonErr == nil && !math.IsNaN(lat) && !math.IsNaN(lon) &&
+				!math.IsInf(lat, 0) && !math.IsInf(lon, 0) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 {
+				selected = &application.PlaceSelection{Name: city, CountryCode: code, Lat: lat, Lon: lon}
+			}
+		}
+	}
 	if cityAndCountry == "" {
 		cityAndCountry = "Lisbon, Portugal"
 	}
 
-	generalInfo, err := s.weatherReporters.GenerateReport(ctx.Context(), cityAndCountry)
+	var generalInfo *application.GeneralWeatherInfo
+	var err error
+	if reporter, ok := s.weatherReporters.(application.PlaceWeatherReporter); ok && selected != nil {
+		generalInfo, err = reporter.GenerateReportForPlace(ctx.Context(), *selected)
+	} else {
+		generalInfo, err = s.weatherReporters.GenerateReport(ctx.Context(), cityAndCountry)
+	}
 	if err != nil {
 		log.Printf("Error Retriving New Weather data information with error %s", err)
 		return destinationSearchError(ctx)
