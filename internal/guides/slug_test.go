@@ -17,3 +17,7 @@ func TestSlug_LowercasesAndHyphenatesSpaces(t *testing.T) {
 func TestSlug_MultiWordCityWithUppercaseCountry(t *testing.T) {
 	assert.Equal(t, "new-york-us", Slug("New York", "US"))
 }
+
+func TestSlug_KeepsDiacriticsAndCollapsesWhitespace(t *testing.T) {
+	assert.Equal(t, "são-paulo-br", Slug("  São   Paulo ", "BR"))
+}

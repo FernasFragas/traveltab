@@ -22,6 +22,8 @@ type Server struct {
 	videoStreamReporters application.Reporter[application.VideosStream]
 
 	tripPlanner    application.TripPlanner
+	photoSource    application.DestinationPhotoSource
+	guideSource    application.CityGuideSource
 	now            func() time.Time
 	newCityLimiter *newCityLimiter
 }
@@ -106,25 +108,18 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 
 	city := generalInfo.City
 
-	// --- BEGIN Cache Check ---
-	var data TemplateData
+	// The photo is looked up for the destination just resolved, whether or not its page data is
+	// cached, and alongside the cache read and the video request.
+	photo := s.startPhotoLookup(ctx.Context(), *generalInfo)
 
-	if data, err = s.checkDatabase(city); err != nil {
-		log.Printf("Error Retriving search data information with error %s", err)
-
-		log.Printf("Cache miss for city: %s. Fetching fresh data.", city)
-
-		data, err = s.retireveFreshInformation(ctx, generalInfo, city)
-		if err != nil {
-			log.Printf("Error Retriving fresh data information with error %s", err)
-		}
-	}
+	data, _ := s.loadDestination(ctx, generalInfo)
+	view := s.destinationPresentation(data.GeneralInfo, data.Videos, photo)
 
 	// Check if it's an HTMX request
 	if ctx.Get("HX-Request") == "true" {
 		// Render only the content fragment for HTMX requests
 		return ctx.Render("content_fragment", fiber.Map{
-			"Presentation": newPresentation(data.GeneralInfo, data.Videos),
+			"Presentation": view,
 			"Query":        city,
 			"GeneralInfo":  data.GeneralInfo,
 			"Videos":       data.Videos,
@@ -134,7 +129,7 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 
 	// Render the full page for regular requests
 	return ctx.Render("index", fiber.Map{
-		"Presentation": newPresentation(data.GeneralInfo, data.Videos),
+		"Presentation": view,
 		"Query":        city,
 		"GeneralInfo":  data.GeneralInfo,
 		"Videos":       data.Videos,

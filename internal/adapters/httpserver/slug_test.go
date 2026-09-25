@@ -46,3 +46,22 @@ func TestSlug_RoundTripsExistingFixtureCities(t *testing.T) {
 		assert.Equal(t, tc.country, country, "slug=%q", slug)
 	}
 }
+
+// Diacritics and multiword names must survive Slug then ParseSlug then Slug unchanged, since
+// stored trip and sitemap URLs are compared as strings.
+func TestSlug_RoundTripsMultiwordAndDiacriticCities(t *testing.T) {
+	for _, tc := range []struct{ city, country, want string }{
+		{"Mexico City", "MX", "mexico-city-mx"},
+		{"Rio de Janeiro", "BR", "rio-de-janeiro-br"},
+		{"São Paulo", "BR", "são-paulo-br"},
+		{"Zürich", "CH", "zürich-ch"},
+	} {
+		slug := Slug(tc.city, tc.country)
+		require.Equal(t, tc.want, slug)
+
+		city, country, ok := ParseSlug(slug)
+
+		require.True(t, ok, "slug=%q", slug)
+		assert.Equal(t, slug, Slug(city, country), "slug=%q", slug)
+	}
+}

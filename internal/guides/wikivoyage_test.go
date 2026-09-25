@@ -57,6 +57,7 @@ func TestFetchWikivoyageText_ReturnsPlainTextAndRevision(t *testing.T) {
 
 	assert.Contains(t, page.Text, "Alfama")
 	assert.Equal(t, int64(5364237), page.Revision)
+	assert.Equal(t, "Lisbon", page.Title)
 }
 
 func TestFetchWikivoyageText_ReturnsErrorForAMissingPage(t *testing.T) {

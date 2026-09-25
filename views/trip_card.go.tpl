@@ -22,8 +22,8 @@
             </label>
 
             <div class="trip-field trip-end">
-                <span class="trip-field-label">Ends</span>
-                <output id="trip-end-value" class="trip-end" for="trip-start trip-days" data-trip-end aria-live="polite">{{ .EndLabel }}</output>
+                <span id="trip-end-label" class="trip-field-label">Ends</span>
+                <output id="trip-end-value" class="trip-end" for="trip-start trip-days" data-trip-end aria-labelledby="trip-end-label" aria-live="polite">{{ .EndLabel }}</output>
             </div>
         </div>
 

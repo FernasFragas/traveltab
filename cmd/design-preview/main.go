@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	go run ./cmd/design-preview [-addr 127.0.0.1:8087] [-map-addr 127.0.0.1:8088] [-slow]
+//	go run ./cmd/design-preview [-addr 127.0.0.1:8087] [-map-addr 127.0.0.1:8088] [-slow] [-live-photos]
 package main
 
 import (
@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"weatherservice/internal/adapters/api"
 )
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 	mapAddr := flag.String("map-addr", "127.0.0.1:8088", "HTTP listen address for the unmistakable local map fixture")
 	slow := flag.Bool("slow", false, "delay search and planning responses by two seconds")
 	scenario := flag.String("scenario", "default", "fixture scenario (see tasks/redesign/preview.md)")
+	livePhotos := flag.Bool("live-photos", false, "look destination photos up on the real Wikimedia APIs instead of the fixture (not deterministic)")
 	flag.Parse()
 	if !validScenario(*scenario) {
 		log.Fatalf("unknown fixture scenario %q; see tasks/redesign/preview.md", *scenario)
@@ -28,7 +30,7 @@ func main() {
 	mapOrigin := "http://" + *mapAddr + "/"
 	mapServer := &http.Server{
 		Addr:              *mapAddr,
-		Handler:           http.HandlerFunc(fixtureMapHandler),
+		Handler:           fixtureOriginHandler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	go func() {
@@ -39,11 +41,25 @@ func main() {
 	}()
 
 	server, cleanup := newPreviewServer(mapOrigin, *slow, *scenario)
+	if *livePhotos {
+		// Opt-in evidence run: the fixture destinations use real coordinates, the photos are real.
+		log.Print("destination photos come from the live Wikimedia APIs; this run is not deterministic")
+		server.SetDestinationPhotoSource(api.NewDestinationPhotoAPI(nil))
+	}
 	defer func() { cleanup(); _ = mapServer.Close() }()
 	log.Printf("fixture preview listening on http://%s/", *addr)
 	if err := server.Listen(*addr); err != nil && !errorIs(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
+}
+
+// fixtureOriginHandler serves the local map document at "/" and the generated destination photos
+// under /fixture-photos/, all from one local origin.
+func fixtureOriginHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/fixture-photos/", fixturePhotoHandler)
+	mux.HandleFunc("/", fixtureMapHandler)
+	return mux
 }
 
 func fixtureMapHandler(w http.ResponseWriter, r *http.Request) {

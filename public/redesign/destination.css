@@ -27,6 +27,27 @@
 
 .destination-image[hidden] { display: none; }
 
+/* The photo state lives on the figure: "unavailable" comes from the server, "failed" from the
+   image's error event. Because it is an attribute, it survives HTMX history snapshots. */
+.destination-photo-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--tt-ink);
+    font-size: 14px;
+}
+
+.destination-photo[data-photo-state="unavailable"] .destination-photo-fallback,
+.destination-photo[data-photo-state="failed"] .destination-photo-fallback { display: flex; }
+
+.destination-photo[data-photo-state="failed"] .destination-image,
+.destination-photo[data-photo-state="failed"] .destination-photo-credit,
+.destination-photo[data-photo-state="failed"] .destination-photo-caption { display: none; }
+
 .destination-photo-caption {
     position: absolute;
     bottom: 28px;
@@ -52,6 +73,7 @@
 }
 
 .destination-photo-credit a { color: inherit; }
+.destination-photo-credit a:focus-visible { outline: 2px solid #fffdfa; outline-offset: -2px; }
 
 .destination-information {
     display: flex;
@@ -110,7 +132,7 @@
 
 .weather-metric:first-child { padding-left: 0; border-left: 0; }
 .weather-metric:last-child { padding-right: 0; }
-.weather-icon { flex-shrink: 0; color: #d98a08; font-size: 24px; }
+.weather-icon { flex-shrink: 0; color: #b87200; font-size: 24px; }
 .weather-condition .weather-icon { font-size: 32px; }
 .weather-icon-water { color: #367e9f; }
 .weather-reading { margin: 0; display: flex; flex-direction: column; min-width: 0; }
@@ -130,6 +152,8 @@
 }
 
 .map-embed { display: block; width: 100%; height: 100%; min-height: 196px; border: 0; }
+/* A cross-origin frame takes keyboard focus without the page showing a ring (navigation.js sets the flag). */
+.map-card[data-frame-focus="true"] { outline: 3px solid var(--tt-accent); outline-offset: -3px; }
 .map-unavailable { align-self: center; padding: 16px; margin: 0; color: var(--tt-muted); }
 .map-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 12px; background: var(--tt-surface); }
 .map-attribution, .map-action { display: inline-flex; align-items: center; min-height: 44px; color: var(--tt-ink); font-size: 12px; line-height: 1.4; }
@@ -152,6 +176,7 @@
     .destination-title { grid-area: 1 / 1; z-index: 1; align-self: end; margin: 48px 16px 16px; padding: 4px 8px; justify-self: start; max-width: calc(100% - 32px); border-radius: 4px; background: rgb(36 34 31 / 78%); color: #fffdfa; font-size: 32px; }
     .destination-tagline, .destination-country, .destination-photo-caption { display: none; }
     .destination-photo-credit { top: 0; bottom: auto; z-index: 2; font-size: 11px; }
+    .destination-photo-fallback { z-index: 1; align-items: flex-start; padding-top: 16px; font-size: 13px; }
     .weather-metrics { grid-area: 2 / 1; margin: 0; padding: 16px 12px; background: var(--tt-surface); }
     .weather-metric { gap: 6px; padding: 0 8px; }
     .weather-icon, .weather-condition .weather-icon { font-size: 20px; }

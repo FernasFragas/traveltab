@@ -88,6 +88,11 @@
     color: #fff;
 }
 
+.stay-credit:focus-visible {
+    outline: 2px solid #fffdfa;
+    outline-offset: -2px;
+}
+
 .stay-details {
     display: flex;
     flex-direction: column;

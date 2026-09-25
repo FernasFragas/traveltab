@@ -140,21 +140,16 @@ func (s *Server) tripPage(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	var data TemplateData
-	newCity := false
-	if data, err = s.checkDatabase(generalInfo.City); err != nil {
-		newCity = true
-		if data, err = s.retireveFreshInformation(ctx, generalInfo, generalInfo.City); err != nil {
-			log.Printf("Error retrieving fresh data for /trip/%s with error %s", slug, err)
-		}
-	}
+	photo := s.startPhotoLookup(ctx.Context(), *generalInfo)
+	data, fromCache := s.loadDestination(ctx, generalInfo)
+	newCity := !fromCache
 
 	s.recordSitemapSlug(slug)
 
 	days, planned := s.slugPlanDays(ctx)
 
 	return ctx.Render("index", fiber.Map{
-		"Presentation":    newPresentation(data.GeneralInfo, data.Videos),
+		"Presentation":    s.destinationPresentation(data.GeneralInfo, data.Videos, photo),
 		"Query":           data.GeneralInfo.City,
 		"GeneralInfo":     data.GeneralInfo,
 		"Videos":          data.Videos,

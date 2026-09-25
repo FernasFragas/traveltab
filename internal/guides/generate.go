@@ -42,7 +42,8 @@ type SkippedCity struct {
 //     revision, keeping its existing entry as-is;
 //   - retries a city's intro up to maxAttempts times when ValidateIntro rejects it, then skips
 //     the city with a logged warning;
-//   - otherwise writes a fresh Entry with the new intro, revision and generation time.
+//   - otherwise writes a fresh, unreviewed Entry with the new intro, revision, title and
+//     generation time. An entry kept unchanged keeps its review; a regenerated one loses it.
 //
 // It returns the full map to write (existing untouched entries included) and the cities it
 // skipped this run, with why.
@@ -89,10 +90,17 @@ func Run(
 			continue
 		}
 
+		title := page.Title
+		if title == "" {
+			title = city.WikivoyageTitle()
+		}
+
+		// A new Entry is unreviewed: review flags belong to the text a person actually read.
 		guides[slug] = Entry{
 			Intro:              intro,
 			WikivoyageRevision: page.Revision,
 			GeneratedAt:        now(),
+			WikivoyageTitle:    title,
 		}
 	}
 

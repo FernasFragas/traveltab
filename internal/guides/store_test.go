@@ -1,6 +1,7 @@
 package guides
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -39,4 +40,30 @@ func TestLoadGuides_ReturnsEmptyMapWhenFileIsMissing(t *testing.T) {
 	loaded, err := LoadGuides(path)
 	require.NoError(t, err)
 	assert.Empty(t, loaded)
+}
+
+func TestLoadGuides_ReadsAFileWrittenBeforeTheReviewFieldsExisted(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "guides.json")
+	old := `{"lisbon-pt": {"intro": "Old intro.", "wikivoyage_revision": 5364237, "generated_at": "2026-09-20T18:08:01.230825+01:00"}}`
+	require.NoError(t, os.WriteFile(path, []byte(old), 0o644))
+
+	loaded, err := LoadGuides(path)
+	require.NoError(t, err)
+
+	entry := loaded["lisbon-pt"]
+	assert.Equal(t, "Old intro.", entry.Intro)
+	assert.False(t, entry.Reviewed)
+	assert.Error(t, entry.Publishable())
+}
+
+func TestWriteGuides_OmitsReviewFieldsForAnUnreviewedEntry(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "guides.json")
+	entry := Entry{Intro: "Draft.", WikivoyageRevision: 1, GeneratedAt: time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)}
+
+	require.NoError(t, WriteGuides(path, map[string]Entry{"lisbon-pt": entry}))
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.NotContains(t, string(data), "reviewed", "the generator's output format has no review fields")
+	assert.NotContains(t, string(data), "wikivoyage_title")
 }

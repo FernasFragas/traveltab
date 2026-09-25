@@ -41,7 +41,13 @@ func (s *Store) initialize() error {
 	if err := s.createVisitsTable(); err != nil {
 		return err
 	}
-	return createSourceCacheTable(s.db)
+	if err := createSourceCacheTable(s.db); err != nil {
+		return err
+	}
+	if err := createSitemapSlugsTable(s.db); err != nil {
+		return err
+	}
+	return migrateLegacySitemapIndex(s.db)
 }
 
 // createSourceCacheTable adds the table the planner's source cache stores its gzipped JSON in.

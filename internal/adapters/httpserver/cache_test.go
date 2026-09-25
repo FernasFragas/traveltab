@@ -25,13 +25,12 @@ type cacheResponseStorage struct {
 }
 
 func (s cacheResponseStorage) GetCityData(city string) (string, error) {
-	if city == sitemapIndexKey {
-		return "", sql.ErrNoRows
-	}
 	return s.raw, s.err
 }
 
 func (cacheResponseStorage) SaveCityData(string, map[string]any) error { return nil }
+func (cacheResponseStorage) RecordSitemapSlug(string) error            { return nil }
+func (cacheResponseStorage) ListSitemapSlugs() ([]string, error)       { return nil, nil }
 func (cacheResponseStorage) SaveVisit(string, string, string) error    { return nil }
 func (cacheResponseStorage) GetVisitStats(time.Time) (*application.VisitStats, error) {
 	return &application.VisitStats{}, nil

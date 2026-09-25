@@ -170,6 +170,12 @@
     document.body.addEventListener('htmx:afterSettle', function (event) {
         var target = event.detail.target;
         var xhr = event.detail.xhr;
+        if (target && target.id === 'trip-card' && xhr && xhr.status >= 400) {
+            // The failed request replaced the form the keyboard user was on; keep them on it.
+            var submit = document.querySelector('.trip-submit');
+            if (submit && (!document.activeElement || document.activeElement === document.body)) submit.focus({ preventScroll: true });
+            return;
+        }
         if (!target || target.id !== 'trip-card' || !xhr || xhr.status < 200 || xhr.status >= 400) return;
         scheduleFocusItinerary();
         announce('Your itinerary has been updated.');

@@ -110,6 +110,51 @@ func TestRun_RegeneratesWhenRevisionChanged(t *testing.T) {
 	assert.Equal(t, 1, generator.calls)
 }
 
+func TestRun_RecordsTheRedirectedTitleAndLeavesTheEntryUnreviewed(t *testing.T) {
+	fetcher := newFakeFetcher(map[string]WikivoyagePage{
+		"Marrakesh": {Title: "Marrakech", Text: "Marrakech is a city in Morocco.", Revision: 7},
+	})
+	generator := &fakeGenerator{intros: []string{"Marrakech is a city in Morocco."}}
+
+	guides, skipped := Run(context.Background(), []City{{"Marrakesh", "ma"}}, nil, fetcher, generator, fixedNow)
+
+	assert.Empty(t, skipped)
+	assert.Equal(t, "Marrakech", guides["marrakesh-ma"].WikivoyageTitle)
+	assert.False(t, guides["marrakesh-ma"].Reviewed)
+	assert.Error(t, guides["marrakesh-ma"].Publishable())
+}
+
+func TestRun_FallsBackToTheRequestedTitleWhenTheAPIGivesNone(t *testing.T) {
+	fetcher := newFakeFetcher(map[string]WikivoyagePage{
+		"New York City": {Text: "New York City is on the Hudson.", Revision: 9},
+	})
+	generator := &fakeGenerator{intros: []string{"New York City is on the Hudson."}}
+
+	guides, _ := Run(context.Background(), []City{{"New York", "us"}}, nil, fetcher, generator, fixedNow)
+
+	assert.Equal(t, "New York City", guides["new-york-us"].WikivoyageTitle)
+}
+
+func TestRun_KeepsAReviewWhileTheRevisionIsUnchangedAndDropsItWhenRegenerated(t *testing.T) {
+	reviewed := Entry{
+		Intro: "reviewed intro", WikivoyageRevision: 100, GeneratedAt: fixedNow(),
+		WikivoyageTitle: "Lisbon", Reviewed: true, ReviewedAt: "2026-09-24", ReviewNote: "checked",
+	}
+	existing := map[string]Entry{"lisbon-pt": reviewed}
+	cities := []City{{"Lisbon", "pt"}}
+
+	unchanged := newFakeFetcher(map[string]WikivoyagePage{"Lisbon": {Text: "Lisbon is a capital near Alfama.", Revision: 100}})
+	kept, _ := Run(context.Background(), cities, existing, unchanged, &fakeGenerator{intros: []string{"unused"}}, fixedNow)
+	assert.Equal(t, reviewed, kept["lisbon-pt"], "an untouched entry keeps its review")
+
+	moved := newFakeFetcher(map[string]WikivoyagePage{"Lisbon": {Text: "Lisbon is a capital near Alfama.", Revision: 101}})
+	regenerated, _ := Run(context.Background(), cities, existing, moved, &fakeGenerator{intros: []string{"Lisbon is a capital near Alfama."}}, fixedNow)
+	assert.False(t, regenerated["lisbon-pt"].Reviewed, "new text has not been reviewed")
+	assert.Empty(t, regenerated["lisbon-pt"].ReviewedAt)
+	assert.Empty(t, regenerated["lisbon-pt"].ReviewNote)
+	assert.Equal(t, int64(101), regenerated["lisbon-pt"].WikivoyageRevision)
+}
+
 func TestRun_SkipsACityWhoseFetchFails(t *testing.T) {
 	fetcher := newFakeFetcher(map[string]WikivoyagePage{})
 	generator := &fakeGenerator{}
