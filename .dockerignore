@@ -4,4 +4,8 @@
 *.db
 *.db-*
 bin
-tasks/artifacts
+
+# Keep repository documentation out of the deployment build context.
+docs
+tasks
+**/*.md
