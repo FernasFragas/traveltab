@@ -68,6 +68,8 @@
 .trip-input,
 .trip-select {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     min-height: 44px;
     padding: 10px var(--tt-space-3);
     border: 1px solid var(--tt-border-control);
@@ -75,6 +77,17 @@
     background: var(--tt-surface);
     color: var(--tt-ink);
     font-size: 14px;
+}
+
+/* Keep the native date picker within its grid cell on mobile Safari. */
+.trip-input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.trip-input[type="date"]::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
 }
 
 .trip-input:focus,
@@ -519,6 +532,8 @@
     .trip-form { grid-template-columns: minmax(0, 1fr); gap: var(--tt-space-2); }
     .trip-date-group { grid-column: 1; grid-template-columns: minmax(0, 1fr); gap: var(--tt-space-2); }
     .trip-days { grid-column: 1; }
+    .trip-input,
+    .trip-select { font-size: 16px; }
     .trip-submit,
     .trip-help { grid-column: 1; }
     .trip-spinner { right: var(--tt-space-4); bottom: var(--tt-space-4); }

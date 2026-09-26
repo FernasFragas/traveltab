@@ -238,6 +238,8 @@ fly deploy
 ```
 
 `fly.toml` keeps one machine always running and mounts a volume (`weather_data_inc`) at `/data`.
+`.dockerignore` excludes `docs/`, `tasks/`, and Markdown files from the build context sent to
+Fly.io. The final image contains only the app binary, templates, and public assets.
 
 ## Tests
 
