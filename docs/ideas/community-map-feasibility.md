@@ -1,5 +1,7 @@
 # Community Map: Initial Feasibility Assessment
 
+**Superseded October 5, 2026:** the product was rethought as a blog-seeded consensus map ([one-pager](community-map.md)). The hosting, Leaflet/OSM tile, Wikimedia attribution and cost notes below still apply; the effort estimate and scope do not.
+
 **Historical assessment:** the user subsequently removed public accounts/sign-in, confirmed browser-only ownership with display names, and excluded Fly billing clarification. The account estimates and billing prerequisites below describe the earlier scope and are superseded by [the implementation plan](../../tasks/plan.md). Do not require billing investigation to begin unrelated implementation. No prototypes have yet validated the revised allocation.
 
 Assessed September 26, 2026. Target: full agreed scope by October 2, with 70 development/review hours and a US$5/month total running-cost ceiling. Product scope remains defined in [the one-pager](community-map.md).

@@ -1,1073 +1,474 @@
-# Community Map Task List
+# Writers' Map (Always Ready) — PRs and Subtasks
 
-Source of truth for implementation progress: this checklist. Read [the plan](plan.md) and [product scope](../docs/ideas/community-map.md) first.
+Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** planned only; no task is implemented by creating this file. Human review of the plan is required before implementation. Public visitors do not sign in: names are attribution and the current browser owns personal state. Fly bill clarification is excluded.
+**Status:** planned, nothing implemented. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). **Owner review of the plan is required before coding.**
 
-**Allocation:** 58 task hours + 10 contingency + 2 planning/review = 70 hours. Individual values are timeboxes for reassessment, not promises. If a task exceeds two hours or five files, split it here before expanding implementation. Checkpoints follow every three tasks. Evidence is recorded in future files under `tasks/community-map/`; these paths do not imply evidence already exists.
+**How to read this file**
+- Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
+- Each **subtask** (1a, 1b …) can go to a different agent. Subtasks in one PR touch **disjoint files** unless marked *after*.
+- **Owns** = the only files the subtask may edit. Shared files belong to the subtask marked **integrator**.
+- Branches: `writers-map/pr<N>-<letter>` → merged into `writers-map/pr<N>` → PR to `main`.
 
-**Verification conventions:** commands run from the repository root. `make build` is the repository build command. Use the listed affected-package tests; new behavior needs meaningful cases, and a command matching zero intended tests is not evidence. Document-only tasks use document review instead of invented runtime tests. The final full suite/race/lint checks belong to Task 36. A browser or live-provider check cannot be marked complete based only on HTTP fixtures.
+**Conventions**
+- Run from the repo root: `make build`, `make test`, `make lint`.
+- **Tests never hit the network:** use the PR 1 fixture, the fake source, the fake summarizer, `httptest` and recorded responses.
+- **No post text stored, logged or committed:** names, positions and AI summaries only.
+- Past 2× an estimate or 5 files → split here first.
 
-## Task 1: Prove map interaction in the local preview
+---
 
-- [ ] Complete Task 1
+## PR 1 — Contracts, Data and Flags (≈4 h) · needs: none
 
-**Description:** Build a disposable, clearly labeled preview of selectable pins before changing the production map.
+**Goal:** freeze everything parallel work depends on. No user-visible change.
 
-**Acceptance criteria:**
-- [ ] The preview supports pan/zoom, pin selection and a small place panel at 375 px and 1440 px.
-- [ ] Repeated destination swaps create one map instance and release the previous instance.
-- [ ] Automated runs use local tile fixtures; record library loading, attribution and keyboard findings.
+### 1a. Write the source data and policy — 1 h
+- [ ] Done
 
-**Verification:**
-- [ ] Tests pass: `go test ./cmd/design-preview`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Open the local experiment, select a pin, change destination twice and check keyboard focus.
+**Owns:** `writerdata/sources.json`, `writerdata/overrides.json`, `writerdata/embed.go`, `docs/maintenance.md`
 
-**Dependencies:** None
+- Sources: the 12 working blogs from [overlap results](blog-overlap-results.md), each with API base, language, `status` (`active`/`blocked`/`removed`) and date checked. VagaMundos, viajarentreviagens and lisbonlisboaportugal start `blocked`.
+- Overrides: alias removals and merges (Clérigos ×3, the "Ribeira Grande" airport alias, "Nossa Senhora da Conceição"); destination areas for Madeira and São Miguel (default ≈40 km for cities); a per-QID summary hide list; a stoplist ("Fernandes", "Infante", "Achada" plus the research list).
+- `docs/maintenance.md` gets a "Writers' map" section: user agent, limiter, robots.txt, 403 handling, names-only storage, AI summaries via LLM Gateway, monthly schedule, in-place updates, takedown steps.
 
-**Files likely touched:**
-- `cmd/design-preview/community_map.go`
-- `cmd/design-preview/community_map_test.go`
-- `cmd/design-preview/main.go`
-- `public/redesign/community-map.js`
-- `tasks/community-map/evidence.md`
+**Verify:** `make build`; document review.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+### 1b. Define the types, ports and contract — 1.5 h
+- [ ] Done
 
-## Task 2: Prove exact-place and nearby-photo lookup
+**Owns:** `internal/writermap/types.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
 
-- [ ] Complete Task 2
+- Types: `Area`, `Place` (QID, names, coordinates, kind, description, photo + credit, sitelinks), `Mention` (writer host, post ref/URL/title, language, positions), `Itinerary` (writer, post, days of QIDs), `Summary` (QID, English text, source post refs, model, generated at), `DestinationResult` (places, writer counts, itineraries, source statuses, complete flag).
+- Port `WriterMapSource`: `Destination(ctx, dest)` and `Place(ctx, dest, qid)` (panel data incl. summary if any).
+- Port `Summarizer`: `Summarize(ctx, place, passages []Passage) (string, error)`; passages carry language and post ref.
+- Contract doc covers:
+  - GeoJSON feature properties
+  - panel fragment fields (summary optional; writer links with language label)
+  - endpoint paths (`/map/:dest.geojson`, `/map/:dest/:qid`)
+  - JS extension API: `TravelMap.registerLayer(name, {add, remove})`, events `travelmap:ready`, `travelmap:place-selected`, `travelmap:plan-updated`
+  - template slots (`data-map-slot="panel|layers|saved|status|list"`)
+  - save-button hook (`data-save-qid`)
 
-**Description:** Test whether existing Wikimedia machinery can support arbitrary pins rather than only cities.
+**Verify:** `make build`; **owner reviews the contract doc**.
 
-**Acceptance criteria:**
-- [ ] A known landmark resolves to a confidently matched photo; ambiguous matches are rejected.
-- [ ] An ordinary business and a place lacking an exact image return nearby candidates with source, license and distance, or an explicit empty result.
-- [ ] Timeouts do not prevent pin creation; live samples and fixture results are recorded separately.
+### 1c. Add the Madeira fixture, fake source and fake summarizer — 1 h · *after 1b*
+- [ ] Done
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/api`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Inspect the three sampled locations and verify nearby images are not labeled as exact matches.
+**Owns:** `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`
 
-**Dependencies:** None
+- About 15 places (base-only and writer pins), EN and PT writers, summaries on some writer pins and none on others, 2 itineraries, mixed source statuses.
+- A fake `Summarizer` that returns a canned sentence or an error.
+- The fake implements `WriterMapSource`, with switches for slow, partial, unavailable and empty.
 
-**Files likely touched:**
-- `internal/application/placephoto.go`
-- `internal/adapters/api/placephoto.go`
-- `internal/adapters/api/placephoto_test.go`
-- `internal/adapters/api/testdata/community_photos.json`
-- `tasks/community-map/evidence.md`
+**Verify:** `go test ./internal/writermap/...`.
 
-**Estimated scope:** Medium (5 files); 2-hour timebox.
+### 1d. Add the feature flags — 0.5 h · **integrator**
+- [ ] Done
 
-## Task 3: Prove immutable itinerary persistence
+**Owns:** `internal/config/env.go`, `internal/config/env_test.go`
 
-- [ ] Complete Task 3
+- Add `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI`, plus `LLM_GATEWAY_URL` / `LLM_GATEWAY_KEY` (unused until 9c); all default off/empty. Merge 1a–1c, run `make test lint build`, open the PR.
 
-**Description:** Use a temporary SQLite database to demonstrate a published plan and independent copy without changing live trip pages.
+**Verify:** `go test ./internal/config/...`; CI green.
 
-**Acceptance criteria:**
-- [ ] Persist and reload a versioned plan preserving stop IDs, coordinates and day order, including past travel dates.
-- [ ] Copying produces a new ID with identical route content; modifying the copy cannot change the original.
-- [ ] A changed forecast and unavailable planner cannot affect a stored snapshot.
+**PR 1 done when:** contract doc approved; fixture and fakes build; flags default off.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Inspect two saved records in a temporary database and document the freeze/copy result.
+---
 
-**Dependencies:** None
+## PR 2 — Index Spike (≈3 h) · needs: none · *parallel with PR 1*
 
-**Files likely touched:**
-- `internal/application/savedplan.go`
-- `internal/adapters/sqlite/savedplan.go`
-- `internal/adapters/sqlite/savedplan_test.go`
-- `internal/adapters/sqlite/community_migrations.go`
-- `tasks/community-map/evidence.md`
+### 2a. Measure index size, lookup speed and precision — 3 h · single agent
+- [ ] Done
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**Owns:** `tasks/writers-map-spike/` (throwaway), `tasks/writers-map-results.md`
 
-## Checkpoint: After Tasks 1–3
+- Crawl two full blogs (viajecomigo PT, saltinourhair EN), build the names-only tables in a temp SQLite file, run the Madeira Wikidata nearby query, match.
 
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Review map/photo/snapshot evidence and revise unknowns before expanding the implementation.
+**Acceptance — record in the results doc:**
+- [ ] MB and rows per 1,000 posts, and the projection for ~20,400 posts (proposed bar ≤300 MB).
+- [ ] Madeira lookup time (proposed ≤200 ms).
+- [ ] 40-match precision with Wikidata aliases, against the research's 37/40 (proposed ≥90%).
+- [ ] How many of the 55 research places (≥3 blogs) Wikidata nearby plus filters still returns.
+- [ ] **Verdict:** keep the schema, cap sub-spans, or add OSM names. **PR 5 waits for this.**
 
-## Task 4: Document browser ownership behavior
+**Verify:** results document reviewed by the owner.
 
-- [ ] Complete Task 4
+---
 
-**Description:** Make the confirmed browser-only model explicit for implementation and verification.
+## PR 3 — Map Shell Behind the Flag (≈4 h) · needs: PR 1
 
-**Acceptance criteria:**
-- [ ] Public posting asks only for a display name, with no registration, email or identity-provider dependency.
-- [ ] Names are unverified attribution, never authorization; an opaque browser credential owns edits, saves, copied plans and like state.
-- [ ] The confirmed browser-only model has no recovery link: clearing cookies or changing devices loses access to private state and author controls without deleting public posts.
+**Goal:** with `WRITERS_MAP=1`, every destination shows the new map with fixture data. With it off, Waze is unchanged.
 
-**Verification:**
-- [ ] Review the identity contract against the confirmed browser-only decision (documentation task; no new runtime tests).
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Walk through same-name visitors, a new device and cleared cookies; make the resulting behavior explicit.
+### 3a. Write the core map JS and CSS — 1.5 h
+- [ ] Done
 
-**Dependencies:** None
+**Owns:** `public/redesign/writers-map.js`, `public/redesign/writers-map.css`
 
-**Files likely touched:**
-- `tasks/community-map/identity.md`
-- `tasks/community-map/evidence.md`
+- Leaflet (unpkg + SRI) and OSM tiles with attribution; tile URL read from a data attribute.
+- One map instance across HTMX swaps.
+- Layer registry and events as in the contract.
+- List alternative reachable by keyboard.
+- Status area for loading, partial and unavailable states.
 
-**Estimated scope:** Small (2 files); 1-hour timebox.
+**Verify:** exercised by 3c.
 
-## Task 5: Measure the current resource baseline
+### 3b. Wire the template and fixture endpoints — 1.5 h · **integrator**
+- [ ] Done
 
-- [ ] Complete Task 5
+**Owns:** `views/map_card.go.tpl`, `views/index.go.tpl`, `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/writermap_test.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
 
-**Description:** Measure local runtime memory and a representative fixture workload without inspecting bills or changing Fly resources.
+- Flag on: the map shell with all contract slots, plus `hx-trigger="load"`. Flag off: today's Waze markup, byte-for-byte.
+- Contract endpoints, served from the PR 1 fake.
+- Keep "View larger map".
 
-**Acceptance criteria:**
-- [ ] Record idle, peak and post-load memory plus toolchain, workload and machine details.
-- [ ] Run cached reads and cold-provider simulations with bounded concurrency, separating synthetic latency from live service behavior.
-- [ ] State whether 512 MB is a testable target; do not claim production fit from idle measurements or macOS results alone.
+**Verify:** `go test ./internal/adapters/httpserver/...` (flag on and off; 404s; escaping).
 
-**Verification:**
-- [ ] Tests pass: `go test ./cmd/loadtest-server`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Run the local load fixture and record memory; exercise no public tile servers or production writes.
+### 3c. Add the design-preview scenario — 1 h
+- [ ] Done
 
-**Dependencies:** None
+**Owns:** `cmd/design-preview/writersmap.go`, `cmd/design-preview/writersmap_test.go`
 
-**Files likely touched:**
-- `loadtests/community-baseline.js`
-- `loadtests/README.md`
-- `tasks/community-map/evidence.md`
+- Scenarios: Madeira (writers), a base-only city, sources unavailable. Local fixture tiles.
 
-**Estimated scope:** Medium (3 files); 1.5-hour timebox.
+**Acceptance**
+- [ ] 375 and 1440 px.
+- [ ] Two destination swaps leave one map.
+- [ ] Keyboard can reach the list.
 
-## Task 6: Wire the optional community module
+**Verify:** `go test ./cmd/design-preview`.
 
-- [ ] Complete Task 6
+**PR 3 done when:** both flag states pass tests; preview shows the shell.
 
-**Description:** Provide narrow application ports, an incremental migration runner and dependency wiring while keeping existing pages functional.
+---
 
-**Acceptance criteria:**
-- [ ] Community dependencies follow existing adapter/setter patterns; existing Storage mocks do not require unrelated community methods.
-- [ ] Versioned migrations are transactional and restart-safe, preserve existing tables, and adopt the snapshot migration from Task 3.
-- [ ] Disabled or unconfigured community dependencies preserve the current dashboard; fixtures never leak into production.
+## PR 4 — Base Layer (≈5 h) · needs: PR 1
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/sqlite ./internal/adapters/httpserver ./cmd/design-preview`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Start with community disabled and compare home, search and shared-trip pages with the baseline.
+### 4a. Write the Wikidata nearby adapter — 2.5 h
+- [ ] Done
 
-**Dependencies:** Task 3
+**Owns:** `internal/adapters/api/wikidatanearby.go`, `wikidatanearby_test.go`, `internal/adapters/api/testdata/wikidata_*.json`
 
-**Files likely touched:**
-- `internal/application/community.go`
-- `internal/adapters/sqlite/community_migrations.go`
-- `internal/adapters/sqlite/database.go`
-- `internal/adapters/httpserver/community.go`
-- `cmd/web/main.go`
+- SPARQL `wikibase:around`: ≈40 km for cities (overrides first for islands/regions), visitable-class filter, infrastructure excluded, capped at ~200 ranked by sitelinks (writer count re-ranks later in 6a).
+- Returns en/pt labels and aliases, English description, P18 image with Commons credit (reuse `wikimedia.go` parsing), and sitelinks.
+- Retry-After honored; identified user agent.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**Acceptance**
+- [ ] Madeira fixture includes Pico Ruivo, Cabo Girão and Câmara de Lobos, and excludes the airport.
+- [ ] Missing image or description → field left empty.
 
-## Checkpoint: After Tasks 4–6
+**Verify:** `go test ./internal/adapters/api/...`.
 
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Review the first five tasks' experiments and the anonymous identity contract with the owner; re-estimate the remaining hours. Billing clarification is explicitly excluded.
+### 4b. Add the cache decorator — 1.5 h
+- [ ] Done
 
-## Task 7: Establish anonymous visitor ownership
+**Owns:** `internal/adapters/sqlite/wikidatanearby.go`, `wikidatanearby_test.go`
 
-- [ ] Complete Task 7
+- Cache in `source_cache` with **no expiry**, following `sourcecache.go`: cached → no call; error with no cache → empty result plus an error the caller can log.
+- `Refresh(dest)` re-runs the query and overwrites the row in place (called by the monthly job in 5d).
+- Singleflight per destination.
 
-**Description:** Assign a durable opaque browser credential without presenting a sign-in flow or treating the chosen name as identity.
+**Verify:** `go test -race ./internal/adapters/sqlite/...` (20 concurrent callers → 1 query).
 
-**Acceptance criteria:**
-- [ ] A random opaque credential identifies a server-side visitor; the client cannot select its owner ID and stored credentials are protected against disclosure.
-- [ ] The persistent cookie uses Secure in production, HttpOnly and appropriate SameSite settings; lost/expired credentials create a new owner rather than claiming old content by name.
-- [ ] Two browsers with the same display name remain distinct; restart preserves valid credentials and records, and reads do not unnecessarily allocate visitors.
+### 4c. Warm from search suggestions — 1 h · **integrator**
+- [ ] Done
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/sqlite ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Create visitor state in two isolated browsers using the same name; restart and verify ownership stays separate.
+**Owns:** `internal/adapters/httpserver/suggest.go`, `suggest_test.go`, `cmd/web/main.go` (wiring only)
 
-**Dependencies:** Task 4, Task 6
+- Top suggestion → background base query: deduplicated, at most one per client per 2 s, only when `WRITERS_MAP` is on, never delaying the suggestion response.
 
-**Files likely touched:**
-- `internal/application/visitor.go`
-- `internal/adapters/sqlite/visitors.go`
-- `internal/adapters/sqlite/visitors_test.go`
-- `internal/adapters/httpserver/visitor.go`
-- `internal/adapters/httpserver/visitor_test.go`
+**Verify:** `go test ./internal/adapters/httpserver/...` with a fake that counts calls.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**PR 4 done when:** cached base data is available behind the flag; suggestion latency is unchanged.
 
-## Task 8: Protect the admin workspace
+---
 
-- [ ] Complete Task 8
+## PR 5 — Writers Index and Monthly Sync (≈9 h) · needs: PR 1, **PR 2 verdict**
 
-**Description:** Provide owner-only access to moderation without introducing accounts or sign-in for public contributors.
+### 5a. Create the index tables and store — 2 h
+- [ ] Done
 
-**Acceptance criteria:**
-- [ ] An admin-only entry verifies a deployment-provided secret verifier and establishes a separate protected session; absent configuration disables administration.
-- [ ] Failed login attempts are bounded and admin session expiry/logout work; secrets never appear in HTML, logs or the repository.
-- [ ] Visitors cannot grant themselves admin status through a name, cookie field or request parameter.
+**Owns:** `internal/adapters/sqlite/writerindex.go`, `writerindex_test.go`
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/config`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Try valid, invalid and missing admin configuration without changing the anonymous contribution flow.
+- Tables `writer_posts`, `writer_names`, `writer_days` and `writer_sync`, using the schema from the PR 2 verdict, created with `CREATE TABLE IF NOT EXISTS` from a function the integrator calls.
+- Store methods: upsert a post with its names and days in one transaction, delete a post, purge a host, look up by phrases, read and write the sync cursor.
 
-**Dependencies:** Task 6, Task 7
+**Acceptance**
+- [ ] Re-indexing a post replaces its rows and never duplicates them.
+- [ ] Purging a host removes every row for it.
+- [ ] An existing database file is untouched otherwise.
 
-**Files likely touched:**
-- `internal/adapters/httpserver/admin_auth.go`
-- `internal/adapters/httpserver/admin_auth_test.go`
-- `internal/config/env.go`
-- `internal/config/env_test.go`
-- `views/admin_login.go.tpl`
+**Verify:** `go test ./internal/adapters/sqlite/...`.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+### 5b. Extract name phrases and day headings — 2.5 h
+- [ ] Done
 
-## Task 9: Enforce visitor write boundaries
+**Owns:** `internal/writermap/extract.go`, `extract_test.go`, `internal/writermap/testdata/posts/`
 
-- [ ] Complete Task 9
+- Pure function: HTML in → phrases (folded, original-case flag, positions, sub-spans of up to 5 words), day sections, and an itinerary flag out. No text is returned.
 
-**Description:** Apply shared ownership and request-protection checks before enabling public writes, and expose browser-owned personal navigation.
+**Acceptance**
+- [ ] "Miradouro do Pico dos Barcelos" yields both the full name and "Pico dos Barcelos".
+- [ ] The EN and PT itinerary fixtures split into the right days; a listicle isn't flagged as an itinerary.
 
-**Acceptance criteria:**
-- [ ] Mutations enforce CSRF/origin protection and server-side visitor ownership; knowing a name or object ID never permits an edit.
-- [ ] Private visitor responses are not publicly cached, and expired credentials cannot access old personal state.
-- [ ] Personal navigation explains browser-local access where relevant; existing destination navigation remains intact and no public sign-in control is introduced.
+**Verify:** `go test ./internal/writermap/...`.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Try two same-name browsers plus an admin session; verify cross-owner and forged writes fail.
+### 5c. Write the WordPress client and host limiter — 2 h
+- [ ] Done
 
-**Dependencies:** Task 7, Task 8
+**Owns:** `internal/adapters/api/wordpress.go`, `wordpress_test.go`, `internal/adapters/api/hostlimiter.go`, `hostlimiter_test.go`
 
-**Files likely touched:**
-- `internal/adapters/httpserver/visitor.go`
-- `internal/adapters/httpserver/visitor_test.go`
-- `internal/adapters/httpserver/community.go`
-- `views/personal.go.tpl`
-- `views/index.go.tpl`
+- Listing by page with `modified_after`, an id-only sweep, fetch by id (`_fields=content`), robots.txt check (cached).
+- Per-host limiter ≥1.5 s, shared by the sync and the summary job (PR 9).
+- 403 returns a typed `ErrBlocked`; one retry with backoff on timeout.
 
-**Estimated scope:** Medium (5 files); 1-hour timebox.
+**Verify:** `go test -race` with `httptest` covering pages, 400 past the last page, 403, timeout and robots disallow.
 
-## Checkpoint: After Tasks 7–9
+### 5d. Build the monthly sync job — 2.5 h · *after 5a–5c* · **integrator**
+- [ ] Done
 
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
+**Owns:** `internal/writermap/sync.go`, `sync_test.go`, `internal/adapters/sqlite/database.go` (table creation call), `cmd/web/main.go` (start only when `WRITERS_SYNC` is on)
 
-## Task 10: Let a contributor publish a place
+- Initial crawl, then one **monthly** run: changed posts (`modified_after`), deleted-posts sweep, Wikidata `Refresh` for cached destinations, then a hook for the summary step (PR 9). Single-run lock, resumable cursor, one page in memory at a time, off-peak.
+- All writes are upserts in place; no history rows.
+- `ErrBlocked` → source marked blocked and skipped; `removed` sources purged.
+- One progress line per host per run.
 
-- [ ] Complete Task 10
+**Acceptance**
+- [ ] An interrupted crawl resumes from its cursor.
+- [ ] Edited posts are re-indexed; deleted posts are dropped after the sweep.
+- [ ] Two consecutive runs over unchanged data leave row counts and file size unchanged.
 
-**Description:** Create one persistent shared place with its initial text contribution through a form and selected coordinates.
+**Verify:** `go test -race ./internal/writermap/...` with the 5c fake server; CI green.
 
-**Acceptance criteria:**
-- [ ] A visitor can submit a display name, place name, finite valid coordinates and initial text without signing in; place and contribution commit atomically under that browser owner.
-- [ ] Empty/oversized names or text and invalid coordinates display field errors; repeated submissions do not leave empty or duplicate records.
-- [ ] The result opens the newly created public place; no image is required and text is rendered safely.
+**PR 5 done when:** a two-blog sync runs locally with `WRITERS_SYNC=1` and resumes after being killed.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Create a place at chosen coordinates, reload it, then retry the submission and simulate a failed write.
+---
 
-**Dependencies:** Task 6, Task 9
+## PR 6 — Matching and the Real Source (≈5.5 h) · needs: PR 4, PR 5
 
-**Files likely touched:**
-- `internal/adapters/sqlite/places.go`
-- `internal/adapters/httpserver/places.go`
-- `internal/adapters/httpserver/places_test.go`
-- `views/place_create.go.tpl`
-- `internal/adapters/httpserver/community.go`
+> **6a can start right after PR 1** against the fixture, and waits in its branch until PR 6 opens. On-demand excerpts were dropped on October 6 — summaries (PR 9) replace them.
 
-**Estimated scope:** Medium (5 files); 2-hour timebox.
+### 6a. Write the matcher and itinerary assembly — 2.5 h · *early*
+- [ ] Done
 
-## Task 11: Suggest existing nearby places
+**Owns:** `internal/writermap/match.go`, `match_test.go`, `internal/writermap/itinerary.go`, `itinerary_test.go`
 
-- [ ] Complete Task 11
+- Pure function: places (aliases) plus index rows go in; mentions per place, writer counts and itineraries come out.
+- Rules from the research: case rule, stoplist, nested-name suppression by position, overrides.
+- Re-rank places: writer count first, then sitelinks; keep the ~200 cap.
 
-**Description:** Before publication, let contributors inspect existing nearby places and continue on the correct shared pin.
+**Acceptance**
+- [ ] "São Pedro de Alcântara" doesn't count as "Alcântara".
+- [ ] "praia" in running text doesn't match.
+- [ ] The three Clérigos entries merge into one.
+- [ ] Itinerary days are ordered by first mention.
 
-**Acceptance criteria:**
-- [ ] The create form lists nearby existing places with names and distances; selecting one opens its current detail page instead of creating a duplicate.
-- [ ] Coordinates alone never force two distinct neighboring businesses to merge; the user can still create a distinct place.
-- [ ] Queries and result counts are bounded; unavailable suggestions do not erase the draft.
+**Verify:** `go test ./internal/writermap/...`.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Add two distinct nearby venues and verify both can exist while an obvious duplicate is suggested.
+### 6b. Compose the real source and wire it — 3 h · **integrator**
+- [ ] Done
 
-**Dependencies:** Task 10
+**Owns:** `internal/writermap/source.go`, `source_test.go`, `internal/adapters/sqlite/writerdestination.go`, `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
 
-**Files likely touched:**
-- `internal/adapters/sqlite/places.go`
-- `internal/adapters/httpserver/places.go`
-- `internal/adapters/httpserver/places_test.go`
-- `views/place_create.go.tpl`
-- `public/redesign/community-map.js`
+- `WriterMapSource` built from base (PR 4), index store (PR 5) and matcher; `Place()` reads `writer_summaries` if the table has a row (empty until PR 9).
+- Per-destination result stored with no expiry, upserted in place, recomputed after each monthly run.
+- Replaces the fake when `WRITERS_MAP` is on.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**Acceptance**
+- [ ] No blog request during `Destination()` or `Place()` (test asserts zero HTTP calls).
+- [ ] The fake is still available to the preview.
 
-## Task 12: Replace Waze with the community map
+**Verify:** `go test -race ./...`; local run with both flags on shows Madeira on real data.
 
-- [ ] Complete Task 12
+**PR 6 done when:** Madeira works end to end locally on real data (links, no summaries yet).
 
-**Description:** Integrate the proven map lifecycle with real viewport place queries and the existing destination flow.
+---
 
-**Acceptance criteria:**
-- [ ] Home, destination search and shared-trip pages show pins for the current viewport without provider-photo calls per pin.
-- [ ] Viewport results are bounded and paginated or clustered without ranking by likes; stale requests cannot replace a newer destination.
-- [ ] Clicking the map opens creation at those coordinates; empty/error states and map attribution remain usable.
+## PR 7 — Map UI Features (≈13.5 h) · needs: PR 3 · *runs on the fake source, parallel with PRs 4–6*
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./cmd/design-preview`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Pan, zoom, create a pin and switch cities rapidly; confirm old markers and event handlers are gone.
+### 7a. Build pins and panels — 3 h
+- [ ] Done
 
-**Dependencies:** Task 1, Task 10, Task 11
+**Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl`, `internal/adapters/httpserver/placepanel_test.go`
 
-**Files likely touched:**
-- `internal/adapters/httpserver/places.go`
-- `internal/adapters/httpserver/places_test.go`
-- `internal/adapters/sqlite/places.go`
-- `views/map_card.go.tpl`
-- `public/redesign/community-map.js`
+- Writer pins drawn above base pins and sized by writer count.
+- Base panel: description, photo with credit, Wikipedia link.
+- Writer panel adds "Mentioned by N writers", the summary labelled *AI summary* when present, and one link per writer's post with a language label. **No quoted blog text.**
+- Save button slot `data-save-qid`.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**Acceptance**
+- [ ] Every writer is listed with a post link.
+- [ ] A writer pin without a summary shows links only, with no empty box.
+- [ ] A base-only destination shows "No writer mentions here yet".
 
-## Checkpoint: After Tasks 10–12
+**Verify:** `go test ./internal/adapters/httpserver/ -run PlacePanel`; preview at 375 and 1440 px.
 
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
+### 7b. Draw the day plan layer — 3 h
+- [ ] Done
 
-## Task 13: Open a place discussion
+**Owns:** `public/redesign/map-dayplan.js`, `views/itinerary_body.go.tpl`, `views/trip_card.go.tpl`
 
-- [ ] Complete Task 13
+- The plan response emits stop coordinates per day; the script fires `travelmap:plan-updated` and draws numbered pins per day with a day toggle.
 
-**Description:** Deliver a public place detail panel and a direct place URL with readable contributions.
+**Acceptance**
+- [ ] Generating, regenerating and clearing a plan leave no duplicate layers.
+- [ ] Works on base-only destinations.
 
-**Acceptance criteria:**
-- [ ] Opening a pin or direct URL shows the same place, a photo placeholder and newest-first contributions.
-- [ ] Contribution pages have a stable cursor and bounded size; an empty discussion remains usable.
-- [ ] The panel supports keyboard opening/closing and small screens; tile failure leaves the place content accessible.
+**Verify:** template test for the emitted data; preview check.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Open a direct place link at 375 px, paginate contributions and close the panel using the keyboard.
+### 7c. Add writers' itinerary layers — 2 h
+- [ ] Done
 
-**Dependencies:** Task 12
+**Owns:** `public/redesign/map-itineraries.js`, `public/redesign/map-itineraries.css`
 
-**Files likely touched:**
-- `internal/adapters/httpserver/places.go`
-- `internal/adapters/httpserver/places_test.go`
-- `views/place_panel.go.tpl`
-- `public/redesign/community-map.js`
-- `public/redesign/community-map.css`
+- Lists itineraries in the `layers` slot; one is drawn at a time, with ordered pins and lines, labelled as the writer's route and linked to the post; hidden when there are none.
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**Verify:** preview check with fixture itineraries.
 
-## Task 14: Let authors manage their comments
+### 7d. Add "Want to visit" — 2 h
+- [ ] Done
 
-- [ ] Complete Task 14
+**Owns:** `public/redesign/map-saved.js`
 
-**Description:** Implement publication, editing and deletion of each author's text contributions in the place discussion.
+- Binds `data-save-qid` buttons; "Saved" list in the `saved` slot; `localStorage` wrapped in try/catch.
 
-**Acceptance criteria:**
-- [ ] Visitors enter a display name and publish immediately; their browser can edit/delete its own comments, with stable newest-first ordering.
-- [ ] Another browser cannot change a comment or its owner, even using the same display name; names are unverified attribution. The author's browser cannot edit or restore an admin-deleted comment.
-- [ ] Deleting the first comment does not delete the shared place or other people's contributions; empty states remain clear.
+**Acceptance**
+- [ ] Saves survive a reload.
+- [ ] Blocked storage hides the buttons.
+- [ ] No server calls.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Publish as one user, try editing as another, then delete the original contribution.
+**Verify:** preview check, including a private window.
 
-**Dependencies:** Task 9, Task 13
+### 7e. Add "Plan with these places" — 3.5 h
+- [ ] Done
 
-**Files likely touched:**
-- `internal/adapters/sqlite/contributions.go`
-- `internal/adapters/httpserver/contributions.go`
-- `internal/adapters/httpserver/contributions_test.go`
-- `views/place_panel.go.tpl`
-- `internal/adapters/httpserver/community.go`
+**Owns:** `internal/planner/types.go`, `internal/planner/build.go` (seeding only), `internal/planner/build_test.go`, `internal/adapters/httpserver/trip.go` (query parsing in `planTrip`), `trip_test.go`, `public/redesign/map-itineraries.js` (button only, after 7c)
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+- `planner.Request` gains `Include []Place` (max ~12); `Build` places them into days first (by writer day where possible), then fills with nearby places as today.
+- `/plan` accepts the QIDs in the query string, resolved through `WriterMapSource.Place` (the fake in PR 7, the real source after PR 6); unknown QIDs are ignored. The URL is shareable.
+- Button on each writer's itinerary layer.
 
-## Task 15: Like a place
+**Acceptance**
+- [ ] All included places appear in the plan; requests without `Include` produce today's plans byte-for-byte.
+- [ ] More included places than days can hold → extra ones listed as "also suggested", not dropped silently.
 
-- [ ] Complete Task 15
+**Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`; preview check.
 
-**Description:** Add a place-level like/unlike action and count, independent of comments and saved places.
+**Integrator for PR 7:** whoever lands last adds the script and style tags to `views/index.go.tpl` and runs the full preview journey on fixture data.
 
-**Acceptance criteria:**
-- [ ] A visitor can like/unlike once per browser owner per place; concurrent retries cannot inflate the count.
-- [ ] Counts and the current browser's state survive refresh/restart; new visitors can like without entering a name or signing in.
-- [ ] No comment, photo or itinerary gets a like action, and map inclusion/order does not depend on likes.
+**PR 7 done when:** with `WRITERS_MAP=1`, the full UI works on fixture data.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Like repeatedly from two tabs in one browser, unlike, then compare counts from a separate browser.
+---
 
-**Dependencies:** Task 9, Task 13
+## PR 8 — Verify and Launch (≈9 h) · needs: PR 6, PR 7
 
-**Files likely touched:**
-- `internal/adapters/sqlite/place_likes.go`
-- `internal/adapters/httpserver/place_likes.go`
-- `internal/adapters/httpserver/place_likes_test.go`
-- `views/place_panel.go.tpl`
-- `internal/adapters/httpserver/community.go`
+### 8a. Add resilience tests — 3 h
+- [ ] Done
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+**Owns:** `internal/writermap/resilience_test.go`, `internal/adapters/httpserver/writermap_resilience_test.go`
 
-## Checkpoint: After Tasks 13–15
+**Acceptance**
+- [ ] Wikidata down with no cache → tiles, day plan and an honest message.
+- [ ] Summary table empty or `WRITERS_AI` off → panels show links only.
+- [ ] A sync killed mid-crawl → it resumes, and searches keep working.
+- [ ] 20 concurrent searches for a new destination → one Wikidata query.
 
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
+**Verify:** `go test -race ./...`.
 
-## Task 16: Save a place for later
+### 8b. Measure live behavior — 3 h
+- [ ] Done
 
-- [ ] Complete Task 16
+**Owns:** `tasks/writers-map-results.md`
 
-**Description:** Add a personal Want to visit toggle to the place panel.
+- Local build limited to the Fly machine's memory, against real sources.
 
-**Acceptance criteria:**
-- [ ] Saving/unsaving is idempotent and persists per visitor independently of likes.
-- [ ] One browser owner's saved state is never returned for another or cached into public fragments; a name cannot recover it.
-- [ ] The UI confirms success and preserves the prior state on request failure.
+**Acceptance — record:**
+- [ ] Full sync: time, bandwidth, peak memory, index size.
+- [ ] Monthly delta size; database size after two runs (should not grow on unchanged data).
+- [ ] Search latency warm and cold for Madeira, Lisbon, a non-Portuguese city, and a city with no writers.
+- [ ] Panel open time (local read only).
+- [ ] Live 40-match precision.
+- [ ] 20 itinerary posts parsed.
+- [ ] The owner sets the targets and the launch date.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Save without liking, open a second isolated browser, then return to the first.
+**Verify:** results document.
 
-**Dependencies:** Task 9, Task 13
+### 8c. Run journeys and write docs — 3 h
+- [ ] Done
 
-**Files likely touched:**
-- `internal/adapters/sqlite/saved_places.go`
-- `internal/adapters/httpserver/saved_places.go`
-- `internal/adapters/httpserver/saved_places_test.go`
-- `views/place_panel.go.tpl`
-- `internal/adapters/httpserver/community.go`
+**Owns:** `cmd/design-preview/fixture.go`, `README.md`, `docs/architecture.md`, `CHANGELOG.md`
 
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
+- Journey at 375 and 1440 px and keyboard-only: search → pins → panel → post link → save → plan → day layer → writer itinerary → plan with these places.
 
-## Task 17: Browse Want to visit
+**Verify:** `go test ./cmd/design-preview`; `make test lint build`.
 
-- [ ] Complete Task 17
+### 8d. Turn the flags on and release — owner · *after 8a–8c*
+- [ ] Done
 
-**Description:** Give each visitor a discoverable page for their browser-owned saved places.
+**Owns:** deploy configuration (`fly.toml` env or secrets)
 
-**Acceptance criteria:**
-- [ ] Personal navigation opens a private, bounded saved-place list with names and preview states.
-- [ ] Each item opens its place, and removing an item updates the list and empty state.
-- [ ] The list works on mobile and across destinations without adding places directly to an itinerary.
+- [ ] The owner reviews the release candidate.
+- [ ] `WRITERS_SYNC=1` first; wait for the initial crawl to finish; then `WRITERS_MAP=1`.
+- [ ] `WRITERS_AI` stays off until PR 9d.
+- [ ] Sign-off recorded in `tasks/writers-map-results.md`.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Save places from two destinations, open the list and remove the final item.
+---
 
-**Dependencies:** Task 16
+## PR 9 — AI Summaries via LLM Gateway (≈9 h) · needs: PR 5, PR 6 · **9c needs the LLM Gateway project**
 
-**Files likely touched:**
-- `internal/adapters/httpserver/saved_places.go`
-- `internal/adapters/httpserver/saved_places_test.go`
-- `views/saved_places.go.tpl`
-- `views/personal.go.tpl`
+**Goal:** an English 2–3 sentence "what writers say" summary per writer pin, made monthly on the server. Not on the launch path: 9a–9b merge with `WRITERS_AI` off; 9c–9d wait for LLM Gateway.
 
-**Estimated scope:** Medium (4 files); 1.5-hour timebox.
+### 9a. Cut passages around mentions — 2 h · *early, after PR 1*
+- [ ] Done
 
-## Task 18: Show supplied exact-place photos
+**Owns:** `internal/writermap/passages.go`, `passages_test.go`, `internal/writermap/testdata/posts/` (add only)
 
-- [ ] Complete Task 18
+- Pure function: post HTML + a place's aliases → passages (the sentence with the mention ± one sentence), language, post ref. Skips address, hotel and price-list lines. Max ~1,500 chars per post. Nothing is persisted.
 
-**Description:** Promote the photo experiment into a cached, bounded lookup for a persistent place.
+**Acceptance**
+- [ ] An "Address: … Chiado" line is skipped.
+- [ ] A mention no longer in the post → no passage.
+- [ ] Works on the EN and PT fixtures.
 
-**Acceptance criteria:**
-- [ ] Only a confident place match is labeled exact; ambiguous/no-result/error outcomes preserve a usable photo-free place.
-- [ ] The panel displays image, author, license and source links; broken images show Photo unavailable.
-- [ ] Cache identity includes the actual place identity/coordinates and uses negative/error handling without reusing city photos as exact matches.
+**Verify:** `go test ./internal/writermap/...`.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/api ./internal/adapters/sqlite ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Inspect an exact match, ambiguous namesake and broken image without losing place comments.
+### 9b. Build the summary job and store — 3 h · *after 5d, 9a* · **integrator**
+- [ ] Done
 
-**Dependencies:** Task 2, Task 6, Task 13
+**Owns:** `internal/writermap/summaries.go`, `summaries_test.go`, `internal/adapters/sqlite/writersummaries.go`, `writersummaries_test.go`, `internal/adapters/sqlite/database.go` (table creation call), `cmd/web/main.go` (`wireSummaries`, only when `WRITERS_AI` is on)
 
-**Files likely touched:**
-- `internal/adapters/api/placephoto.go`
-- `internal/adapters/sqlite/placephoto.go`
-- `internal/adapters/httpserver/place_photos.go`
-- `internal/adapters/httpserver/place_photos_test.go`
-- `views/place_panel.go.tpl`
+- Table `writer_summaries` (QID, text, source post refs, model, generated at), upserted in place.
+- Runs as the last step of the monthly job: places whose writer posts changed or that have no summary; per-run cap; resumable; posts fetched by id through the host limiter; text dropped after the call.
+- Removed hosts and the override hide list delete or suppress summaries.
 
-**Estimated scope:** Medium (5 files); 2-hour timebox.
+**Acceptance**
+- [ ] With the fake summarizer, Madeira pins get summaries; a second run with no changes makes zero summarizer calls.
+- [ ] Summarizer error → previous summary kept; run continues.
 
-## Checkpoint: After Tasks 16–18
+**Verify:** `go test -race ./internal/writermap/... ./internal/adapters/sqlite/...`.
 
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
+**PR 9a–9b done when:** merged with `WRITERS_AI` off; the fake summarizer fills Madeira locally.
 
-## Task 19: Choose a nearby preview
+### 9c. Write the LLM Gateway adapter — 2 h · ***blocked on the LLM Gateway project***
+- [ ] Done
 
-- [ ] Complete Task 19
+**Owns:** `internal/adapters/api/llmgateway.go`, `llmgateway_test.go`
 
-**Description:** Allow the creator to select a supplied nearby image when the place lacks an exact photo.
+- Implements `Summarizer` against the gateway API (`LLM_GATEWAY_URL`, `LLM_GATEWAY_KEY`). Fixed prompt: "2–3 sentences in English; use only these passages; no facts not in them."
+- Timeouts, one retry, request size cap.
 
-**Acceptance criteria:**
-- [ ] The creation/result flow offers bounded nearby candidates with attribution and distance; skipping selection still publishes the pin.
-- [ ] Only a server-issued candidate for that place can be selected; no upload field or arbitrary remote image URL is accepted.
-- [ ] Selection appears immediately as Nearby photo and atomically creates a pending admin review item; retries do not duplicate it.
+**Verify:** `go test` with `httptest` covering success, timeout, 4xx/5xx.
 
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/sqlite ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Create a photo-free place, choose a nearby preview, and inspect the pending review state.
+### 9d. Check quality and switch AI on — 2 h · *after 9c* · owner sign-off
+- [ ] Done
 
-**Dependencies:** Task 11, Task 18
+**Owns:** `tasks/writers-map-results.md`
 
-**Files likely touched:**
-- `internal/adapters/sqlite/placephoto.go`
-- `internal/adapters/httpserver/place_photos.go`
-- `internal/adapters/httpserver/place_photos_test.go`
-- `views/place_photo_picker.go.tpl`
-- `views/place_create.go.tpl`
+**Acceptance — record:**
+- [ ] 20 Madeira summaries hand-checked against their posts: invented facts (target 0), PT sources summarized correctly.
+- [ ] Monthly run time and number of gateway calls.
+- [ ] `docs/maintenance.md` updated with the gateway setup and how to hide a bad summary.
+- [ ] Owner switches `WRITERS_AI=1`.
 
-**Estimated scope:** Medium (5 files); 2-hour timebox.
-
-## Task 20: Review selected photos
-
-- [ ] Complete Task 20
-
-**Description:** Give admins a dedicated queue for nearby previews and the tools to resolve each selection.
-
-**Acceptance criteria:**
-- [ ] Only admins can list pending selections and approve, replace or remove the preview.
-- [ ] Approval retains Nearby photo unless the admin explicitly confirms it depicts the actual place; removal restores the unavailable state.
-- [ ] A stale review cannot overwrite a newer selection; resolution and actor are recorded once.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/sqlite ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Review as admin and non-admin, and resolve the same pending selection from two tabs.
-
-**Dependencies:** Task 9, Task 19
-
-**Files likely touched:**
-- `internal/adapters/sqlite/photo_reviews.go`
-- `internal/adapters/httpserver/admin_photos.go`
-- `internal/adapters/httpserver/admin_photos_test.go`
-- `views/admin_photos.go.tpl`
-- `internal/adapters/httpserver/community.go`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 21: Save the displayed itinerary
-
-- [ ] Complete Task 21
-
-**Description:** Let a visitor persist exactly the plan currently displayed by the existing planner without signing in.
-
-**Acceptance criteria:**
-- [ ] Save operates on a server-issued reference bound to the rendered plan; it never silently regenerates from city/date parameters.
-- [ ] Stored content preserves stops and day order with a schema version and owner, without embedding transient weather as current information.
-- [ ] Expired/tampered references fail clearly while the displayed itinerary remains visible; saving creates a private plan.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Generate, change the forecast fixture, then save and verify the original displayed route was retained.
-
-**Dependencies:** Task 3, Task 9
-
-**Files likely touched:**
-- `internal/adapters/httpserver/trip.go`
-- `internal/adapters/httpserver/saved_plans.go`
-- `internal/adapters/httpserver/saved_plans_test.go`
-- `views/itinerary_body.go.tpl`
-- `internal/adapters/sqlite/savedplan.go`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Checkpoint: After Tasks 19–21
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
-
-## Task 22: Browse saved itineraries
-
-- [ ] Complete Task 22
-
-**Description:** Make browser-owned stored plans discoverable and viewable independently of the live planner.
-
-**Acceptance criteria:**
-- [ ] Personal navigation offers a private saved-plan list with stable links and an empty state.
-- [ ] The owner can view a stored route when dates are past or external providers are unavailable.
-- [ ] Private plans cannot be read by another user; views do not call the planner or relabel old forecast information as current.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Open a stored plan with providers disabled and verify a second browser cannot open its private URL.
-
-**Dependencies:** Task 21
-
-**Files likely touched:**
-- `internal/adapters/httpserver/saved_plans.go`
-- `internal/adapters/httpserver/saved_plans_test.go`
-- `views/saved_plans.go.tpl`
-- `views/saved_plan.go.tpl`
-- `views/personal.go.tpl`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 23: Attach an itinerary recommendation
-
-- [ ] Complete Task 23
-
-**Description:** Let creators and commenters attach their own saved plan, either alone or alongside text.
-
-**Acceptance criteria:**
-- [ ] The contribution form can select an owned plan and explicitly publish an immutable snapshot with an inline preview/link.
-- [ ] A display name is required; text-only, itinerary-only and combined submissions work for new/existing places, and a fully empty submission fails.
-- [ ] Authors can replace/remove their own attachment; publishing does not expose unrelated private plans or mutate earlier published snapshots.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Create an itinerary-only pin, add a combined contribution and remove its attachment as the author.
-
-**Dependencies:** Task 10, Task 14, Task 22
-
-**Files likely touched:**
-- `internal/adapters/sqlite/contributions.go`
-- `internal/adapters/httpserver/contributions.go`
-- `internal/adapters/httpserver/contributions_test.go`
-- `views/place_create.go.tpl`
-- `views/place_panel.go.tpl`
-
-**Estimated scope:** Medium (5 files); 2-hour timebox.
-
-## Task 24: Copy a published itinerary
-
-- [ ] Complete Task 24
-
-**Description:** Turn a public itinerary recommendation into an independent saved plan owned by the current visitor.
-
-**Acceptance criteria:**
-- [ ] A visitor can preview a published snapshot and copy it into their browser-owned saved-plan list without signing in.
-- [ ] The copy receives a new ID/owner and retains the route and source attribution; retries do not create accidental duplicates.
-- [ ] Source removal or later source changes do not mutate an existing copy; no general itinerary editor is implied.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Copy in a second browser, remove the source attachment from its author's browser, then verify the copy still opens unchanged.
-
-**Dependencies:** Task 22, Task 23
-
-**Files likely touched:**
-- `internal/adapters/sqlite/savedplan.go`
-- `internal/adapters/httpserver/saved_plans.go`
-- `internal/adapters/httpserver/saved_plans_test.go`
-- `views/saved_plan.go.tpl`
-- `views/place_panel.go.tpl`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Checkpoint: After Tasks 22–24
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
-
-## Task 25: Report content
-
-- [ ] Complete Task 25
-
-**Description:** Provide public report entry points for places, comments and photos without requiring pre-publication approval.
-
-**Acceptance criteria:**
-- [ ] A visitor can submit a bounded reason against an existing target without an account; visitor identifiers are not exposed publicly.
-- [ ] Duplicate/rate-limited reports receive a clear response and cannot automatically hide content; no contact email is required.
-- [ ] Reports enter the admin queue while ordinary contributions continue publishing immediately.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Report each supported target anonymously and confirm the content stays visible pending review.
-
-**Dependencies:** Task 13, Task 14, Task 18
-
-**Files likely touched:**
-- `internal/adapters/sqlite/reports.go`
-- `internal/adapters/httpserver/reports.go`
-- `internal/adapters/httpserver/reports_test.go`
-- `views/place_panel.go.tpl`
-- `internal/adapters/httpserver/community.go`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 26: Moderate community content
-
-- [ ] Complete Task 26
-
-**Description:** Give admins a compact moderation workspace with report resolution and the ability to find and delete any comment, whether reported or not. Comment deletion is an explicit action separate from temporarily hiding content.
-
-**Acceptance criteria:**
-- [ ] Only admins can resolve reports or delete any reported/unreported comment. Deletion requires confirmation, a moderation reason and request protection; record actor, target and time.
-- [ ] Deletion removes the comment and attached recommendation from public discussion, preserving the place, other contributions, likes, saved places and previously copied itineraries. Repeated deletion is safe; author edits, hide/restore and later merges cannot revive it.
-- [ ] Report dismissal and temporary hide/restore actions still work independently of deletion; hiding a place preserves references and existing private copies, and public pages show an appropriate unavailable state.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Delete reported and unreported comments as admin, including a place's first comment and one with an itinerary. Verify public removal, retained copies/place data, blocked non-admin deletion and blocked stale author edits; also dismiss a report and hide/restore another target.
-
-**Dependencies:** Task 9, Task 25, Task 24
-
-**Files likely touched:**
-- `internal/adapters/sqlite/reports.go`
-- `internal/adapters/httpserver/admin_reports.go`
-- `internal/adapters/httpserver/admin_reports_test.go`
-- `views/admin_reports.go.tpl`
-- `internal/adapters/httpserver/community.go`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 27: Review shared-place corrections
-
-- [ ] Complete Task 27
-
-**Description:** Route suggested place-name/location changes through admins instead of granting creators shared editing rights.
-
-**Acceptance criteria:**
-- [ ] Anyone can propose a bounded correction or duplicate reference, and the suggestion reaches the admin queue.
-- [ ] Only an admin can apply a validated name/location change; the actor and previous value are recorded.
-- [ ] A location change invalidates inappropriate photo matches and refreshes map placement without moving contributions to a new identity.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Suggest a correction as a visitor, apply it as admin and verify map/photo behavior.
-
-**Dependencies:** Task 11, Task 20, Task 26
-
-**Files likely touched:**
-- `internal/adapters/httpserver/place_corrections.go`
-- `internal/adapters/httpserver/place_corrections_test.go`
-- `internal/adapters/sqlite/places.go`
-- `views/place_panel.go.tpl`
-- `views/admin_reports.go.tpl`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Checkpoint: After Tasks 25–27
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
-
-## Task 28: Preserve data during a duplicate merge
-
-- [ ] Complete Task 28
-
-**Description:** Implement a transactional merge operation on the complete community data model before exposing it to admins.
-
-**Acceptance criteria:**
-- [ ] Merging moves contributions, reports and photo-review references to the survivor, retaining an audit record and old-ID alias.
-- [ ] Overlapping browser owners produce one like and one save each; published snapshots and independent copies retain their contents.
-- [ ] Failure rolls back the entire merge; repeated/self/cyclic/concurrent merges are handled without orphan records.
-
-**Verification:**
-- [ ] Tests pass: `go test -race ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Run a temporary-database merge with overlapping likes/saves and an injected failure, then inspect all references.
-
-**Dependencies:** Task 15, Task 16, Task 20, Task 24, Task 27
-
-**Files likely touched:**
-- `internal/adapters/sqlite/place_merge.go`
-- `internal/adapters/sqlite/place_merge_test.go`
-- `internal/adapters/sqlite/community_migrations.go`
-
-**Estimated scope:** Medium (3 files); 2-hour timebox.
-
-## Task 29: Let admins merge duplicate pins
-
-- [ ] Complete Task 29
-
-**Description:** Expose a reviewable survivor/source merge action and keep old place links usable.
-
-**Acceptance criteria:**
-- [ ] An admin preview identifies the survivor, affected contributions, likes/saves and preview-photo decision before committing.
-- [ ] Only an admin can confirm the merge; a stale preview is rejected instead of applying unexpected changes.
-- [ ] Old links resolve to the survivor, old pins disappear and saved lists show one entry without losing contributions.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Preview and confirm a merge, then follow an old link as a visitor and inspect both users' saved lists.
-
-**Dependencies:** Task 28
-
-**Files likely touched:**
-- `internal/adapters/httpserver/admin_places.go`
-- `internal/adapters/httpserver/admin_places_test.go`
-- `views/admin_places.go.tpl`
-- `internal/adapters/httpserver/places.go`
-- `internal/adapters/httpserver/community.go`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 30: Expose admin navigation
-
-- [ ] Complete Task 30
-
-**Description:** Make moderation work discoverable from one admin entry point with separate report and photo queues.
-
-**Acceptance criteria:**
-- [ ] Admin navigation links to comment moderation, reports, photo reviews, corrections and merge tools with pending counts where applicable; comment deletion is accessible without a prior report.
-- [ ] Public visitors cannot access queues through navigation or direct requests, and queue counts do not leak publicly.
-- [ ] Queue lists are bounded and support pending/resolved states without loading every record.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Delete an unreported comment, complete one report and review one photo from the admin entry page; verify relevant counts update.
-
-**Dependencies:** Task 20, Task 26, Task 27, Task 29
-
-**Files likely touched:**
-- `internal/adapters/httpserver/admin.go`
-- `internal/adapters/httpserver/admin_test.go`
-- `views/admin.go.tpl`
-- `views/personal.go.tpl`
-- `internal/adapters/httpserver/community.go`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Checkpoint: After Tasks 28–30
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
-
-## Task 31: Add deterministic community journeys
-
-- [ ] Complete Task 31
-
-**Description:** Extend the existing preview with temporary persistent community data and fake visitor identities/providers.
-
-**Acceptance criteria:**
-- [ ] Fixtures include two browser owners using the same name, an admin, empty destinations, exact/nearby/missing photos and a published itinerary; no production authorization bypass is added.
-- [ ] Real handlers can exercise create, like, save, attach, copy and review against temporary SQLite state.
-- [ ] Restart/reset behavior and fixture labels are documented; prior dashboard scenarios remain available.
-
-**Verification:**
-- [ ] Tests pass: `go test ./cmd/design-preview`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Walk one traveler journey and one admin journey without external credentials or internet access.
-
-**Dependencies:** Task 12, Task 17, Task 24, Task 30
-
-**Files likely touched:**
-- `cmd/design-preview/community.go`
-- `cmd/design-preview/community_test.go`
-- `cmd/design-preview/server.go`
-- `cmd/design-preview/main.go`
-- `tasks/community-map/verification.md`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 32: Verify mobile map journeys
-
-- [ ] Complete Task 32
-
-**Description:** Check the real browser experience, focusing on the map lifecycle and accessible place interactions.
-
-**Acceptance criteria:**
-- [ ] At 375 px and 1440 px, create/open/like/save/copy controls work without clipping, trapped focus or page-scroll interference.
-- [ ] Rapid destination changes, panel reopening and browser back/forward do not duplicate handlers or show another destination's data.
-- [ ] Keyboard navigation, loading/error states and supplied-photo attribution work with tiles or photos unavailable.
-
-**Verification:**
-- [ ] Tests pass: `go test ./cmd/design-preview ./internal/adapters/httpserver`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Run the new browser check using the repository's isolated-browser convention; retain screenshots and failures.
-
-**Dependencies:** Task 31
-
-**Files likely touched:**
-- `tasks/community-map/browser-check.mjs`
-- `public/redesign/community-map.js`
-- `public/redesign/community-map.css`
-- `views/place_panel.go.tpl`
-- `tasks/community-map/verification.md`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 33: Verify community write boundaries
-
-- [ ] Complete Task 33
-
-**Description:** Exercise hostile and concurrent requests across the implemented features rather than merely retesting happy paths.
-
-**Acceptance criteria:**
-- [ ] Cross-browser edits, non-admin comment deletion, forged admin requests, CSRF, unsafe names/text/URLs and unauthorized snapshot access are rejected.
-- [ ] Concurrent like/save/retry/merge/review operations preserve uniqueness, ownership and reference integrity; deletion racing an author edit or a merge cannot revive a deleted comment or remove independent itinerary copies.
-- [ ] Write limits and pagination bounds work under repeated requests without blocking public reading; failures identify a focused follow-up before completion.
-
-**Verification:**
-- [ ] Tests pass: `go test -race ./internal/adapters/httpserver ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Run the author/second-browser/admin attack matrix against the local fixture and inspect rendered escaping.
-
-**Dependencies:** Task 30, Task 31
-
-**Files likely touched:**
-- `internal/adapters/httpserver/community_security_test.go`
-- `internal/adapters/sqlite/community_concurrency_test.go`
-- `internal/adapters/httpserver/community.go`
-- `tasks/community-map/verification.md`
-
-**Estimated scope:** Medium (4 files); 2-hour timebox.
-
-## Checkpoint: After Tasks 31–33
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Report deviations; continue within the approved plan unless scope, deadline, budget or an external action needs a new decision.
-
-## Task 34: Rehearse migration and recovery
-
-- [ ] Complete Task 34
-
-**Description:** Prove the new user data survives deployment preparation and can be restored using a disposable database.
-
-**Acceptance criteria:**
-- [ ] Migrating a copy of the previous schema preserves cached data and creates required tables; rerunning migrations is harmless.
-- [ ] A database-consistent backup restores visitor ownership, saved places, published plans and review decisions in a fresh process.
-- [ ] The release runbook defines compatible rollback behavior and never drops user data to revert the UI.
-
-**Verification:**
-- [ ] Tests pass: `go test ./internal/adapters/sqlite`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Migrate, back up and restore a temporary pre-community database; compare counts and representative records.
-
-**Dependencies:** Task 28, Task 31
-
-**Files likely touched:**
-- `internal/adapters/sqlite/community_migrations_test.go`
-- `tasks/community-map/recovery.md`
-- `tasks/community-map/verification.md`
-
-**Estimated scope:** Medium (3 files); 1.5-hour timebox.
-
-## Task 35: Measure the completed workload
-
-- [ ] Complete Task 35
-
-**Description:** Repeat resource measurements with realistic community reads/writes and provider failure simulations.
-
-**Acceptance criteria:**
-- [ ] Document a reproducible workload including map browsing, discussions, likes, saves, copying and admin actions at 10 concurrent fixture users.
-- [ ] Record peak memory, latency and error rate with warm/cold data; investigate failures against declared thresholds and repeat only affected checks.
-- [ ] Assess 512 MB headroom in a comparable Linux environment if available, recording uncertainty otherwise; do not resize Fly or inspect billing.
-
-**Verification:**
-- [ ] Tests pass: `go test ./cmd/loadtest-server`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Run the local workload, retain metrics and state precisely which production behaviors were not measured.
-
-**Dependencies:** Task 5, Task 31, Task 33
-
-**Files likely touched:**
-- `loadtests/community.js`
-- `cmd/loadtest-server/community.go`
-- `cmd/loadtest-server/main.go`
-- `loadtests/README.md`
-- `tasks/community-map/verification.md`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Task 36: Prepare the release candidate
-
-- [ ] Complete Task 36
-
-**Description:** Document and validate the complete release configuration without changing production resources.
-
-**Acceptance criteria:**
-- [ ] Document admin secret configuration, visitor-cookie lifetime/recovery limitations, tile settings and feature enable/disable behavior without secrets.
-- [ ] Full tests, race checks, lint, builds and container startup succeed; regression evidence covers existing search/planner/export flows.
-- [ ] Record live admin-auth/photo smoke results separately from fixtures and list unresolved release blockers, retaining the full agreed scope.
-
-**Verification:**
-- [ ] Tests pass: `go test -race -count=1 ./...`.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Run make lint and make build, verify the container, then review every requirement against the release checklist.
-
-**Dependencies:** Task 32, Task 33, Task 34, Task 35
-
-**Files likely touched:**
-- `README.md`
-- `tasks/community-map/release.md`
-- `tasks/community-map/verification.md`
-- `.env.example`
-- `Dockerfile`
-
-**Estimated scope:** Medium (5 files); 1.5-hour timebox.
-
-## Checkpoint: After Tasks 34–36
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Obtain owner review of the concrete release candidate before Task 37; record unresolved limits, including unverified operating cost.
-
-## Task 37: Release the reviewed community map
-
-- [ ] Complete Task 37
-
-**Description:** After the owner reviews the candidate, perform the documented deployment and verify the public flows.
-
-**Acceptance criteria:**
-- [ ] The reviewed candidate and migration/restore plan are approved before changing production; no infrastructure resize or paid service is bundled.
-- [ ] Deployment preserves existing data; public smoke checks cover browsing, named posting, likes, saves, copying and protected admin review.
-- [ ] Record deployed revision and outcomes; use the rehearsed rollback if release checks fail and never claim the deferred $5 ceiling was verified.
-
-**Verification:**
-- [ ] Verify Task 36's passing test/build evidence matches the reviewed revision; rerun affected checks only if the revision changed.
-- [ ] Build succeeds: `make build` (reuse unchanged passing evidence for documentation/release-only steps).
-- [ ] Manual check: Deploy the reviewed revision using the established Fly workflow, then run the documented public smoke checks without publishing fake community recommendations.
-
-**Dependencies:** Task 36
-
-**Files likely touched:**
-- `tasks/community-map/release.md`
-- `tasks/community-map/verification.md`
-
-**Estimated scope:** Small (2 files); 1.5-hour timebox.
-
-## Checkpoint: After Task 37
-
-- [ ] All affected tests pass and `make build` succeeds; do not rerun unchanged checks without a reason.
-- [ ] Demonstrate the completed feature path in a disposable local environment and record evidence.
-- [ ] Record the public smoke outcome and deployed revision; close only requirements actually verified.
+**PR 9 done when:** summaries show on live writer pins and the first monthly run is recorded.
 

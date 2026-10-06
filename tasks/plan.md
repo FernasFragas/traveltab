@@ -1,265 +1,161 @@
-# Implementation Plan: TravelTab Community Map
+# Implementation Plan: Writers' Map — Always Ready
 
-## Overview
+**Replace Waze on every destination with a map that is useful instantly:** an open-data base layer for any location, writers' pins from a pre-synced local index of the allowlisted blogs, and English AI summaries per place from a monthly job via LLM Gateway. No blog is contacted during a search or when a panel opens.
 
-Replace the Waze iframe with a community map where visitors publish named recommendations on shared places, like places, save places to Want to visit, and attach/copy TravelTab itineraries. TravelTab supplies photos; nearby-photo selections appear immediately with a label and later admin review. There are **no public accounts or sign-in**. Anonymous visitor ownership stays in the current browser, as explicitly confirmed by the user.
+Refined October 6, 2026 (summaries replace excerpts; AI in MVP; monthly sync; caches never expire). Scope: [one-pager](../docs/ideas/community-map.md). Evidence: [overlap results](blog-overlap-results.md). Tasks: [todo.md](todo.md). Earlier plans are in git history.
 
-Target: **October 2, 2026**, full agreed scope, **70 available hours**. Prefer free services and retain the **US$5/month goal**, but **Fly bill clarification and billing verification are excluded at the user's request**. Do not make bill investigation an implementation prerequisite or claim the ceiling is verified.
+## Comparison With Earlier Plans
 
-Planning only: this deliverable changes documentation, not application code. Tasks are tracked in [tasks/todo.md](todo.md). Both target files were absent at planning start; existing named plans under tasks/ remain untouched. No project instruction designates an external tracker.
+| | Offline consensus | Live per search | Always ready, Oct 5 | **Always ready + summaries (this)** |
+| --- | --- | --- | --- | --- |
+| Destinations | 4 | Any | Any | **Any** |
+| First search | Instant | Waits on 12 blogs | Instant writers; base ~2–3 s once | **Same** |
+| Writer content | AI summaries, reviewed | Verbatim excerpts | Verbatim excerpts, on demand | **AI summary per place (English), links per writer** |
+| Places with no writers | No map (Waze) | Empty map | Base pins | **Base pins** |
+| Blog load | Once per regeneration | Every cold search | Weekly delta + opened panels | **Monthly sync only** |
+| Stored blog text | Summaries + quotes | Excerpts | Names; excerpts ≤250 chars | **Names and positions; AI summaries** |
+| Estimate | ≈61 h | ≈52 h | ≈63 h | **≈74 h** |
 
-## Agreed Product Behavior
-
-- One shared pin per place; its creator posts the first contribution with a display name and text, an itinerary, or both.
-- Comments/reviews publish immediately, newest first. Authors control their contributions through their browser credential. Duplicate display names are allowed and are not proof of identity.
-- Place likes are limited to one per browser owner, removable, and separate from Want to visit. Without accounts this is **not enforceably one per person**; a new browser or cleared cookie can create another identity.
-- Want to visit, private saved plans and copies belong to the current browser. Switching devices, clearing cookies or credential expiry loses access to personal state and author controls. Public comments remain. No recovery link or cross-device sync in this release.
-- Exact-place photos take priority. If unavailable, offer supplied nearby candidates for selection; show the selected image immediately as Nearby photo and queue review. Pins can publish without any image. Users never upload photos.
-- Admins can delete any comment, including comments that have never been reported, through the admin workspace. Require confirmation and a moderation reason; record the actor and time. Remove the comment and attached recommendation from public discussion while preserving the place, other comments, likes, saved places and independent itinerary copies. Authors cannot edit or restore an admin-deleted comment; generic hide/restore actions must not revive it.
-- Admins also resolve reports, approve/replace/remove preview photos, change shared names/locations and merge duplicates. Approval alone does not turn a nearby photo into an exact photo.
-- Published itinerary recommendations are immutable snapshots. Copies are independent private snapshots with provenance; a general route editor and direct add-place-to-itinerary action are outside scope.
+## Product Behavior
+- **Search** unchanged except the map card, which loads after the page.
+- **Base pins** for any location: Wikidata places of visitable types within ≈40 km (islands/regions larger); English description, Commons photo with credit, Wikipedia link.
+- **Writer pins** drawn above base pins, sized by writer count. Panel: description and photo, "Mentioned by N writers", the **AI summary** (labelled) when it exists, and one link per writer's post with a language label. **No quoted blog text.**
+- **Day plan layer** after "Plan my trip"; **writers' itinerary layers** from pre-parsed posts, each with **"Plan with these places"**.
+- **Want to visit** in `localStorage`.
+- **States:** base only ("No writer mentions here yet"), summary not available yet (links only), writer site unavailable (link still shown).
 
 ## Architecture Decisions
+1. **Layer 1 — Wikidata nearby query, one call per destination.** SPARQL `wikibase:around`, radius ≈40 km (overrides for islands/regions), filtered to visitable classes (attractions, heritage, nature, viewpoints, museums, beaches, parks, neighbourhoods), excluding infrastructure (airports, municipalities as such). Capped at ~200 places ranked by writer count, then sitelinks. Returns QID, coordinates, en/pt labels and aliases, English description, image, sitelink count. Stored in `source_cache` **with no expiry; refreshed by the monthly run**. **It is also the gazetteer for writer matching**; Overpass is not used. Matching quality is checked in PR 2.
+2. **Warm before the search.** When the search suggestions return a city, the top suggestion's base query starts in the background (throttled), so the base is usually cached before the user presses search.
+3. **Layer 2 — writers index in SQLite**, created at startup with `CREATE TABLE IF NOT EXISTS`, as existing tables are:
+   - `writer_posts` (host, post_id, url, title, lang, modified, is_itinerary)
+   - `writer_names` (post ref, folded phrase, original-case flag, start, end): candidate place-name phrases, i.e. capitalized sequences with connectors (de/do/da/dos/das/e/of/the), and their sub-spans up to 5 words
+   - `writer_days` (post ref, day number, start, end): day-heading sections
+   - `writer_sync` (host, status, last_full, last_delta, cursor)
 
-1. **Keep Go/Fiber, HTMX and SQLite.** Follow application ports and adapter/setter injection already used by photo and planning providers. Keep community interfaces separate from the existing dashboard Storage interface to avoid forcing unrelated mocks to change.
-2. **Use a small browser map module.** Leaflet is the proposed renderer; make tile URL/attribution configurable. Initialize/destroy maps on HTMX swaps and cancel stale viewport requests. Use local fixture tiles in automated checks. Normal OSM tile use must follow attribution/caching/referrer requirements and has no availability guarantee. [Leaflet](https://leafletjs.com/), [OSM tile policy](https://operations.osmfoundation.org/policies/tiles/).
-3. **Use opaque anonymous ownership.** Persist a random browser credential with a hashed server-side verifier; never authorize by display name. Set a persistent HttpOnly/SameSite cookie, Secure in production. Proposed inactivity lifetime: 90 days, sliding on meaningful use; document expiry. Keep visitor state separate from admin sessions. No identity provider, password recovery or public email collection is needed.
-4. **Protect admin access separately.** A configured secret verifier bootstraps the single owner/admin. Use a limited admin login with session rotation, CSRF protection and logout. This protects shared changes without requiring public sign-in.
-5. **Add migrations incrementally with each slice.** Versioned, transactional migrations preserve existing cache/analytics data. Enforce ownership and unique place-like/save pairs in SQLite; use transactions for initial place/contribution creation, photo selection/review and merges.
-6. **Bound reads and writes.** Viewport queries, comment lists, queues and provider requests need limits and predictable pagination. Display names/comments render as text. Shared request protection, write rate limits and server-side validation belong to each mutation, not a last-minute hardening phase.
-7. **Extend existing image adapters without weakening city matching.** Reuse Commons metadata/credit parsing, but implement arbitrary-place identity and nearby candidates separately. Cache source metadata, distinguish exact versus nearby, and keep image/provider failure independent of contribution publishing. Direct embedding can fail and Commons discourages hotlinking; document the chosen delivery behavior and retain a no-photo fallback. [Commons reuse guidance](https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia).
-8. **Capture the displayed plan before publication.** Issue a server-controlled reference to the rendered route; do not reconstruct it later from city/date parameters. Private drafts/copies and published immutable snapshots have separate access rules. Store route facts and original dates without presenting old weather as current.
-9. **Make moderation and shared-place changes auditable.** Comment deletion requires admin authorization and CSRF protection, records actor/reason/time, and is idempotent. Deleted comments stay excluded from public reads and author edits, including after a duplicate merge. Merge into a selected survivor atomically, deduplicate likes/saves by browser owner, preserve contributions and review references, and redirect old place IDs. Admin changes to coordinates invalidate or re-review photo matches as appropriate.
-10. **Use the existing preview and verification conventions.** Extend cmd/design-preview with temporary SQLite and fake visitor/admin contexts isolated from production. Retain existing weather, destination search, planner and export behavior.
+   **No post text is stored.** Raw HTML is processed in memory and dropped.
+4. **Monthly job inside the web server.** A background goroutine with a single-run lock (`writer_sync`), off-peak:
+   - **Initial crawl:** about 205 requests of 100 posts each.
+   - **Monthly:** `modified_after` for changed posts; `_fields=id` sweep to delete posts that are gone; re-run Wikidata for cached destinations; then summaries (decision 6).
+   - **Rows are updated in place** (upsert by key, no history), so the database stays bounded by the number of posts and places.
+   - **Politeness:** per-host limiter at ≥1.5 s, identified user agent, robots.txt respected.
+   - **Blocks and takedowns:** 403 marks the source blocked and stops it; `removed` in the allowlist purges its rows and its summaries' references.
+   - **Memory:** one page in memory at a time.
+5. **Search-time matching is a lookup.** Folded aliases of the destination's Wikidata places are joined against `writer_names`. Then the research rules are applied: single-word names case-sensitive, stoplist, nested-name suppression using positions, and `writerdata/overrides.json`. The result (places, writers, itineraries) is stored per destination with no expiry and recomputed after each monthly run.
+6. **AI summaries via LLM Gateway (layer 3, in the MVP).** After the index update, for each place with writers whose posts changed (or that has no summary yet): fetch those posts by id through the limiter, cut the passages around each mention in memory (address/hotel/price lines skipped), send them to LLM Gateway with a fixed prompt ("2–3 sentences in English, only what the passages say"), store the result in `writer_summaries` (QID, text, source post refs, model, generated at), upserted in place.
+   - **Port `Summarizer`** with a fake for tests; the gateway adapter is the only part blocked on the separate LLM Gateway project.
+   - **Flag `WRITERS_AI`** gates the summary step; with it off, panels show links only.
+   - **Overrides** can hide a bad summary for a QID.
+   - **Cost:** LLM Gateway is the owner's own project and free to TravelTab; only Fly counts toward the US$5 cap.
+7. **Map in the browser:** Leaflet (unpkg + SRI), OSM tiles with attribution, configurable tile URL, one map instance across HTMX swaps, list alternative. The day plan reaches the map through an HTMX event with stop coordinates.
+8. **"Plan with these places."** The planner's `Request` gains `Include []Place` (from the writer's itinerary, max ~12); `planner.Build` seeds these into the days before filling with nearby places. The link is a normal `/plan` URL with the QIDs, so it is shareable. No frozen snapshot: day order follows today's forecast.
+9. **Feature flags keep `main` releasable.** `WRITERS_MAP` (new map card; off → Waze exactly as today), `WRITERS_SYNC` (monthly job) and `WRITERS_AI` (summary step) in `internal/config/env.go`. Every PR merges with all off; the launch PR turns on the first two; `WRITERS_AI` follows when LLM Gateway is ready.
+10. **Contracts first, so agents work in parallel.** PR 1 freezes the domain types, the `WriterMapSource` and `Summarizer` ports, the GeoJSON/panel shapes, the JS extension API and a Madeira fixture with a fake source. Later PRs code against these, not against each other. Changing a contract is its own small PR.
+11. **Front-end split into modules** so UI work doesn't collide: `writers-map.js` (core: map, list, layer registry, events) plus `map-panel.js`, `map-dayplan.js`, `map-itineraries.js`, `map-saved.js`. Templates expose named slots (`data-map-slot="…"`) created once in PR 3.
 
-## Conceptual Data and Route Boundaries
+## Delivery: PRs and Parallel Work
 
-Introduce records incrementally, not as one oversized schema task:
+**9 PRs, each mergeable on its own with CI green and flags off.** Subtasks inside a PR touch disjoint files and can go to different agents; the PR's integrator subtask owns the shared files and opens the PR. Full subtask detail: [todo.md](todo.md).
 
-| Record | Identity and invariant |
-| --- | --- |
-| Visitor credential | Random secret grants a browser access to its private state; display name is not a key. |
-| Place | Internal stable ID, name/coordinates, optional source entity, moderation state and merge alias. |
-| Contribution | Place + browser owner + display name + text and/or published snapshot reference; newest-first cursor. |
-| Place like / saved place | Unique (place, visitor) pair; likes and saves are independent. |
-| Photo candidate / selection | Verified provider reference, credit/license metadata, geographic relationship, selection revision and review status. |
-| Saved plan / published snapshot | Versioned immutable route content; private owner or explicit public publication, plus copy provenance. |
-| Report / correction / admin action | Target reference, bounded reason, resolution, actor and timestamp; no public reporter identifier. |
+| PR | Title | Needs | Subtasks (parallel) | Est. h |
+| --- | --- | --- | --- | ---: |
+| **1** | Contracts, data and flags | — | 1a data + policy · 1b types + ports + contract doc · 1c fixture + fake source (after 1b) · 1d flags | 4 |
+| **2** | Index spike (research) | — | single agent | 3 |
+| **3** | Map shell behind flag | 1 | 3a core JS/CSS · 3b template + fixture endpoints · 3c preview scenario | 4 |
+| **4** | Base layer (Wikidata) | 1 | 4a SPARQL adapter · 4b cache decorator · 4c suggestion warming | 5 |
+| **5** | Writers index + monthly sync | 1, **2 verdict** | 5a tables/store · 5b extraction · 5c WordPress client + limiter · 5d sync job (integrator) | 9 |
+| **6** | Matching and real source | 4, 5 | 6a matcher + itineraries · 6b real source + wiring (integrator) | 5.5 |
+| **7** | Map UI features | 3 | 7a pins + panels · 7b day plan layer · 7c writers' itineraries · 7d want to visit · 7e plan with these places | 13.5 |
+| **8** | Verify and launch | 6, 7 | 8a resilience tests · 8b live measurement · 8c journeys + docs · 8d flags on (owner) | 9 |
+| **9** | AI summaries | 5, 6; **9c needs LLM Gateway** | 9a passage cutter · 9b summary job + store · 9c gateway adapter · 9d quality check + `WRITERS_AI` on | 9 |
+| | | | **Subtotal** | **62** |
+| | | | Contingency (≈20%) | 12 |
+| | | | **Total** | **≈74** |
 
-Proposed public routes: GET /community/places for viewport data; GET/POST /community/places/:id/contributions; GET /community/places/:id for the panel/page; POST /community/places to create. Place like/save operations use dedicated POST/DELETE routes (or explicit POST actions for ordinary forms), never GET mutations. Personal pages live under /me/places and /me/plans and require the browser credential, not a sign-in. Public published-plan pages use stable snapshot IDs. Admin routes live under /admin/community with separate authorization. Final route spellings can follow existing conventions without changing these boundaries.
+**6a and 9a are pure functions** against the PR 1 contract and fixtures: they can start right after PR 1, alongside PRs 3–5.
 
-## Dependency Graph
+**PR 9 does not block launch.** 9a and 9b land with `WRITERS_AI` off and a fake summarizer; 9c starts when LLM Gateway is ready.
+
+### Waves
 
 ```mermaid
-flowchart TD
-  MapProof["1: Map experiment"] --> Map["10–13: Place discovery"]
-  PhotoProof["2: Photo experiment"] --> Photos["18–20: Photo selection and review"]
-  SnapshotProof["3: Snapshot experiment"] --> SavedPlans["21–24: Save, attach and copy"]
-  Contract["4: Browser ownership contract"] --> Visitor["7–9: Ownership and admin protection"]
-  Baseline["5: Memory baseline"] --> Load["35: Completed workload"]
-  Foundation["6: Module and migrations"] --> Visitor
-  Foundation --> Map
-  Visitor --> Map
-  Map --> Discussion["14–17: Comments, likes and saves"]
-  Map --> Photos
-  Visitor --> SavedPlans
-  Discussion --> Moderation["25–27: Reports and corrections"]
-  Photos --> Moderation
-  SavedPlans --> Moderation
-  Moderation --> Merge["28–30: Merge and admin workspace"]
-  Merge --> Verify["31–34: Journeys, boundaries and recovery"]
-  Verify --> Load
-  Load --> Candidate["36: Release candidate"]
-  Candidate --> Review["Owner reviews concrete candidate"]
-  Review --> Release["37: Release"]
+flowchart LR
+  subgraph W1["Wave 1"]
+    PR1["PR 1 Contracts"]
+    PR2["PR 2 Spike"]
+  end
+  subgraph W2["Wave 2"]
+    PR3["PR 3 Map shell"]
+    PR4["PR 4 Base layer"]
+    PR5["PR 5 Index + sync"]
+    E6["6a / 9a early"]
+  end
+  subgraph W3["Wave 3"]
+    PR7["PR 7 Map UI"]
+    PR6["PR 6 Real source"]
+    PR9["PR 9a/9b Summaries (fake)"]
+  end
+  subgraph W4["Wave 4"]
+    PR8["PR 8 Verify + launch"]
+  end
+  subgraph EXT["When LLM Gateway is ready"]
+    PR9C["PR 9c/9d Gateway + AI on"]
+  end
+  PR1 --> PR3 & PR4 & PR5 & E6
+  PR2 --> PR5
+  PR3 --> PR7
+  PR4 --> PR6
+  PR5 --> PR6
+  E6 --> PR6 & PR9
+  PR6 --> PR8 & PR9
+  PR7 --> PR8
+  PR9 --> PR9C
+  PR8 --> PR9C
 ```
 
-Individual task dependencies in todo.md are authoritative. Tasks use vertical feature slices after the small experimental/integration foundations. Each slice includes its storage, handler and UI responsibilities where applicable; schema edits are serialized.
+**Critical path:** PR 1 → PR 5 (after the PR 2 verdict) → PR 6 → PR 8, about 28 h. PR 3, 4, 7 and 9a/9b run alongside it. **External dependency:** 9c/9d wait on the LLM Gateway project.
 
-## Task List
+### Rules for Agents
+- **Own only your listed files.** Shared files belong to the PR's integrator subtask: `server.go` routes, `cmd/web/main.go`, `database.go`, `map_card.go.tpl`, `env.go`.
+- **Cross-PR shared files:** PRs 3, 4, 5 and 9 each add a few wiring lines to `cmd/web/main.go`. Keep those edits small, one function per PR (`wireWritersMap`, `wireBaseLayer`, `wireWriterSync`, `wireSummaries`), and rebase on merge.
+- **Contracts are frozen after PR 1.** Need a change? Stop and raise a contract PR; everyone rebases.
+- **One worktree and branch per subtask** (`writers-map/pr<N>-<letter>`). The integrator merges subtasks into `writers-map/pr<N>`, runs `make test lint build`, and opens the PR.
+- **Tests never hit the network.** Use the PR 1 fixture, the fake source, the fake summarizer, `httptest`, and recorded responses.
+- **Flags stay off** until PR 8d (`WRITERS_MAP`, `WRITERS_SYNC`) and 9d (`WRITERS_AI`). No subtask may change production behavior while the flags are off.
+- **No post text stored, logged or committed.** Only names, positions and AI summaries.
 
-The links below are a review index. Update completion in todo.md first, then synchronize this index; do not maintain a separate tracker.
-
-### Technical experiments
-
-- [ ] [Task 1: Prove map interaction in the local preview](todo.md#task-1-prove-map-interaction-in-the-local-preview)
-- [ ] [Task 2: Prove exact-place and nearby-photo lookup](todo.md#task-2-prove-exactplace-and-nearbyphoto-lookup)
-- [ ] [Task 3: Prove immutable itinerary persistence](todo.md#task-3-prove-immutable-itinerary-persistence)
-
-- [ ] Checkpoint: completed paths verified after Task 3.
-
-### Ownership and integration foundation
-
-- [ ] [Task 4: Document browser ownership behavior](todo.md#task-4-document-browser-ownership-behavior)
-- [ ] [Task 5: Measure the current resource baseline](todo.md#task-5-measure-the-current-resource-baseline)
-- [ ] [Task 6: Wire the optional community module](todo.md#task-6-wire-the-optional-community-module)
-
-- [ ] Checkpoint: completed paths verified after Task 6.
-
-### Anonymous ownership and admin protection
-
-- [ ] [Task 7: Establish anonymous visitor ownership](todo.md#task-7-establish-anonymous-visitor-ownership)
-- [ ] [Task 8: Protect the admin workspace](todo.md#task-8-protect-the-admin-workspace)
-- [ ] [Task 9: Enforce visitor write boundaries](todo.md#task-9-enforce-visitor-write-boundaries)
-
-- [ ] Checkpoint: completed paths verified after Task 9.
-
-### Publish places on the map
-
-- [ ] [Task 10: Let a contributor publish a place](todo.md#task-10-let-a-contributor-publish-a-place)
-- [ ] [Task 11: Suggest existing nearby places](todo.md#task-11-suggest-existing-nearby-places)
-- [ ] [Task 12: Replace Waze with the community map](todo.md#task-12-replace-waze-with-the-community-map)
-
-- [ ] Checkpoint: completed paths verified after Task 12.
-
-### Discussion and place likes
-
-- [ ] [Task 13: Open a place discussion](todo.md#task-13-open-a-place-discussion)
-- [ ] [Task 14: Let authors manage their comments](todo.md#task-14-let-authors-manage-their-comments)
-- [ ] [Task 15: Like a place](todo.md#task-15-like-a-place)
-
-- [ ] Checkpoint: completed paths verified after Task 15.
-
-### Saved places and supplied photos
-
-- [ ] [Task 16: Save a place for later](todo.md#task-16-save-a-place-for-later)
-- [ ] [Task 17: Browse Want to visit](todo.md#task-17-browse-want-to-visit)
-- [ ] [Task 18: Show supplied exact-place photos](todo.md#task-18-show-supplied-exactplace-photos)
-
-- [ ] Checkpoint: completed paths verified after Task 18.
-
-### Photo decisions and itinerary capture
-
-- [ ] [Task 19: Choose a nearby preview](todo.md#task-19-choose-a-nearby-preview)
-- [ ] [Task 20: Review selected photos](todo.md#task-20-review-selected-photos)
-- [ ] [Task 21: Save the displayed itinerary](todo.md#task-21-save-the-displayed-itinerary)
-
-- [ ] Checkpoint: completed paths verified after Task 21.
-
-### Itinerary recommendations and copies
-
-- [ ] [Task 22: Browse saved itineraries](todo.md#task-22-browse-saved-itineraries)
-- [ ] [Task 23: Attach an itinerary recommendation](todo.md#task-23-attach-an-itinerary-recommendation)
-- [ ] [Task 24: Copy a published itinerary](todo.md#task-24-copy-a-published-itinerary)
-
-- [ ] Checkpoint: completed paths verified after Task 24.
-
-### Reports and shared-place corrections
-
-- [ ] [Task 25: Report content](todo.md#task-25-report-content)
-- [ ] [Task 26: Moderate community content](todo.md#task-26-moderate-community-content)
-- [ ] [Task 27: Review shared-place corrections](todo.md#task-27-review-sharedplace-corrections)
-
-- [ ] Checkpoint: completed paths verified after Task 27.
-
-### Duplicate merges and admin workspace
-
-- [ ] [Task 28: Preserve data during a duplicate merge](todo.md#task-28-preserve-data-during-a-duplicate-merge)
-- [ ] [Task 29: Let admins merge duplicate pins](todo.md#task-29-let-admins-merge-duplicate-pins)
-- [ ] [Task 30: Expose admin navigation](todo.md#task-30-expose-admin-navigation)
-
-- [ ] Checkpoint: completed paths verified after Task 30.
-
-### Integrated browser and permission checks
-
-- [ ] [Task 31: Add deterministic community journeys](todo.md#task-31-add-deterministic-community-journeys)
-- [ ] [Task 32: Verify mobile map journeys](todo.md#task-32-verify-mobile-map-journeys)
-- [ ] [Task 33: Verify community write boundaries](todo.md#task-33-verify-community-write-boundaries)
-
-- [ ] Checkpoint: completed paths verified after Task 33.
-
-### Recovery, performance and release readiness
-
-- [ ] [Task 34: Rehearse migration and recovery](todo.md#task-34-rehearse-migration-and-recovery)
-- [ ] [Task 35: Measure the completed workload](todo.md#task-35-measure-the-completed-workload)
-- [ ] [Task 36: Prepare the release candidate](todo.md#task-36-prepare-the-release-candidate)
-
-- [ ] Checkpoint: completed paths verified after Task 36.
-
-### Reviewed release
-
-- [ ] [Task 37: Release the reviewed community map](todo.md#task-37-release-the-reviewed-community-map)
-
-- [ ] Checkpoint: public release verified.
-
-## Schedule and Time Budget
-
-The earlier **66–94-hour** assessment included public sign-in. It is historical evidence, not a measured forecast for this revised scope. Removing public accounts reduces work, but browser ownership, admin protection and recovery limitations still require implementation.
-
-| Allocation | Hours |
-| --- | ---: |
-| 37 focused task timeboxes, including feature verification | 58 |
-| Contingency for failures and integration fixes | 10 |
-| Planning and owner review | 2 |
-| **Available total** | **70** |
-
-This allocation is an optimistic execution budget, not proof that the full idea fits. Tasks have 1–2 hour timeboxes and at most five likely files. If a timebox or file limit is exceeded, split the task, record the revised estimate and consume contingency explicitly; never hide extra work by marking incomplete criteria done.
-
-The first five tasks allocate **7.5 hours** to map/photo/snapshot experiments, the confirmed identity contract and resource evidence. Task 6 completes the foundation checkpoint at 9 task hours. Re-estimate there before scheduling the remaining work.
-
-Proposed cumulative task-hour checkpoints (calendar allocation may shift with the user's availability):
-
-| Target date | Completed checkpoint | Cumulative task hours |
-| --- | --- | ---: |
-| September 26 | Tasks 1–6: experiments and foundation | 9 |
-| September 27 | Tasks 7–12: ownership and shared places | 18 |
-| September 28 | Tasks 13–18: contributions, saves and exact photos | 27.5 |
-| September 29 | Tasks 19–24: nearby previews and itinerary sharing | 37.5 |
-| September 30 | Tasks 25–30: moderation and merges | 47 |
-| October 1 | Tasks 31–36: integration and release candidate | 56.5 |
-| October 2 | Task 37: reviewed release | 58 |
-
-Distribute the remaining 12 hours across review and fixes; do not reserve all bug fixing for release day. Missing a checkpoint triggers a revised forecast, not an automatic feature cut. The user requested the full scope by October 2.
-
-## Verification and Checkpoints
-
-- Every task in todo.md has at most three acceptance criteria, an affected-package test or document check, the repository build command, a manual check, dependencies and a file budget.
-- Checkpoints follow every two or three tasks (three here), with an additional final release checkpoint. Record actual evidence in tasks/community-map/evidence.md and verification.md when implementation begins.
-- Package tests use the existing Go test conventions. Final verification runs `go test -race -count=1 ./...`, `make lint`, `make build`, and a container startup check. Do not treat a skipped/missing tool or zero matching tests as a pass.
-- Browser checks cover 375 px and 1440 px, keyboard focus, HTMX destination changes, stale requests, empty/photo-failure states, named publication, likes, saves, itinerary copying and separate admin actions.
-- Integrity checks cover duplicate names, two isolated browsers, cleared credentials, unauthorized edits, CSRF, concurrent retries, stale reviews, transactional merges and preserved copies. Verify that admins can delete reported or unreported comments, non-admin deletion is rejected, stale author edits cannot revive deleted content, and deletion preserves unrelated place data and itinerary copies.
-- Resource measurements use a reproducible local workload, initially 10 concurrent fixture users with bounded provider delays. Starting targets follow the existing load harness: below 1% request failures, read p95 below 500 ms and mutation p95 below 1000 ms for fixture traffic. Report real provider latency separately. Assess 512 MB with headroom under comparable Linux conditions; do not infer safe resizing from an idle process.
-- Migration/recovery checks run on disposable database copies before any deployment. Existing app behavior remains a required regression check.
-- Human review of this plan is required before implementation, and review of the concrete release candidate is required before production deployment. Routine intermediate checks do not require repeated permission unless a material change is needed.
-
-## Parallelization Opportunities
-
-- Tasks 1, 2, 3 and 5 can run independently in isolated branches/worktrees; Task 4 documents the already-confirmed decision.
-- After Task 9, itinerary capture and map work can proceed separately only after shared contracts are agreed. Photo adapter work can proceed alongside community UI work.
-- Serialize migration registration, cmd/web and httpserver/community.go wiring, and edits to shared place templates. Avoid simultaneous edits to place_panel.go.tpl, map JavaScript or shared navigation.
-- Tasks 28–30 wait for every referenced data type. Tests can run in parallel on completed independent packages, but a merge/deployment must use the integrated revision.
-- Parallel sessions reduce elapsed time only when coordination fits the same 70-hour total; they do not make the estimate automatically smaller.
+## Checkpoints
+- **After PR 1:** contract doc reviewed by the owner. Every later PR depends on it.
+- **After PR 2:** spike verdict (index size, lookup time, precision, against proposed bars of ≤300 MB, ≤200 ms, ≥90%). **PR 5 starts only on a pass, or on a revised schema.**
+- **After PR 3 + PR 7:** with `WRITERS_MAP=1`, the full UI works on fixture data in the preview.
+- **After PR 6:** with both flags on locally, Madeira works end to end on real data.
+- **After PR 8b:** measured numbers recorded; the owner sets targets and the launch date.
+- **After PR 9d:** 20 Madeira summaries hand-checked; the owner switches `WRITERS_AI` on.
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Arbitrary places lack usable photos | High | Early exact/nearby experiment; no-photo publication remains valid. |
-| Names mistaken for verified identity | High | Names are attribution only; credentials control edits; test same-name browsers. |
-| Browser credential loss | Medium | Confirmed limitation; explain it in personal-state UI; no recovery or sync promise. |
-| Repeated likes using new browsers | Medium | Enforce one per browser owner and rate-limit abuse; never claim verified per-person votes. |
-| Public submissions create moderation load | High | Immediate publication plus bounded writes and usable report/photo queues. |
-| Regenerated plans alter recommendations | High | Server-captured versioned snapshots and independent copies, tested before UI integration. |
-| Duplicate merges orphan community data | High | Transactional operation, old-ID aliases, concurrency tests and reviewable admin confirmation. |
-| HTMX swaps duplicate map handlers | Medium | Lifecycle cleanup and overlapping-navigation browser checks. |
-| Smaller Machine cannot support workload | High | Baseline and final measurements; no automatic Fly resize. |
-| Deadline overrun | High | Early experiments, small timeboxes, explicit contingency and checkpoint re-estimation. |
-| Free services unavailable or change limits | Medium | Configurable map source, cached image metadata and independent failure states. |
-| US$5 ceiling remains unknown | Known limitation | Billing investigation is excluded; record uncertainty without blocking unrelated implementation. |
+| Risk | Mitigation |
+| --- | --- |
+| Index too large for the Fly volume | PR 2 spike gates the design; cap sub-span length; drop single-word lowercase-start phrases |
+| Database grows month after month | Upsert in place, no history; deleted posts and removed hosts purged; size recorded in 8b |
+| Wikidata matching worse than OSM + Wikidata | PR 2 precision check; overrides; add OSM names later if needed |
+| Base pins notable but dull (airports, municipalities) | Type filter + exclusions; writer pins drawn above; cap ranked by fame |
+| Wikidata Query Service slow or down | Cache never expires; warming from suggestions; map still shows tiles and day plan |
+| Initial crawl bandwidth or time on Fly | One page in memory; resumable cursor; measured in PR 8b |
+| LLM Gateway late | PR 9 is off the launch path; panels show links until it's ready |
+| AI summaries invent or misread (esp. PT) | Passages-only prompt; 20-place hand check in 9d; *AI summary* label; per-QID hide override |
+| Monthly summary run too long or too heavy | Only places whose posts changed; per-run cap; resumable |
+| Wrong pins (no review) | Research matching rules, overrides, precision bar |
+| Writer blocks or takedown request | 403 stops the source; `removed` purges its rows; no circumvention |
+| Thin writer coverage outside Portugal | Base layer always present; expand the allowlist with global EN blogs |
 
-## Open Questions and Recorded Defaults
-
-No further product clarification is required to write this plan. Browser-only personal state is explicitly confirmed.
-
-Implementation experiments must establish photo coverage, actual task pace and memory requirements. The plan proposes a 90-day sliding visitor credential and conservative nearby-photo candidates within 1 km, with displayed distance and no-result fallback; validate these defaults in the early experiments without treating a nearby image as an exact match. If changing a default materially changes the user experience, surface it at the next checkpoint.
-
-Admin secret provisioning and production deployment access will be needed during implementation/release setup, not during planning. Fly billing details are intentionally deferred and will not be requested again as part of this plan.
-
-## Planning Completion
-
-- [x] Read the agreed spec and relevant architecture, preview and verification conventions.
-- [x] Confirmed plan.md and todo.md were absent; no unfinished plan was overwritten.
-- [x] Recorded dependencies, file budgets, acceptance criteria and verification per task.
-- [x] Included checkpoints, parallelization boundaries and schedule uncertainty.
-- [x] Incorporated no public sign-in and confirmed browser-only personal state.
-- [ ] Human has reviewed and approved this plan before implementation.
+## Decisions and Open Questions
+- **Radius:** ≈40 km for cities, overrides for islands/regions; cap ~200 places. *Decided.*
+- **Caches:** never expire; monthly refresh, updated in place. *Decided.*
+- **Sync schedule:** monthly, off-peak. *Decided.*
+- **Language:** English only in the UI; PT via summaries. *Decided.*
+- **AI:** LLM Gateway on the server, free to TravelTab. *Decided; gateway API and readiness date open.*
+- **Bloggers:** not notified before launch. *Decided.*
+- **Budget:** US$5/month total. *Decided.*
+- **Spike thresholds** (300 MB, 200 ms, 90%): proposed, not agreed.
+- **Target date / hour budget:** not set (≈74 h estimated).
