@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** planned, nothing implemented. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). **Owner review of the plan is required before coding.**
+**Status:** PR 1 implementation complete; owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -23,7 +23,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Goal:** freeze everything parallel work depends on. No user-visible change.
 
 ### 1a. Write the source data and policy — 1 h
-- [ ] Done
+- [x] Done
 
 **Owns:** `writerdata/sources.json`, `writerdata/overrides.json`, `writerdata/embed.go`, `docs/maintenance.md`
 
@@ -34,7 +34,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `make build`; document review.
 
 ### 1b. Define the types, ports and contract — 1.5 h
-- [ ] Done
+- [x] Done
 
 **Owns:** `internal/writermap/types.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
 
@@ -52,7 +52,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `make build`; **owner reviews the contract doc**.
 
 ### 1c. Add the Madeira fixture, fake source and fake summarizer — 1 h · *after 1b*
-- [ ] Done
+- [x] Done
 
 **Owns:** `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`
 
@@ -63,7 +63,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `go test ./internal/writermap/...`.
 
 ### 1d. Add the feature flags — 0.5 h · **integrator**
-- [ ] Done
+- [x] Done
 
 **Owns:** `internal/config/env.go`, `internal/config/env_test.go`
 
@@ -85,11 +85,11 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Crawl two full blogs (viajecomigo PT, saltinourhair EN), build the names-only tables in a temp SQLite file, run the Madeira Wikidata nearby query, match.
 
 **Acceptance — record in the results doc:**
-- [ ] MB and rows per 1,000 posts, and the projection for ~20,400 posts (proposed bar ≤300 MB).
-- [ ] Madeira lookup time (proposed ≤200 ms).
+- [x] MB and rows per 1,000 posts, and the projection for ~20,400 posts (proposed bar ≤300 MB).
+- [x] Madeira lookup time (proposed ≤200 ms).
 - [ ] 40-match precision with Wikidata aliases, against the research's 37/40 (proposed ≥90%).
 - [ ] How many of the 55 research places (≥3 blogs) Wikidata nearby plus filters still returns.
-- [ ] **Verdict:** keep the schema, cap sub-spans, or add OSM names. **PR 5 waits for this.**
+- [x] **Verdict:** keep the schema, cap sub-spans, or add OSM names. **PR 5 waits for this.**
 
 **Verify:** results document reviewed by the owner.
 
@@ -471,4 +471,3 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - [ ] Owner switches `WRITERS_AI=1`.
 
 **PR 9 done when:** summaries show on live writer pins and the first monthly run is recorded.
-

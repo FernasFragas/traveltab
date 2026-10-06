@@ -18,6 +18,11 @@ type WeatherServiceKeys struct {
 	AmadeusSecret     string
 	GeoapifyAPIKey    string
 	OverpassURLs      []string
+	WritersMap        bool
+	WritersSync       bool
+	WritersAI         bool
+	LLMGatewayURL     string
+	LLMGatewayKey     string
 }
 
 type MateoMaticsSecrets struct {
@@ -55,8 +60,23 @@ func LoadEnvKey() (weatherServiceKeys *WeatherServiceKeys) {
 	// Empty unless someone points the planner at their own Overpass servers; cmd/web then
 	// falls back to the public ones.
 	weatherServiceKeys.OverpassURLs = splitList(os.Getenv("OVERPASS_URLS"))
+	weatherServiceKeys.WritersMap = envBool("WRITERS_MAP")
+	weatherServiceKeys.WritersSync = envBool("WRITERS_SYNC")
+	weatherServiceKeys.WritersAI = envBool("WRITERS_AI")
+	weatherServiceKeys.LLMGatewayURL = os.Getenv("LLM_GATEWAY_URL")
+	weatherServiceKeys.LLMGatewayKey = os.Getenv("LLM_GATEWAY_KEY")
 
 	return weatherServiceKeys
+}
+
+// envBool accepts the conventional true values used by deployment environments.
+func envBool(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
 
 // splitList reads a comma-separated setting, dropping the spaces around each entry and any

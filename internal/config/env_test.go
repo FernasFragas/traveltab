@@ -55,3 +55,33 @@ func TestLoadEnvKey_NoLongerReadsPlacesOrFoursquareKeys(t *testing.T) {
 		assert.False(t, exists, "obsolete field %s remains", field)
 	}
 }
+
+func TestLoadEnvKey_WritersFlagsDefaultOffAndGatewayEmpty(t *testing.T) {
+	t.Setenv("ENV", "production")
+	for _, name := range []string{"WRITERS_MAP", "WRITERS_SYNC", "WRITERS_AI", "LLM_GATEWAY_URL", "LLM_GATEWAY_KEY"} {
+		t.Setenv(name, "")
+	}
+
+	keys := LoadEnvKey()
+	assert.False(t, keys.WritersMap)
+	assert.False(t, keys.WritersSync)
+	assert.False(t, keys.WritersAI)
+	assert.Empty(t, keys.LLMGatewayURL)
+	assert.Empty(t, keys.LLMGatewayKey)
+}
+
+func TestLoadEnvKey_ReadsWritersFlagsAndGateway(t *testing.T) {
+	t.Setenv("ENV", "production")
+	t.Setenv("WRITERS_MAP", "1")
+	t.Setenv("WRITERS_SYNC", "true")
+	t.Setenv("WRITERS_AI", "on")
+	t.Setenv("LLM_GATEWAY_URL", "https://gateway.example")
+	t.Setenv("LLM_GATEWAY_KEY", "secret")
+
+	keys := LoadEnvKey()
+	assert.True(t, keys.WritersMap)
+	assert.True(t, keys.WritersSync)
+	assert.True(t, keys.WritersAI)
+	assert.Equal(t, "https://gateway.example", keys.LLMGatewayURL)
+	assert.Equal(t, "secret", keys.LLMGatewayKey)
+}
