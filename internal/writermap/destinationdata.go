@@ -19,6 +19,16 @@ type Area struct {
 	RadiusKM float64 `json:"radius_km,omitempty"`
 }
 
+// DestinationResult is the complete map payload for a destination.
+type DestinationResult struct {
+	Places         []Place              `json:"places"`
+	Mentions       map[string][]Mention `json:"mentions,omitempty"`
+	WriterCounts   map[string]int       `json:"writer_counts"`
+	Itineraries    []Itinerary          `json:"itineraries"`
+	SourceStatuses []SourceStatus       `json:"source_statuses"`
+	Complete       bool                 `json:"complete"`
+}
+
 // Place is a Wikidata place with the names and metadata used by matching and panels.
 type Place struct {
 	QID         string   `json:"qid"`
@@ -33,15 +43,6 @@ type Place struct {
 	Sitelinks   int      `json:"sitelinks,omitempty"`
 }
 
-// Position identifies a matched span in the plain-text title and body stream.
-type Position struct {
-	Start int `json:"start"`
-	End   int `json:"end"`
-}
-
-// PostRef is a stable source reference, normally host plus WordPress post ID.
-type PostRef string
-
 // Mention records that a writer's post mentions a place. Post content is never included.
 type Mention struct {
 	WriterHost string     `json:"writer_host"`
@@ -50,6 +51,15 @@ type Mention struct {
 	PostTitle  string     `json:"post_title"`
 	Language   string     `json:"language"`
 	Positions  []Position `json:"positions"`
+}
+
+// PostRef is a stable source reference, normally host plus WordPress post ID.
+type PostRef string
+
+// Position identifies a matched span in the plain-text title and body stream.
+type Position struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
 }
 
 // Itinerary is an ordered writer route. Days contain Wikidata QIDs in first-mention order.
@@ -62,6 +72,13 @@ type Itinerary struct {
 	Days       [][]string `json:"days"`
 }
 
+// SourceStatus reports the latest known state of one allowlisted writer source.
+type SourceStatus struct {
+	Host      string    `json:"host"`
+	Status    string    `json:"status"`
+	CheckedAt time.Time `json:"checked_at,omitempty"`
+}
+
 // Summary contains the only blog-derived prose retained by the writers' map.
 type Summary struct {
 	QID            string    `json:"qid"`
@@ -71,26 +88,9 @@ type Summary struct {
 	GeneratedAt    time.Time `json:"generated_at"`
 }
 
-// SourceStatus reports the latest known state of one allowlisted writer source.
-type SourceStatus struct {
-	Host      string    `json:"host"`
-	Status    string    `json:"status"`
-	CheckedAt time.Time `json:"checked_at,omitempty"`
-}
-
-// DestinationResult is the complete map payload for a destination.
-type DestinationResult struct {
-	Places         []Place              `json:"places"`
-	Mentions       map[string][]Mention `json:"mentions,omitempty"`
-	WriterCounts   map[string]int       `json:"writer_counts"`
-	Itineraries    []Itinerary          `json:"itineraries"`
-	SourceStatuses []SourceStatus       `json:"source_statuses"`
-	Complete       bool                 `json:"complete"`
-}
-
 // Passage is transient text passed to the summarizer and must not be persisted or logged.
 type Passage struct {
-	Language string  `json:"language"`
-	PostRef  PostRef `json:"post_ref"`
-	Text     string  `json:"text"`
+	Language string
+	PostRef  PostRef
+	Text     string
 }

@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 implementation complete; owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/Unknown.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1d done; 1e (mockup fields) open; owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -36,7 +36,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ### 1b. Define the types, ports and contract — 1.5 h
 - [x] Done
 
-**Owns:** `internal/writermap/types.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
+**Owns:** `internal/writermap/destinationdata.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
 
 - Types: `Area`, `Place` (QID, names, coordinates, kind, description, photo + credit, sitelinks), `Mention` (writer host, post ref/URL/title, language, positions), `Itinerary` (writer, post, days of QIDs), `Summary` (QID, English text, source post refs, model, generated at), `DestinationResult` (places, writer counts, itineraries, source statuses, complete flag).
 - Port `WriterMapSource`: `Destination(ctx, dest)` and `Place(ctx, dest, qid)` (panel data incl. summary if any).
@@ -65,7 +65,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ### 1d. Add the feature flags — 0.5 h · **integrator**
 - [x] Done
 
-**Owns:** `internal/config/env.go`, `internal/config/env_test.go`
+**Owns:** `internal/config/env.go`, `internal/config/env_test.go`, `internal/config/flags.go`, `internal/config/flags_test.go`
 
 - Add `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI`, plus `LLM_GATEWAY_URL` / `LLM_GATEWAY_KEY` (unused until 9c); all default off/empty. Merge 1a–1c, run `make test lint build`, open the PR.
 
@@ -74,7 +74,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ### 1e. Add the fields the mockup needs — 1 h · *contract change, before the owner review*
 - [ ] Done
 
-**Owns:** `internal/writermap/types.go`, `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`, `docs/writers-map-contract.md`
+**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`, `docs/writers-map-contract.md`
 
 - GeoJSON properties gain `writers` (host array, for the "All writers" filter) and `has_summary` (for the Summaries layer).
 - Place panel gains `area` (Wikidata P131 label, shown as *kind · area*) and per-writer `blog_name` (from `writerdata/sources.json`).
@@ -474,7 +474,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Owns:** `cmd/design-preview/fixture.go`, `README.md`, `docs/architecture.md`, `CHANGELOG.md`
 
 - Journey at 375 and 1440 px and keyboard-only: search → pins → panel → post link → save → plan → day layer → writer itinerary → plan with these places.
-- Final screenshots next to [the mockup](../docs/ideas/Unknown.png); differences other than the planned ones (plan, **Target Output**) are fixed or listed.
+- Final screenshots next to [the mockup](../docs/ideas/writers-map-mockup.png); differences other than the planned ones (plan, **Target Output**) are fixed or listed.
 
 **Verify:** `go test ./cmd/design-preview`; `make test lint build`.
 

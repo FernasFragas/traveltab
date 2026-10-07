@@ -1,8 +1,12 @@
 package config
 
 import (
+	"bytes"
+	"log"
 	"os"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,45 +60,50 @@ func TestLoadEnvKey_NoLongerReadsPlacesOrFoursquareKeys(t *testing.T) {
 	}
 }
 
-func TestLoadEnvKey_WritersFlagsDefaultOffAndGatewayEmpty(t *testing.T) {
+func TestLoadEnvKey_GatewayEmptyByDefault(t *testing.T) {
 	t.Setenv("ENV", "production")
-	for _, name := range []string{"WRITERS_MAP", "WRITERS_SYNC", "WRITERS_AI", "LLM_GATEWAY_URL", "LLM_GATEWAY_KEY"} {
-		t.Setenv(name, "")
-	}
+	t.Setenv("LLM_GATEWAY_URL", "")
+	t.Setenv("LLM_GATEWAY_KEY", "")
 
 	keys := LoadEnvKey()
-	assert.False(t, keys.WritersMap)
-	assert.False(t, keys.WritersSync)
-	assert.False(t, keys.WritersAI)
+
 	assert.Empty(t, keys.LLMGatewayURL)
 	assert.Empty(t, keys.LLMGatewayKey)
 }
 
-func TestLoadEnvKey_ReadsWritersFlagsAndGateway(t *testing.T) {
+func TestLoadEnvKey_ReadsGateway(t *testing.T) {
 	t.Setenv("ENV", "production")
-	t.Setenv("WRITERS_MAP", "1")
-	t.Setenv("WRITERS_SYNC", "true")
-	t.Setenv("WRITERS_AI", "on")
 	t.Setenv("LLM_GATEWAY_URL", "https://gateway.example")
 	t.Setenv("LLM_GATEWAY_KEY", "secret")
 
 	keys := LoadEnvKey()
-	assert.True(t, keys.WritersMap)
-	assert.True(t, keys.WritersSync)
-	assert.True(t, keys.WritersAI)
+
 	assert.Equal(t, "https://gateway.example", keys.LLMGatewayURL)
 	assert.Equal(t, "secret", keys.LLMGatewayKey)
 }
 
-func TestLoadEnvKey_WritersFlagsStayOffForOtherValues(t *testing.T) {
-	t.Setenv("ENV", "production")
-	for _, value := range []string{"0", "false", "no", "off", "enabled", " "} {
-		t.Run(value, func(t *testing.T) {
-			t.Setenv("WRITERS_MAP", value)
-
-			keys := LoadEnvKey()
-
-			assert.False(t, keys.WritersMap)
-		})
+func TestWeatherServiceKeys_HoldsNoFeatureFlags(t *testing.T) {
+	keys := reflect.TypeOf(WeatherServiceKeys{})
+	for _, field := range []string{"WritersMap", "WritersSync", "WritersAI"} {
+		_, exists := keys.FieldByName(field)
+		assert.False(t, exists, "feature flag %s belongs in FeatureFlags", field)
 	}
+}
+
+func TestLoaders_LogAMissingDotEnvOnlyOnce(t *testing.T) {
+	dotEnvOnce = sync.Once{}
+	t.Cleanup(func() { dotEnvOnce = sync.Once{} })
+	workDir, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(t.TempDir()))
+	t.Cleanup(func() { _ = os.Chdir(workDir) })
+	t.Setenv("ENV", "development")
+	var logs bytes.Buffer
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+
+	LoadEnvKey()
+	LoadFeatureFlags()
+
+	assert.Equal(t, 1, strings.Count(logs.String(), "Error loading .env file"))
 }

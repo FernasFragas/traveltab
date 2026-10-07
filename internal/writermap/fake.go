@@ -75,30 +75,13 @@ func (f *FakeSource) wait(ctx context.Context) error {
 	}
 }
 
+// cloneResult copies the places and their names, so callers can edit them. The other fields
+// are shared with the fake and must be treated as read-only.
 func cloneResult(in DestinationResult) DestinationResult {
 	out := in
 	out.Places = append([]Place(nil), in.Places...)
 	for i := range out.Places {
 		out.Places[i].Names = append([]string(nil), in.Places[i].Names...)
-	}
-	out.WriterCounts = make(map[string]int, len(in.WriterCounts))
-	for key, value := range in.WriterCounts {
-		out.WriterCounts[key] = value
-	}
-	out.Itineraries = append([]Itinerary(nil), in.Itineraries...)
-	for i := range out.Itineraries {
-		out.Itineraries[i].Days = make([][]string, len(in.Itineraries[i].Days))
-		for j := range in.Itineraries[i].Days {
-			out.Itineraries[i].Days[j] = append([]string(nil), in.Itineraries[i].Days[j]...)
-		}
-	}
-	out.SourceStatuses = append([]SourceStatus(nil), in.SourceStatuses...)
-	out.Mentions = make(map[string][]Mention, len(in.Mentions))
-	for key, mentions := range in.Mentions {
-		out.Mentions[key] = append([]Mention(nil), mentions...)
-		for i := range out.Mentions[key] {
-			out.Mentions[key][i].Positions = append([]Position(nil), mentions[i].Positions...)
-		}
 	}
 	return out
 }

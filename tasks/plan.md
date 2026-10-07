@@ -2,7 +2,7 @@
 
 **Replace Waze on every destination with a map that is useful instantly:** an open-data base layer for any location, writers' pins from a pre-synced local index of the allowlisted blogs, and English AI summaries per place from a monthly job via LLM Gateway. No blog is contacted during a search or when a panel opens.
 
-Refined October 6, 2026 (summaries replace excerpts; AI in MVP; monthly sync; caches never expire). October 7: **target output set by [the mockup](../docs/ideas/Unknown.png)**. Scope: [one-pager](../docs/ideas/community-map.md). Evidence: [overlap results](blog-overlap-results.md). Tasks: [todo.md](todo.md). Earlier plans are in git history.
+Refined October 6, 2026 (summaries replace excerpts; AI in MVP; monthly sync; caches never expire). October 7: **target output set by [the mockup](../docs/ideas/writers-map-mockup.png)**. Scope: [one-pager](../docs/ideas/community-map.md). Evidence: [overlap results](blog-overlap-results.md). Tasks: [todo.md](todo.md). Earlier plans are in git history.
 
 ## Comparison With Earlier Plans
 
@@ -26,7 +26,7 @@ Refined October 6, 2026 (summaries replace excerpts; AI in MVP; monthly sync; ca
 
 ## Target Output
 
-**The finished page should look like [the mockup](../docs/ideas/Unknown.png)** (Lisbon, desktop 1440 px and phone 375 px). Header, weather, section tabs, stays and videos already exist; the work is the map card, the panel and a richer itinerary.
+**The finished page should look like [the mockup](../docs/ideas/writers-map-mockup.png)** (Lisbon, desktop 1440 px and phone 375 px). Header, weather, section tabs, stays and videos already exist; the work is the map card, the panel and a richer itinerary.
 
 **Desktop, top to bottom**
 1. **Hero + weather + tabs** — exists; no change.
@@ -88,7 +88,7 @@ Refined October 6, 2026 (summaries replace excerpts; AI in MVP; monthly sync; ca
    - **Cost:** LLM Gateway is the owner's own project and free to TravelTab; only Fly counts toward the US$5 cap.
 7. **Map in the browser:** Leaflet (unpkg + SRI), OSM tiles with attribution, configurable tile URL, one map instance across HTMX swaps, list alternative. The day plan reaches the map through an HTMX event with stop coordinates.
 8. **"Plan with these places."** The planner's `Request` gains `Include []Place` (from the writer's itinerary, max ~12); `planner.Build` seeds these into the days before filling with nearby places. The link is a normal `/plan` URL with the QIDs, so it is shareable. No frozen snapshot: day order follows today's forecast.
-9. **Feature flags keep `main` releasable.** `WRITERS_MAP` (new map card; off → Waze exactly as today), `WRITERS_SYNC` (monthly job) and `WRITERS_AI` (summary step) in `internal/config/env.go`. Every PR merges with all off; the launch PR turns on the first two; `WRITERS_AI` follows when LLM Gateway is ready.
+9. **Feature flags keep `main` releasable.** `WRITERS_MAP` (new map card; off → Waze exactly as today), `WRITERS_SYNC` (monthly job) and `WRITERS_AI` (summary step) in `config.FeatureFlags` (`internal/config/flags.go`). Every PR merges with all off; the launch PR turns on the first two; `WRITERS_AI` follows when LLM Gateway is ready.
 10. **Contracts first, so agents work in parallel.** PR 1 freezes the domain types, the `WriterMapSource` and `Summarizer` ports, the GeoJSON/panel shapes, the JS extension API and a Madeira fixture with a fake source. Later PRs code against these, not against each other. Changing a contract is its own small PR.
 11. **Front-end split into modules** so UI work doesn't collide: `writers-map.js` (core: map, list, layer registry, events) plus `map-panel.js`, `map-dayplan.js`, `map-itineraries.js`, `map-saved.js`. Templates expose named slots (`data-map-slot="…"`) created once in PR 3.
 
@@ -155,7 +155,7 @@ flowchart LR
 **Critical path:** PR 1 → PR 5 (after the PR 2 verdict) → PR 6 → PR 8, about 29 h. PR 3, 4, 7 and 9a/9b run alongside it. **External dependency:** 9c/9d wait on the LLM Gateway project.
 
 ### Rules for Agents
-- **Own only your listed files.** Shared files belong to the PR's integrator subtask: `server.go` routes, `cmd/web/main.go`, `database.go`, `map_card.go.tpl`, `env.go`.
+- **Own only your listed files.** Shared files belong to the PR's integrator subtask: `server.go` routes, `cmd/web/main.go`, `database.go`, `map_card.go.tpl`, `env.go`, `flags.go`.
 - **Cross-PR shared files:** PRs 3, 4, 5 and 9 each add a few wiring lines to `cmd/web/main.go`. Keep those edits small, one function per PR (`wireWritersMap`, `wireBaseLayer`, `wireWriterSync`, `wireSummaries`), and rebase on merge.
 - **Contracts are frozen after PR 1.** Need a change? Stop and raise a contract PR; everyone rebases.
 - **One worktree and branch per subtask** (`writers-map/pr<N>-<letter>`). The integrator merges subtasks into `writers-map/pr<N>`, runs `make test lint build`, and opens the PR.
@@ -198,4 +198,4 @@ flowchart LR
 - **Budget:** US$5/month total. *Decided.*
 - **Spike thresholds** (300 MB, 200 ms, 90%): proposed, not agreed.
 - **Target date / hour budget:** not set (≈89 h estimated, of which ≈12 h is matching the mockup).
-- **Look and feel:** [the mockup](../docs/ideas/Unknown.png) is the target, with the differences listed under **Target Output**. *Decided October 7, 2026.*
+- **Look and feel:** [the mockup](../docs/ideas/writers-map-mockup.png) is the target, with the differences listed under **Target Output**. *Decided October 7, 2026.*

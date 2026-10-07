@@ -12,6 +12,7 @@ import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+import urllib.robotparser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -32,6 +33,19 @@ def request(url, data=None, timeout=90):
         if exc.code in (401, 403, 429):
             raise RuntimeError(f"source returned HTTP {exc.code}; stopping without retry")
         raise
+
+def allowed_by_robots(host, path):
+    """Checks the host's robots.txt for our user agent. No robots.txt (404) allows everything;
+    401/403/429 stop the run through request()."""
+    parser = urllib.robotparser.RobotFileParser()
+    try:
+        with request(f"https://{host}/robots.txt") as response:
+            parser.parse(response.read().decode("utf-8", "replace").splitlines())
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return True
+        raise
+    return parser.can_fetch(UA, f"https://{host}{path}")
 
 def fold(value):
     return unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().casefold()
@@ -123,6 +137,10 @@ def main():
     total_posts, total_rows = 0, 0
     per_host = {}
     for host in HOSTS:
+        if not allowed_by_robots(host, "/wp-json/wp/v2/posts"):
+            print(f"{host}: robots.txt disallows the posts API; skipping", flush=True)
+            continue
+        time.sleep(LIMITER_SECONDS)
         endpoint = f"https://{host}/wp-json/wp/v2/posts?per_page=100&page=1&_fields=id,content"
         with request(endpoint) as response:
             total_pages = int(response.headers.get("X-WP-TotalPages", "1"))

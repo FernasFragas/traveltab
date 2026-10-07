@@ -2,7 +2,7 @@
 
 **Verdict:** keep the phrase/QID/position schema for PR 5, with the planned five-word sub-span cap. The measured names-only prototype is well below the proposed size and lookup limits. **PR 5 remains gated on the 55-place coverage check:** the committed research records only the aggregate of 55, not the place names needed to compare against Wikidata nearby plus filters.
 
-Run October 6, 2026. The reproducible runner is [`writers-map-spike/run.py`](writers-map-spike/run.py). It streamed the public WordPress API responses through memory with the identified `TravelTab-research/0.1 (blog overlap check)` user agent and a 1.5-second delay between pages. It stopped on access blocks. No post body, title, or URL was written to the database or output. Only matched QIDs/names, post IDs, and offsets were indexed. The temporary database and downloaded candidate-name cache were removed after measurement.
+Run October 6, 2026. The reproducible runner is [`writers-map-spike/run.py`](writers-map-spike/run.py). It streamed the public WordPress API responses through memory with the identified `TravelTab-research/0.1 (blog overlap check)` user agent and a 1.5-second delay between pages. It stopped on access blocks. **It did not check `robots.txt`.** The script now checks it before each host (added October 7, 2026), so a rerun respects it; the October 6 numbers came from the run without the check. No post body, title, or URL was written to the database or output. Only matched QIDs/names, post IDs, and offsets were indexed. The temporary database and downloaded candidate-name cache were removed after measurement.
 
 ## Measurements
 

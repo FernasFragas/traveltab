@@ -38,7 +38,7 @@
           Error:      Target error should be in err chain:
   ```
 - **GREEN:** `ok  weatherservice/internal/writermap`
-- **Refactor:** moved `ErrPlaceNotFound` from `fake.go` to `types.go`, because real sources will return it too. Tests still pass.
+- **Refactor:** moved `ErrPlaceNotFound` from `fake.go` to `types.go` (since renamed `destinationdata.go`), because real sources will return it too. Tests still pass.
 
 ### Unavailable and delay paths (1c)
 - These tests passed on their first run, because the behaviour already existed.
@@ -51,7 +51,35 @@
 
 ### Flags stay off (1d)
 - This test passed on its first run.
-- **Can fail:** with `envBool` changed to treat any non-empty value as on, all six subtests of `TestLoadEnvKey_WritersFlagsStayOffForOtherValues` failed. `env.go` was then restored unchanged.
+- **Can fail:** with `envBool` changed to treat any non-empty value as on, all six subtests of the stay-off test (now `TestLoadFeatureFlags_WritersFlagsStayOffForOtherValues`) failed. `env.go` was then restored unchanged.
+
+### Move the flags out of `WeatherServiceKeys` (1d)
+- **Summary:** `WritersMap`, `WritersSync` and `WritersAI` are switches, not keys, so they moved to a new `config.FeatureFlags`, loaded by `LoadFeatureFlags()` in `internal/config/flags.go`. `LLMGatewayURL` and `LLMGatewayKey` stay in `WeatherServiceKeys`: they are a credential and its endpoint. Loading `.env` moved into `loadDotEnv()`, which both loaders call.
+- **RED (compile)**, `go test ./internal/config/`:
+  ```
+  internal/config/flags_test.go:26:11: undefined: LoadFeatureFlags
+  FAIL    weatherservice/internal/config [build failed]
+  ```
+- **RED (runtime)**, with an empty `FeatureFlags` type and a loader that returned it:
+  ```
+  --- FAIL: TestWeatherServiceKeys_HoldsNoFeatureFlags (0.00s)
+          Messages:   feature flag WritersMap belongs in FeatureFlags
+  --- FAIL: TestLoadFeatureFlags_ReadsWritersFlags (0.00s)
+  ```
+- **GREEN:** `ok  weatherservice/internal/config  coverage: 87.0% of statements`
+
+### Second review fixes
+- **Flags accept only `"1"`.** This matches the docs (`WRITERS_SYNC=1`) and the repo's `RECORD_FIXTURES == "1"`. The parser moved from `env.go` to `flags.go`, its only user, and was renamed `envFlag`.
+  - **RED**, `go test ./internal/config/`: `--- FAIL: TestLoadFeatureFlags_WritersFlagsStayOffForOtherValues/true`, and the same for `/yes` and `/on`.
+  - **GREEN:** `ok  weatherservice/internal/config`
+- **`.env` is loaded once.** `loadDotEnv` uses `sync.Once`, so a missing file is logged once, not once per loader.
+  - **RED (compile):** `undefined: dotEnvOnce`.
+  - **RED (runtime)**, with the variable declared but unused: `TestLoaders_LogAMissingDotEnvOnlyOnce`, `expected: 1`, `actual: 2`.
+  - **GREEN:** `ok  weatherservice/internal/config  coverage: 100.0% of statements`
+- **`cloneResult` trimmed.** It now copies only places and their names; the other fields are shared and read-only, as its comment says. This was a refactor with tests green before and after. A new test, `TestFakeSource_ReplacingAResultPlaceLeavesTheFakeUnchanged`, passed on its first run. With the places copy removed, both copy tests failed. With the names copy removed, `TestFakeSource_EditingAResultNameLeavesTheFakeUnchanged` failed.
+- **`Passage` lost its JSON tags**, so passages aren't easy to serialize by accident. Nothing marshalled them.
+- **Tests split and reordered.** The fixture, panel and summarizer tests that checked several things are now one test per behaviour. Every earlier assertion is kept, except `Calls == 2`: each summarizer test now has its own summarizer and checks `Calls == 1`. `fake_test.go` and `writerdata/embed_test.go` now go top-down, tests first and helpers last. `embed_test.go` was a pure reorder, with the same lines when sorted.
+- **Spike script.** `run.py` now checks `robots.txt` before each host: 404 allows everything, a disallow skips the host, and 401/403/429 stop the run. Four offline cases passed (disallow all, disallow `/wp-json/`, allow, no file) with the network call replaced. The script was not rerun.
 
 ## Test specification
 
@@ -70,7 +98,11 @@
 | 11 | Overrides contain only known keys | `TestOverrides_DecodeWithKnownFieldsOnly` | unit | PASS |
 | 12 | Every area has a positive radius | `TestOverrides_AreasHaveAPositiveRadius` | unit | PASS |
 | 13 | Summary hide list holds only Wikidata QIDs | `TestOverrides_SummaryHideListHoldsWikidataQIDs` | unit | PASS |
-| 14 | Writers' flags are off for `0`, `false`, `no`, `off`, unknown values and blank | `TestLoadEnvKey_WritersFlagsStayOffForOtherValues` | unit | PASS |
+| 14 | Writers' flags are off for anything but `"1"`: `true`, `yes`, `on`, `0`, `false`, unknown values and blank | `TestLoadFeatureFlags_WritersFlagsStayOffForOtherValues` | unit | PASS |
+| 15 | Flags are read into `FeatureFlags`: off by default, on for `1` | `TestLoadFeatureFlags_WritersFlagsDefaultOff`, `TestLoadFeatureFlags_ReadsWritersFlags` | unit | PASS |
+| 16 | `WeatherServiceKeys` holds no feature flags | `TestWeatherServiceKeys_HoldsNoFeatureFlags` | unit | PASS |
+| 17 | A missing `.env` is logged once when both loaders run | `TestLoaders_LogAMissingDotEnvOnlyOnce` | unit | PASS |
+| 18 | Editing or replacing a result place leaves the fake unchanged | `TestFakeSource_EditingAResultNameLeavesTheFakeUnchanged`, `TestFakeSource_ReplacingAResultPlaceLeavesTheFakeUnchanged` | unit | PASS |
 
 The existing tests from 1c and 1d still pass: fixture shape, panel summary present or absent, cancellation, fixture not changed by the fake, fake summarizer, and flags default off or read as on.
 
@@ -82,20 +114,14 @@ The existing tests from 1c and 1d still pass: fixture shape, panel summary prese
 
 | Package | Before | After |
 | --- | ---: | ---: |
-| `internal/writermap` | 90.9% | 98.2% |
-| `internal/config` | 87.0% | 87.0% |
+| `internal/writermap` | 90.9% | 97.6% |
+| `internal/config` | 87.0% | 100.0% |
 | `writerdata` | no statements | no statements; 8 data tests |
 
-In `config`, the uncovered lines are the existing non-production `.env` loading branch, which this PR doesn't touch.
+`writermap` dropped from 98.2% to 97.6% when `cloneResult` lost its copy loops: fewer statements, and the uncovered branch is the same. In `config`, the `.env` test now covers the development branch too.
 
 ## Known gaps
 
 - **No recorded RED for the original 1a–1d.** That evidence can't be recovered.
-- **Not changed in this pass (review notes):**
-  - two fixture and panel tests still check several things each
-  - `envBool` still also accepts `yes` and `on`
-  - `cloneResult` still deep-copies more than the tests check
-  - `Passage` still has JSON tags
-  - the spike script still doesn't check `robots.txt`
-  - the branch still mixes PR 1 and PR 2 in one commit
+- **Branch mixes PR 1 and PR 2.** Splitting it needs commits, which agents don't make (`AGENTS.md` §6). The owner decides.
 - **Step 1e** (fields for the mockup) is open. It changes the contract and needs its own RED → GREEN cycle.

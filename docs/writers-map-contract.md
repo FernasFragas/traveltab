@@ -8,6 +8,9 @@ coordinates use decimal degrees (latitude, then longitude). QIDs are Wikidata it
 
 - `WriterMapSource.Destination(ctx, area)` returns the destination's cached base places and writer
   matches, ordered for display, along with source status and whether the result is complete.
+  Writer matches are `Mentions`, keyed by QID: one entry per post with writer host, post
+  reference, URL, title, language and the matched character positions. Mentions never carry post
+  text.
 - `WriterMapSource.Place(ctx, area, qid)` returns panel place data and an optional summary. A
   missing summary is represented by `nil`; this is a normal state. An unknown QID returns an error
   wrapping `writermap.ErrPlaceNotFound`, never a `nil` place without an error.
