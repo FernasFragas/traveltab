@@ -54,7 +54,7 @@ Refined October 6, 2026 (summaries replace excerpts; AI in MVP; monthly sync; ca
 | Plan with these places | 7e |
 | "Suggested based on writers" chips | **7h** |
 | Itinerary time slots, temperature, walking minutes, Writers' pick, View on map | **7g** |
-| Panel `area`, GeoJSON `writers` hosts, stop writer flag | **1e** (contract) |
+| Panel `area` and `blog_name`, GeoJSON `writers` and `has_summary`, per-day `distance_km`/`walk_minutes`, plan-stop `writers_pick` | **1e** (contract) |
 
 **Deliberate differences from the mockup**
 - **Writer avatars → initials monograms** per blog (colour from host). Blog photos are "all rights reserved".

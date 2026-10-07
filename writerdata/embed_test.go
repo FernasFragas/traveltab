@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,6 +42,12 @@ func TestSources_HostsAreUnique(t *testing.T) {
 	for _, s := range loadSources(t) {
 		assert.False(t, seen[s.Host], "duplicate host %s", s.Host)
 		seen[s.Host] = true
+	}
+}
+
+func TestSources_EverySourceHasABlogName(t *testing.T) {
+	for _, s := range loadSources(t) {
+		assert.NotEmpty(t, strings.TrimSpace(s.Name), s.Host)
 	}
 }
 
@@ -87,6 +94,7 @@ func decodeStrict(t *testing.T, name string, v any) {
 
 type source struct {
 	Host      string `json:"host"`
+	Name      string `json:"name"`
 	APIBase   string `json:"api_base"`
 	Language  string `json:"language"`
 	Status    string `json:"status"`

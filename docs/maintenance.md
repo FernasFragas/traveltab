@@ -73,6 +73,11 @@ Open work is listed under [Next up](#next-up).
 
 ## Writers' map
 
+**Status (2026-10-08):** only the contracts, fixture, embedded source data and flags exist
+(PR 1 in [tasks/todo.md](../tasks/todo.md)). There is no sync job, WordPress client, summary pass
+or map route yet, so the sync, robots and takedown rules below are requirements for that work, not
+current behaviour.
+
 The writers' map reads its allowlist from the embedded `writerdata/sources.json` file and reviewed
 matching policy from `writerdata/overrides.json`. Source status is `active`, `blocked` or `removed`;
 the date in the source file records the last check. Add or change a source only after confirming its
@@ -99,45 +104,21 @@ flags off until the corresponding feature has been reviewed and is ready to laun
 
 ## Next up
 
-In priority order. Updated 2026-09-24.
+In priority order. Updated 2026-10-08. Done work (redesign, destination photos, sitemap storage,
+city guides, slug helpers, city autocomplete) is recorded in the [changelog](../CHANGELOG.md).
 
-1. **Ship the redesign.** Commit the verification work (the preview checks, evidence and results)
-   and merge PR #7.
-2. **Destination photos for every search.** Done. Every search resolves a Wikimedia photo live
-   (keyless, identity-checked, cached 30 days; "none found" one hour), and a cached city page is
-   used only when its country and coordinates match, so Paris, France and Paris, Texas no longer
-   share data. Verification, live samples, latency and the [remaining limits](#destination-photo-limits)
-   are in the [results](../tasks/destination-photos-results.md). Remove this item when the list is
-   next reordered.
-3. **Close the verification gaps.** The contrast and accessibility audit and the
-   screenshots for every named preview scenario are **done** (2026-09-25, offline, with
-   [assertions and a requirement matrix](../tasks/artifacts/redesign/final-verification-2/README.md);
-   11 defects fixed, one focus-order limitation below 900px documented). Still open from the
-   [final browser evidence](../tasks/artifacts/redesign/final-verification/README.md):
-   - live checks of the map embed, Wikimedia photos, YouTube playback and the Booking landing
-     page in a normal browser (see the [external checks](../tasks/artifacts/redesign/final-verification/external-results.md)).
-4. **Sitemap storage.** Done. `application.Storage` has `RecordSitemapSlug` and
-   `ListSitemapSlugs`, backed by a `sitemap_slugs` table with one row per slug. On open, the
-   SQLite store copies slugs from a legacy `__sitemap_index__` cache row into that table and
-   deletes the row, so existing URLs are kept. Rolling back to an older build loses that index
-   until cities are visited again. Remove this item when the list is next reordered.
-5. **City guides.** Done. `guides/guides.json` was reviewed against Wikivoyage on 2026-09-24: all 20
-   starter cities were rewritten to what the cited revision supports, 26 wrong or misleading draft
-   statements were corrected and 56 unsupported or dated ones removed, and each entry now records
-   its article title, review date and note. The destination page shows a reviewed intro with its
-   attribution, or an explicit "no reviewed guide yet" card, and serving a request never calls
-   Ollama. The [review](../tasks/guides-review.md), the [results](../tasks/guides-results.md) and
-   the [remaining limits](#city-guide-limits) are recorded. Remove this item when the list is next
-   reordered.
-6. **Slug helpers.** Done. `internal/slug` now holds the `city-country` format; `guides.Slug` and
-   `httpserver.Slug`/`ParseSlug` are thin wrappers. Both old helpers behaved the same for real
-   inputs (two-letter codes); the only difference was whitespace inside the country, now
-   hyphenated in both. Diacritics are kept, not stripped, and a test pins every
-   `guides/guides.json` key. Remove this item when the list is next reordered.
-7. **Export interoperability.** Import the ICS and KML exports into real calendar and map apps.
+1. **Writers' map.** Follow [tasks/todo.md](../tasks/todo.md): finish 1e (mockup fields) and the
+   owner review of the [contract](writers-map-contract.md), then the map shell and base layer.
+   PR 5 (writers index) waits on the 55-place coverage check in
+   [the spike results](../tasks/writers-map-results.md).
+2. **Close the verification gaps.** Live checks of the map embed, Wikimedia photos, YouTube
+   playback and the Booking landing page in a normal browser (see the
+   [external checks](../tasks/artifacts/redesign/final-verification/external-results.md)), plus
+   the manual autocomplete checks in [its plan](../tasks/city-autocomplete-plan.md#verification).
+3. **Export interoperability.** Import the ICS and KML exports into real calendar and map apps.
    Parser checks don't prove importer compatibility. Event times are defaults, not real visit
    schedules.
-8. **Indexing after deployment.** Check the public trip URLs, canonical tags and sitemap in
+4. **Indexing after deployment.** Check the public trip URLs, canonical tags and sitemap in
    search-engine diagnostics. Local tests can't show this.
 
 ## Historical verification boundaries

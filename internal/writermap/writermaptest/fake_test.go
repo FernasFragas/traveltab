@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"os"
 	"testing"
 	"time"
 
+	"weatherservice/internal/planner"
 	"weatherservice/internal/writermap"
+	"weatherservice/writerdata"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -151,6 +154,47 @@ func TestFakeSourcePlace_UnavailableReturnsError(t *testing.T) {
 	assert.Nil(t, place)
 }
 
+func TestFakeBaseSource_PlacesReturnsTheConfiguredPlacesAndCountsCalls(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeBaseSource{Result: fixture.Places}
+
+	places, err := source.Places(context.Background(), writermap.Area{Name: "Madeira"})
+
+	require.NoError(t, err)
+	assert.Len(t, places, 15)
+	assert.Equal(t, 1, source.PlacesCalls())
+}
+
+func TestFakeBaseSource_EditingAResultLeavesTheFakeUnchanged(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeBaseSource{Result: fixture.Places}
+	places, err := source.Places(context.Background(), writermap.Area{})
+	require.NoError(t, err)
+
+	places[0].Names[0] = "changed"
+
+	assert.Equal(t, "Madeira", source.Result[0].Names[0])
+}
+
+func TestFakeBaseSource_ReturnsConfiguredError(t *testing.T) {
+	wantErr := errors.New("wikidata unavailable")
+	source := &FakeBaseSource{Err: wantErr}
+
+	places, err := source.Places(context.Background(), writermap.Area{})
+
+	assert.ErrorIs(t, err, wantErr)
+	assert.Empty(t, places)
+}
+
+func TestFakeBaseSource_RefreshCountsCalls(t *testing.T) {
+	source := &FakeBaseSource{}
+
+	err := source.Refresh(context.Background(), writermap.Area{Name: "Madeira"})
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, source.RefreshCalls())
+}
+
 func TestFakeSummarizer_ReturnsConfiguredText(t *testing.T) {
 	summarizer := &FakeSummarizer{Text: "A fixture summary."}
 
@@ -213,6 +257,45 @@ func TestMadeiraFixture_SourceStatusesUseContractValues(t *testing.T) {
 	}
 }
 
+func TestMadeiraFixture_EveryPlaceHasAnArea(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+
+	for _, place := range fixture.Places {
+		assert.NotEmpty(t, place.Area, place.QID)
+	}
+}
+
+func TestMadeiraFixture_BlogNamesMatchTheSourcesFile(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	names := sourceNames(t)
+
+	for qid, mentions := range fixture.Mentions {
+		for _, mention := range mentions {
+			assert.Equal(t, names[mention.WriterHost], mention.BlogName, qid)
+			assert.NotEmpty(t, mention.BlogName, qid)
+		}
+	}
+}
+
+func TestMadeiraFixture_DayDistanceAndWalkTimeMatchTheStops(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	places := map[string]planner.Place{}
+	for _, place := range fixture.Places {
+		places[place.QID] = planner.Place{ID: place.QID, Lat: place.Lat, Lon: place.Lon}
+	}
+
+	for _, itinerary := range fixture.Itineraries {
+		for i, day := range itinerary.Days {
+			want := 0.0
+			for j := 1; j < len(day.QIDs); j++ {
+				want += planner.DistanceKM(places[day.QIDs[j-1]], places[day.QIDs[j]])
+			}
+			assert.InDelta(t, want, day.DistanceKM, 0.05, "%s day %d", itinerary.PostRef, i+1)
+			assert.Equal(t, int(math.Round(day.DistanceKM*60/writermap.WalkSpeedKMH)), day.WalkMinutes, "%s day %d", itinerary.PostRef, i+1)
+		}
+	}
+}
+
 func loadMadeiraFixture(t *testing.T) madeiraFixture {
 	t.Helper()
 	data, err := os.ReadFile("testdata/madeira.json")
@@ -225,4 +308,20 @@ func loadMadeiraFixture(t *testing.T) madeiraFixture {
 type madeiraFixture struct {
 	writermap.DestinationResult
 	Summaries map[string]writermap.Summary `json:"summaries"`
+}
+
+func sourceNames(t *testing.T) map[string]string {
+	t.Helper()
+	data, err := writerdata.Files.ReadFile("sources.json")
+	require.NoError(t, err)
+	var sources []struct {
+		Host string `json:"host"`
+		Name string `json:"name"`
+	}
+	require.NoError(t, json.Unmarshal(data, &sources))
+	names := make(map[string]string, len(sources))
+	for _, source := range sources {
+		names[source.Host] = source.Name
+	}
+	return names
 }

@@ -16,7 +16,9 @@ When no city is given, the page opens on Lisbon, Portugal.
 
 This started as a RESTful JSON weather API, a personal project for practising Go. It grew into a server-rendered web app that combines several third-party APIs into one page.
 
-The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Every searched destination now gets a photograph looked up live on Wikimedia (see [destination photos](#destination-photos)); the [results](tasks/destination-photos-results.md) record what was verified.
+The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Every searched destination now gets a photograph looked up live on Wikimedia (see [destination photos](#destination-photos)); the [results](tasks/destination-photos-results.md) record what was verified. The search box suggests matching places as you type.
+
+**In progress:** a *writers' map* of places that travel bloggers mention. Only its contracts, source data and feature flags exist so far; nothing is shown on the site. See the [plan](tasks/plan.md), [task list](tasks/todo.md) and [contract](docs/writers-map-contract.md).
 
 ## Tech stack
 
@@ -33,6 +35,7 @@ The redesigned interface and September 2026 repairs are implemented. [Verificati
 | Feature        | Provider                                                                                   | Key needed |
 |----------------|--------------------------------------------------------------------------------------------|------------|
 | Weather and geocoding | [OpenWeather](https://openweathermap.org/api) (Current Weather and Geocoding APIs)  | Yes        |
+| Search suggestions | [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api): up to 6 places as you type | No |
 | Wave height    | [Open-Meteo Marine API](https://open-meteo.com/en/docs/marine-weather-api)                 | No         |
 | Videos         | [YouTube Data API v3](https://developers.google.com/youtube/v3) (up to 10 results)         | Yes        |
 | Map            | Waze embed iframe                                                                          | No         |
@@ -146,6 +149,7 @@ When something is unavailable, the page degrades instead of failing:
 |--------|-----------------------|-----------------------------------------------------------------------------|
 | GET    | `/`                   | Full page. Optional `city_name` query parameter; defaults to `Lisbon, Portugal`. |
 | GET    | `/process-form/`      | Same handler as `/`. Returns only the HTML fragment for HTMX requests.      |
+| GET    | `/suggest`            | Place suggestions as an HTML fragment. Takes `city_name`; under 2 characters or a provider error returns an empty response. Cached in memory for 10 minutes. |
 | GET    | `/plan`               | Form, itinerary, and stays fragments. Takes `city`, `country`, `lat`, `lon`, `start` (`YYYY-MM-DD`) and `days` (1–5). |
 | GET    | `/stats`              | Visit statistics as JSON. Hidden (404) unless `STATS_TOKEN` is set and matches `?token=`. |
 | GET    | `/trip/:slug`         | A shareable trip page (`slug` is `city-country`, e.g. `lisbon-pt`). With `?days=N&from=YYYY-MM-DD` the plan is built and shown on first load. |
@@ -170,7 +174,8 @@ When something is unavailable, the page degrades instead of failing:
 │   │   └── testdata/      # Recorded city acceptance fixtures
 │   ├── placetypes/       # Offline type classification and generation
 │   ├── guides/           # Wikivoyage + Ollama city-intro generation, and the reviewed-guide book the site reads
-│   ├── config/           # Environment and .env loading
+│   ├── writermap/        # Writers' map domain types and test fakes (in progress, not served)
+│   ├── config/           # Environment and .env loading and feature flags
 │   └── adapters/
 │       ├── api/          # External HTTP providers and their test fixtures
 │       ├── httpserver/   # Fiber routes, HTMX rendering, sessions, exports and request analytics
@@ -178,6 +183,8 @@ When something is unavailable, the page degrades instead of failing:
 ├── views/                # Go HTML templates (*.go.tpl)
 ├── public/                # Styles, scripts, and local destination imagery
 ├── guides/                # Reviewed city intros (guides.json), embedded in the web binary; see below
+├── writerdata/            # Writers' map source allowlist and matching overrides, embedded
+├── docs/                  # Architecture, design, maintenance, contracts, ideas and TDD evidence
 ├── Dockerfile            # Multi-stage build (CGO enabled for SQLite)
 └── fly.toml              # Fly.io app configuration
 ```
@@ -211,6 +218,8 @@ YOUTUBE_NEW=your-youtube-data-api-key
 | `OVERPASS_URLS`      | Optional. Comma-separated Overpass servers to try, in order. Falls back to the built-in public list |
 | `DB_PATH`            | Optional. Where the SQLite file lives. Defaults to `weatherservice.db` in the working directory |
 | `STATS_TOKEN`        | Optional. Enables `/stats` for requests with a matching `?token=`          |
+| `WRITERS_MAP`, `WRITERS_SYNC`, `WRITERS_AI` | Writers' map feature flags, off unless set to `1`. Read by `config.LoadFeatureFlags` but not yet used by the app |
+| `LLM_GATEWAY_URL`, `LLM_GATEWAY_KEY` | Optional. LLM Gateway for the planned writers' map summaries. Loaded, not yet used |
 | `ENV`                | Set to `production` to skip loading `.env` and read only real environment variables |
 
 ### 2. Run
@@ -316,6 +325,7 @@ Visit the site in a browser, then open the stats URL to verify recording.
 - [Architecture](docs/architecture.md): packages, dependency boundaries, and verification commands.
 - [Maintenance notes](docs/maintenance.md): planner decisions, known limits, and follow-ups.
 - [Design reference](docs/design.md): visual target, template contracts, and data rules.
+- [Writers' map contract](docs/writers-map-contract.md): ports, GeoJSON and panel shapes, and browser hooks for the planned map. The idea and feasibility notes are in [docs/ideas](docs/ideas/community-map.md), and TDD evidence per task in [docs/tdd](docs/tdd/).
 - [Design preview](tasks/redesign/preview.md): deterministic fixtures and reproducible HTTP/browser checks.
 - [Verification results](tasks/project-fix-results.md): current test and browser evidence, and remaining limits.
 - [Destination photos](tasks/destination-photos-plan.md): the plan, and the [results](tasks/destination-photos-results.md) with live samples, latency and remaining limits.

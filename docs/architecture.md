@@ -8,7 +8,7 @@ working directory. Run the commands from the repository root, as before.
 |---|---|---|
 | `internal/planner` | Trip types, ranking, grouping, scheduling, geometry and stay selection | None |
 | `internal/application` | Weather/video report services, trip service, destination identity/photo and city guide contracts, shared models and ports | `planner` |
-| `internal/config` | Environment and `.env` configuration | None |
+| `internal/config` | Environment and `.env` configuration, and the off-by-default writers' map feature flags | None |
 | `internal/adapters/api` | External HTTP provider clients, including Wikimedia (places and destination photos), Open-Meteo and Overpass | `application`, `planner` |
 | `internal/adapters/httpserver` | Fiber routes, sessions, HTML/HTMX rendering and request analytics | `application`, `planner` |
 | `internal/adapters/sqlite` | Database lifecycle, city/source caching, visit persistence and queries | `application`, `planner` |
@@ -16,6 +16,9 @@ working directory. Run the commands from the repository root, as before.
 | `internal/slug` | The `city-country` slug format (`Build`/`Parse`) shared by `/trip/:slug` URLs and `guides/guides.json` keys | None |
 | `internal/guides` | Offline Wikivoyage collection, a local Ollama call and generation of `guides/guides.json`, plus `Book`, the in-memory reader that serves only reviewed entries as `application.CityGuideSource` | `application`, `slug`, `adapters/api` (Wikivoyage client user agent) |
 | `weatherservice/guides` (package `guidedata`) | Embeds `guides/guides.json` in the web binary | None |
+| `internal/writermap` | Writers' map domain types (`Area`, `DestinationResult`, `Place`, `Mention`, `Summary`, `Passage`). In progress: not wired into `cmd/web` | None |
+| `internal/writermap/writermaptest` | Fixture-backed fake `WriterMapSource`, base-place source and summarizer (Madeira) for tests and the future preview | `application`, `writermap` |
+| `weatherservice/writerdata` | Embeds the writers' map source allowlist and matching overrides | None |
 
 ```mermaid
 flowchart TD
@@ -47,6 +50,18 @@ wiring with fixture reporters. `cmd/placetypes` handles flags and calls `placety
 parses the embedded file into a `guides.Book` and hands it to `Server.SetCityGuideSource`, the
 same wiring style as the photo source. The HTTP adapter sees only `application.CityGuideSource`,
 so it does not import `internal/guides` or reach a provider.
+
+**Search suggestions** use the same port style: `application.PlaceSuggester` is implemented by
+`api.OpenMeteoGeocodingAPI`, and `cmd/web` passes it to `Server.SetPlaceSuggester`. `suggest.go`
+serves `/suggest` from a small in-memory cache (10 minutes, 128 queries) and returns an empty
+fragment when the provider fails, so autocomplete never blocks a search. A picked suggestion
+sends its country code and coordinates with the search, so a namesake resolves to the chosen place.
+
+**Writers' map (in progress).** `application.WriterMapSource`, `BasePlaceSource`,
+`BasePlaceRefresher` and `Summarizer` (`internal/application/writermap.go`) are the ports for the
+planned map; the
+[contract](writers-map-contract.md) defines their shapes and the planned routes. No adapter,
+route or template uses them yet, and the feature flags are not read by `cmd/web`.
 
 `internal/adapters/httpserver` also holds shareable-link and export code: `slug.go`
 (`Slug`/`ParseSlug`, thin wrappers over `internal/slug` for the `city-country` `/trip/:slug` path segment), `export_ics.go`/

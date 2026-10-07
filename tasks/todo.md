@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1d done; 1e (mockup fields) open; owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner); owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -72,16 +72,17 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `go test ./internal/config/...`; CI green.
 
 ### 1e. Add the fields the mockup needs — 1 h · *contract change, before the owner review*
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/1e-mockup-fields.tdd.md)
 
-**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `docs/writers-map-contract.md`
+**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/destinationdata_test.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `writerdata/sources.json`, `writerdata/embed_test.go`, `docs/writers-map-contract.md`
 
 - GeoJSON properties gain `writers` (host array, for the "All writers" filter) and `has_summary` (for the Summaries layer).
-- Place panel gains `area` (Wikidata P131 label, shown as *kind · area*) and per-writer `blog_name` (from `writerdata/sources.json`).
-- Itinerary routes gain `distance_km` and `walk_minutes` (for the writer's walk card).
+- Place panel gains `area` (Wikidata P131 label, shown as *kind · area*) and per-writer `blog_name`, from a new `name` field in `writerdata/sources.json`.
+- Itinerary days gain `distance_km` and `walk_minutes` (for the writer's walk card, which shows one day). Distance is straight-line between consecutive stops, as in the planner; real values come from 6a, the fixture fills them now.
+- Plan stops gain a `writers_pick` flag (for 7g's "Writers' pick" chip): true when the stop's QID has a writer count of 1 or more. Defined in the contract; 7g builds it.
 - Fixture filled for all new fields.
 
-**Verify:** `go test ./internal/writermap/...`.
+**Verify:** `go test ./internal/writermap/... ./writerdata/`.
 
 **PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off.
 
@@ -127,13 +128,14 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ### 3b. Wire the template and fixture endpoints — 1.5 h · **integrator**
 - [ ] Done
 
-**Owns:** `views/map_card.go.tpl`, `views/index.go.tpl`, `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/writermap_test.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
+**Owns:** `views/map_card.go.tpl`, `views/index.go.tpl`, `views/place_panel.go.tpl` (minimal; 7a builds it out), `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/writermap_test.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
 
 - Flag on: the map shell with all contract slots, plus `hx-trigger="load"`. Flag off: today's Waze markup, byte-for-byte.
-- Contract endpoints, served from the PR 1 fake.
+- Contract endpoints, served from the PR 1 fake. `:dest` is the trip slug plus `?lat=…&lon=…` (see **Destination in map URLs** in the contract); the shell's data attributes carry the full URLs.
+- Minimal `place_panel.go.tpl`: the contract's panel fields and writer links, no mockup styling.
 - Keep "View larger map".
 
-**Verify:** `go test ./internal/adapters/httpserver/...` (flag on and off; 404s; escaping).
+**Verify:** `go test ./internal/adapters/httpserver/...` (flag on and off; bad slug → 404; bad coordinates → 400; escaping).
 
 ### 3c. Add the design-preview scenario — 1 h
 - [ ] Done
@@ -157,7 +159,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Header: "Writers' Map", subtitle, green **"Always ready"** pill in the `status` slot (turns amber for partial, grey for unavailable).
 - ≥1024 px: map ≈60% and `panel` slot ≈40% side by side, equal height. <1024 px: panel stacks under the map as a card.
 - Chip row overlaid top-left of the map (`layers` slot); "All writers" select top-right.
-- Map chrome: zoom, north arrow, scale bar, basemap thumbnail toggle (OSM / Esri World Imagery or another free imagery tile with attribution).
+- Map chrome: zoom, north arrow, scale bar, basemap thumbnail toggle (OSM / satellite). **Check first** that the imagery source's terms allow free use on this site (Esri World Imagery is not confirmed); if no free source fits, leave the satellite option out.
 - Empty panel state: "Pick a place on the map".
 
 **Acceptance**
@@ -177,7 +179,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Owns:** `internal/adapters/api/wikidatanearby.go`, `wikidatanearby_test.go`, `internal/adapters/api/testdata/wikidata_*.json`
 
+- Implements `application.BasePlaceSource`.
 - SPARQL `wikibase:around`: ≈40 km for cities (overrides first for islands/regions), visitable-class filter, infrastructure excluded, capped at ~200 ranked by sitelinks (writer count re-ranks later in 6a).
+- Visitable classes come from the planner's generated list (`planner.PlaceTypes`, skipping `never`), not a second list.
 - Returns en/pt labels and aliases, English description, P18 image with Commons credit (reuse `wikimedia.go` parsing), and sitelinks.
 - Retry-After honored; identified user agent.
 
@@ -192,8 +196,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Owns:** `internal/adapters/sqlite/wikidatanearby.go`, `wikidatanearby_test.go`
 
+- Implements `application.BasePlaceSource` and `application.BasePlaceRefresher`.
 - Cache in `source_cache` with **no expiry**, following `sourcecache.go`: cached → no call; error with no cache → empty result plus an error the caller can log.
-- `Refresh(dest)` re-runs the query and overwrites the row in place (called by the monthly job in 5d).
+- `Refresh(ctx, dest)` re-runs the query and overwrites the row in place (called by the monthly job in 5d).
 - Singleflight per destination.
 
 **Verify:** `go test -race ./internal/adapters/sqlite/...` (20 concurrent callers → 1 query).
@@ -205,7 +210,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 - Top suggestion → background base query: deduplicated, at most one per client per 2 s, only when `WRITERS_MAP` is on, never delaying the suggestion response.
 
-**Verify:** `go test ./internal/adapters/httpserver/...` with a fake that counts calls.
+**Verify:** `go test ./internal/adapters/httpserver/...` with `writermaptest.FakeBaseSource`, which counts calls.
 
 **PR 4 done when:** cached base data is available behind the flag; suggestion latency is unchanged.
 
@@ -318,7 +323,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ### 7a. Build pins and panels — 4 h
 - [ ] Done
 
-**Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl`, `internal/adapters/httpserver/placepanel_test.go`
+**Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl` (builds out 3b's minimal template), `internal/adapters/httpserver/placepanel_test.go`
 
 - Writer pins drawn above base pins and sized by writer count.
 - Base panel: description, photo with credit, Wikipedia link.

@@ -1,6 +1,6 @@
 # PR 1 — Contracts, Data and Flags: TDD Evidence
 
-**Source plan:** [`tasks/todo.md`](../../tasks/todo.md) PR 1, subtasks 1a–1d. Step 1e is not started.
+**Source plan:** [`tasks/todo.md`](../../tasks/todo.md) PR 1, subtasks 1a–1d. Step 1e is in [its own report](1e-mockup-fields.tdd.md).
 
 **Status:** 1a–1d were written before the TDD rules in [`AGENTS.md`](../../AGENTS.md). Their first RED runs were not recorded. This report covers the follow-up from the October 7, 2026 review: it fixes one test that could not fail, decides the not-found rule, and adds the missing tests. Every test that passed on its first run was checked by breaking its behaviour temporarily.
 
