@@ -9,7 +9,8 @@ coordinates use decimal degrees (latitude, then longitude). QIDs are Wikidata it
 - `WriterMapSource.Destination(ctx, area)` returns the destination's cached base places and writer
   matches, ordered for display, along with source status and whether the result is complete.
 - `WriterMapSource.Place(ctx, area, qid)` returns panel place data and an optional summary. A
-  missing summary is represented by `nil`; this is a normal state.
+  missing summary is represented by `nil`; this is a normal state. An unknown QID returns an error
+  wrapping `writermap.ErrPlaceNotFound`, never a `nil` place without an error.
 - `Summarizer.Summarize(ctx, place, passages)` returns English prose. Passage text is transient:
   callers must not log it or persist it. Only the generated summary and source post references may
   be retained.

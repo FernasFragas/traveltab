@@ -45,7 +45,7 @@ func (f *FakeSource) Place(ctx context.Context, _ Area, qid string) (*Place, *Su
 		return nil, nil, ErrFakeUnavailable
 	}
 	if f.Empty {
-		return nil, nil, nil
+		return nil, nil, ErrPlaceNotFound
 	}
 	for _, place := range f.Result.Places {
 		if place.QID == qid {
@@ -58,7 +58,7 @@ func (f *FakeSource) Place(ctx context.Context, _ Area, qid string) (*Place, *Su
 			return &placeCopy, nil, nil
 		}
 	}
-	return nil, nil, fmt.Errorf("place %s not found", qid)
+	return nil, nil, fmt.Errorf("%w: %s", ErrPlaceNotFound, qid)
 }
 
 func (f *FakeSource) wait(ctx context.Context) error {

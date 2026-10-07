@@ -1,7 +1,13 @@
 // Package writermap defines the stable domain shapes shared by the writers' map.
 package writermap
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+// ErrPlaceNotFound means the destination has no place with the requested QID.
+var ErrPlaceNotFound = errors.New("place not found")
 
 // Area is a resolved destination and the radius used to find nearby places.
 // A non-positive RadiusKM lets the source use its normal city radius.

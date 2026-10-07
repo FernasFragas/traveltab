@@ -62,11 +62,12 @@ func TestFakeSourceDestinationAndPanelStates(t *testing.T) {
 func TestFakeSourceSwitches(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	t.Run("partial", func(t *testing.T) {
-		source := &FakeSource{Result: fixture.DestinationResult, Partial: true}
+		complete := fixture.DestinationResult
+		complete.Complete = true
+		source := &FakeSource{Result: complete, Partial: true}
 		result, err := source.Destination(context.Background(), Area{})
 		require.NoError(t, err)
 		assert.False(t, result.Complete)
-		assert.True(t, fixture.Complete == false, "fixture remains incomplete")
 	})
 	t.Run("empty", func(t *testing.T) {
 		source := &FakeSource{Result: fixture.DestinationResult, Empty: true}
@@ -87,6 +88,47 @@ func TestFakeSourceSwitches(t *testing.T) {
 		_, err := source.Destination(ctx, Area{})
 		assert.ErrorIs(t, err, context.Canceled)
 	})
+}
+
+func TestFakeSourcePlace_UnknownQIDReturnsNotFound(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeSource{Result: fixture.DestinationResult}
+
+	place, summary, err := source.Place(context.Background(), Area{}, "Q0")
+
+	assert.ErrorIs(t, err, ErrPlaceNotFound)
+	assert.Nil(t, place)
+	assert.Nil(t, summary)
+}
+
+func TestFakeSourcePlace_EmptyDestinationReturnsNotFound(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeSource{Result: fixture.DestinationResult, Empty: true}
+
+	place, _, err := source.Place(context.Background(), Area{}, "Q206626")
+
+	assert.ErrorIs(t, err, ErrPlaceNotFound)
+	assert.Nil(t, place)
+}
+
+func TestFakeSourcePlace_UnavailableReturnsError(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeSource{Result: fixture.DestinationResult, Unavailable: true}
+
+	place, _, err := source.Place(context.Background(), Area{}, "Q206626")
+
+	assert.ErrorIs(t, err, ErrFakeUnavailable)
+	assert.Nil(t, place)
+}
+
+func TestFakeSource_DelayElapsesThenReturnsData(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeSource{Result: fixture.DestinationResult, Delay: 10 * time.Millisecond}
+
+	result, err := source.Destination(context.Background(), Area{})
+
+	require.NoError(t, err)
+	assert.Len(t, result.Places, 15)
 }
 
 func TestFakeSourcePartialDoesNotMutateFixture(t *testing.T) {

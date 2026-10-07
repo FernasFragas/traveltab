@@ -85,3 +85,16 @@ func TestLoadEnvKey_ReadsWritersFlagsAndGateway(t *testing.T) {
 	assert.Equal(t, "https://gateway.example", keys.LLMGatewayURL)
 	assert.Equal(t, "secret", keys.LLMGatewayKey)
 }
+
+func TestLoadEnvKey_WritersFlagsStayOffForOtherValues(t *testing.T) {
+	t.Setenv("ENV", "production")
+	for _, value := range []string{"0", "false", "no", "off", "enabled", " "} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("WRITERS_MAP", value)
+
+			keys := LoadEnvKey()
+
+			assert.False(t, keys.WritersMap)
+		})
+	}
+}
