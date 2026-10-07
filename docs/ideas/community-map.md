@@ -73,4 +73,4 @@ How might we show any traveler, for any place they search, what is worth seeing 
 
 ## Open Questions
 - **When is LLM Gateway ready, and what is its API?** Sets when PR 9c can start.
-- **Launch date / hour budget:** not set (≈74 h estimated).
+- **Launch date / hour budget:** not set (≈89 h estimated).
