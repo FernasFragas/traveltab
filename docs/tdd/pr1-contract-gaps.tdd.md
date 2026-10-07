@@ -1,6 +1,6 @@
 # PR 1 — Contract Gaps Before Review: TDD Evidence
 
-**Source plan:** [`tasks/todo.md`](../../tasks/todo.md) PR 1, follow-up agreed on October 8, 2026, before the owner review freezes the contract. It closes three gaps that would have blocked PR 3 and PR 4.
+**Source plan:** [`tasks/todo.md`](../../tasks/todo.md) PR 1, follow-up agreed on October 8, 2026, before the owner review freezes the contract. It closes three gaps that would have blocked PR 3 and PR 4. The owner approved the contract on the same day.
 
 **Status:** done. Only the base-place ports have code; the `:dest` rules and the panel template owner are contract and task-list changes, tested later by 3b.
 

@@ -18,7 +18,7 @@ This started as a RESTful JSON weather API, a personal project for practising Go
 
 The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Every searched destination now gets a photograph looked up live on Wikimedia (see [destination photos](#destination-photos)); the [results](tasks/destination-photos-results.md) record what was verified. The search box suggests matching places as you type.
 
-**In progress:** a *writers' map* of places that travel bloggers mention. Only its contracts, source data and feature flags exist so far; nothing is shown on the site. See the [plan](tasks/plan.md), [task list](tasks/todo.md) and [contract](docs/writers-map-contract.md).
+**In progress:** a *writers' map* of places that travel bloggers mention. Only its approved contracts, source data and feature flags exist so far; nothing is shown on the site. See the [plan](tasks/plan.md), [task list](tasks/todo.md) and [contract](docs/writers-map-contract.md).
 
 ## Tech stack
 

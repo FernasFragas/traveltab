@@ -164,7 +164,7 @@ flowchart LR
 - **No post text stored, logged or committed.** Only names, positions and AI summaries.
 
 ## Checkpoints
-- **After PR 1:** contract doc reviewed by the owner. Every later PR depends on it.
+- **After PR 1:** contract doc reviewed by the owner. Every later PR depends on it. **Passed October 8, 2026.**
 - **After PR 2:** spike verdict (index size, lookup time, precision, against proposed bars of ≤300 MB, ≤200 ms, ≥90%). **PR 5 starts only on a pass, or on a revised schema.**
 - **After PR 3 + PR 7:** with `WRITERS_MAP=1`, the full UI works on fixture data in the preview.
 - **After PR 6:** with both flags on locally, Madeira works end to end on real data.

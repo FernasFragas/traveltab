@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner); owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -49,7 +49,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
   - template slots (`data-map-slot="panel|layers|saved|status|list"`)
   - save-button hook (`data-save-qid`)
 
-**Verify:** `make build`; **owner reviews the contract doc**.
+**Verify:** `make build`; **owner reviews the contract doc** (approved October 8, 2026).
 
 ### 1c. Add the Madeira fixture, fake source and fake summarizer — 1 h · *after 1b*
 - [x] Done
@@ -84,7 +84,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/writermap/... ./writerdata/`.
 
-**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off.
+**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off. **Done:** contract approved October 8, 2026.
 
 ---
 

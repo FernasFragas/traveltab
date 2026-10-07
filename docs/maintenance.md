@@ -107,8 +107,9 @@ flags off until the corresponding feature has been reviewed and is ready to laun
 In priority order. Updated 2026-10-08. Done work (redesign, destination photos, sitemap storage,
 city guides, slug helpers, city autocomplete) is recorded in the [changelog](../CHANGELOG.md).
 
-1. **Writers' map.** Follow [tasks/todo.md](../tasks/todo.md): finish 1e (mockup fields) and the
-   owner review of the [contract](writers-map-contract.md), then the map shell and base layer.
+1. **Writers' map.** Follow [tasks/todo.md](../tasks/todo.md). PR 1 is done and the
+   [contract](writers-map-contract.md) is approved; next are the base layer (PR 4) and the map
+   shell (PR 3), with the matcher (6a) and passage cutter (9a) alongside.
    PR 5 (writers index) waits on the 55-place coverage check in
    [the spike results](../tasks/writers-map-results.md).
 2. **Close the verification gaps.** Live checks of the map embed, Wikimedia photos, YouTube

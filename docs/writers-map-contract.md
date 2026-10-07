@@ -1,7 +1,8 @@
 # Writers' Map Contracts
 
-**Status (2026-10-08):** the Go types and ports exist; the HTTP routes, plan-stop flag, browser API and template
-hooks below are planned and not yet served.
+**Status:** approved by the owner on 2026-10-08 and **frozen**. A change needs a contract PR
+(see **Rules for Agents** in [the plan](../tasks/plan.md)). The Go types and ports exist; the
+HTTP routes, plan-stop flag, browser API and template hooks below are planned and not yet served.
 
 This document is the integration boundary for the writers' map. Go models live in
 `internal/writermap`; application ports live in `internal/application/writermap.go`. All
