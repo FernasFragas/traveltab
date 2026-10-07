@@ -1,8 +1,12 @@
 package config
 
 import (
+	"bytes"
+	"log"
 	"os"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,4 +58,54 @@ func TestLoadEnvKey_NoLongerReadsPlacesOrFoursquareKeys(t *testing.T) {
 		_, exists := keys.FieldByName(field)
 		assert.False(t, exists, "obsolete field %s remains", field)
 	}
+}
+
+func TestLoadEnvKey_GatewayEmptyByDefault(t *testing.T) {
+	t.Setenv("ENV", "production")
+	t.Setenv("LLM_GATEWAY_URL", "")
+	t.Setenv("LLM_GATEWAY_KEY", "")
+
+	keys := LoadEnvKey()
+
+	assert.Empty(t, keys.LLMGatewayURL)
+	assert.Empty(t, keys.LLMGatewayKey)
+}
+
+func TestLoadEnvKey_ReadsGateway(t *testing.T) {
+	t.Setenv("ENV", "production")
+	t.Setenv("LLM_GATEWAY_URL", "https://gateway.example")
+	t.Setenv("LLM_GATEWAY_KEY", "secret")
+
+	keys := LoadEnvKey()
+
+	assert.Equal(t, "https://gateway.example", keys.LLMGatewayURL)
+	assert.Equal(t, "secret", keys.LLMGatewayKey)
+}
+
+func TestWeatherServiceKeys_HoldsNoFeatureFlags(t *testing.T) {
+	keys := reflect.TypeOf(WeatherServiceKeys{})
+	for _, field := range []string{"WritersMap", "WritersSync", "WritersAI"} {
+		_, exists := keys.FieldByName(field)
+		assert.False(t, exists, "feature flag %s belongs in FeatureFlags", field)
+	}
+}
+
+// Changes the working directory and the log output for the whole process: never t.Parallel().
+func TestLoaders_LogAMissingDotEnvOnlyOnce(t *testing.T) {
+	dotEnvOnce = sync.Once{}
+	t.Cleanup(func() { dotEnvOnce = sync.Once{} })
+	workDir, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(t.TempDir()))
+	t.Cleanup(func() { _ = os.Chdir(workDir) })
+	t.Setenv("ENV", "development")
+	var logs bytes.Buffer
+	previousOutput := log.Writer()
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(previousOutput) })
+
+	LoadEnvKey()
+	LoadFeatureFlags()
+
+	assert.Equal(t, 1, strings.Count(logs.String(), "Error loading .env file"))
 }

@@ -71,6 +71,32 @@ Open work is listed under [Next up](#next-up).
 - The site does not check the guide file for factual accuracy; the tests check its shape
   (attribution fields, review date, length and that it round-trips through the generator's writer).
 
+## Writers' map
+
+The writers' map reads its allowlist from the embedded `writerdata/sources.json` file and reviewed
+matching policy from `writerdata/overrides.json`. Source status is `active`, `blocked` or `removed`;
+the date in the source file records the last check. Add or change a source only after confirming its
+public WordPress API and language. The API base must be the site's `/wp-json/wp/v2/posts` endpoint.
+
+Sync and summary requests use an identified TravelTab user agent, honor each site's `robots.txt`,
+and share a per-host limiter of at least 1.5 seconds between requests. If a site returns 403, mark it
+`blocked` and stop requesting it. Do not retry through alternate identities or endpoints to work
+around a block. A robots disallow also stops fetches. Record status changes and their check date in
+the embedded source data.
+
+The monthly sync runs off peak when `WRITERS_SYNC=1`. It updates post, name, day, destination and
+summary rows in place. It retains names, positions, post metadata and generated summaries; raw post
+text and HTML are processed in memory and discarded after indexing or summarization. Never store,
+log or commit post text, excerpts or fetched response bodies. The optional monthly summary pass is
+gated by `WRITERS_AI=1`; it sends mention passages to the configured LLM Gateway and keeps only the
+English summary, source post references, model and generation time.
+
+For a takedown, mark the source `removed` in `writerdata/sources.json`. The next sync purges that
+host's indexed rows and removes its post references from summaries; recompute affected destination
+results and summaries. To hide one generated summary, add its Wikidata QID to
+`summary_hide_qids` in `writerdata/overrides.json`; the next summary pass suppresses it. Keep the
+flags off until the corresponding feature has been reviewed and is ready to launch.
+
 ## Next up
 
 In priority order. Updated 2026-09-24.

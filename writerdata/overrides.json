@@ -1,0 +1,21 @@
+{
+  "alias_removals": [
+    {"place_name":"Aeroporto de Santana","aliases":["Ribeira Grande"]},
+    {"place_name":"Nossa Senhora da Conceição","aliases":["*"]}
+  ],
+  "merges": [
+    {"canonical_name":"Igreja e Torre dos Clérigos","names":["Igreja dos Clérigos","Torre dos Clérigos"]}
+  ],
+  "areas": [
+    {"name":"Madeira","lat":32.75,"lon":-16.96,"radius_km":70},
+    {"name":"São Miguel","lat":37.78,"lon":-25.50,"radius_km":50}
+  ],
+  "summary_hide_qids": [],
+  "stoplist": [
+    "Fernandes", "Infante", "Achada",
+    "miradouro", "igreja", "capela", "jardim", "praia", "museu", "castelo", "convento", "parque", "mercado", "ribeira", "baixa", "centro", "cathedral",
+    "church", "garden", "beach", "museum", "viewpoint", "market", "park", "lagoa", "ponta", "faja", "vitoria", "estrela", "risco", "old town", "downtown",
+    "city centre", "city center", "historic centre", "the cathedral", "main square", "botanical garden", "jardim botanico", "cable car", "teleferico",
+    "santa maria", "sao pedro", "sao joao", "sao jose", "santo antonio", "nossa senhora", "old market", "fish market", "farmers market", "bridge", "lighthouse", "farol"
+  ]
+}

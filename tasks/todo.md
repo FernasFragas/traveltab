@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** planned, nothing implemented. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). **Owner review of the plan is required before coding.**
+**Status:** PR 1 subtasks 1a–1d done; 1e (mockup fields) open; owner review of the contract document pending. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -18,12 +18,12 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 1 — Contracts, Data and Flags (≈4 h) · needs: none
+## PR 1 — Contracts, Data and Flags (≈5 h) · needs: none
 
 **Goal:** freeze everything parallel work depends on. No user-visible change.
 
 ### 1a. Write the source data and policy — 1 h
-- [ ] Done
+- [x] Done
 
 **Owns:** `writerdata/sources.json`, `writerdata/overrides.json`, `writerdata/embed.go`, `docs/maintenance.md`
 
@@ -34,9 +34,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `make build`; document review.
 
 ### 1b. Define the types, ports and contract — 1.5 h
-- [ ] Done
+- [x] Done
 
-**Owns:** `internal/writermap/types.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
+**Owns:** `internal/writermap/destinationdata.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
 
 - Types: `Area`, `Place` (QID, names, coordinates, kind, description, photo + credit, sitelinks), `Mention` (writer host, post ref/URL/title, language, positions), `Itinerary` (writer, post, days of QIDs), `Summary` (QID, English text, source post refs, model, generated at), `DestinationResult` (places, writer counts, itineraries, source statuses, complete flag).
 - Port `WriterMapSource`: `Destination(ctx, dest)` and `Place(ctx, dest, qid)` (panel data incl. summary if any).
@@ -52,9 +52,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `make build`; **owner reviews the contract doc**.
 
 ### 1c. Add the Madeira fixture, fake source and fake summarizer — 1 h · *after 1b*
-- [ ] Done
+- [x] Done
 
-**Owns:** `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`
+**Owns:** `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`
 
 - About 15 places (base-only and writer pins), EN and PT writers, summaries on some writer pins and none on others, 2 itineraries, mixed source statuses.
 - A fake `Summarizer` that returns a canned sentence or an error.
@@ -63,15 +63,27 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `go test ./internal/writermap/...`.
 
 ### 1d. Add the feature flags — 0.5 h · **integrator**
-- [ ] Done
+- [x] Done
 
-**Owns:** `internal/config/env.go`, `internal/config/env_test.go`
+**Owns:** `internal/config/env.go`, `internal/config/env_test.go`, `internal/config/flags.go`, `internal/config/flags_test.go`
 
-- Add `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI`, plus `LLM_GATEWAY_URL` / `LLM_GATEWAY_KEY` (unused until 9c); all default off/empty. Merge 1a–1c, run `make test lint build`, open the PR.
+- Add `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI`, plus `LLM_GATEWAY_URL` / `LLM_GATEWAY_KEY` (unused until 9c); all default off/empty. Bring 1a–1c together in the working tree and run `make test lint build`; the owner commits and opens the PR.
 
 **Verify:** `go test ./internal/config/...`; CI green.
 
-**PR 1 done when:** contract doc approved; fixture and fakes build; flags default off.
+### 1e. Add the fields the mockup needs — 1 h · *contract change, before the owner review*
+- [ ] Done
+
+**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `docs/writers-map-contract.md`
+
+- GeoJSON properties gain `writers` (host array, for the "All writers" filter) and `has_summary` (for the Summaries layer).
+- Place panel gains `area` (Wikidata P131 label, shown as *kind · area*) and per-writer `blog_name` (from `writerdata/sources.json`).
+- Itinerary routes gain `distance_km` and `walk_minutes` (for the writer's walk card).
+- Fixture filled for all new fields.
+
+**Verify:** `go test ./internal/writermap/...`.
+
+**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off.
 
 ---
 
@@ -85,17 +97,17 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Crawl two full blogs (viajecomigo PT, saltinourhair EN), build the names-only tables in a temp SQLite file, run the Madeira Wikidata nearby query, match.
 
 **Acceptance — record in the results doc:**
-- [ ] MB and rows per 1,000 posts, and the projection for ~20,400 posts (proposed bar ≤300 MB).
-- [ ] Madeira lookup time (proposed ≤200 ms).
+- [x] MB and rows per 1,000 posts, and the projection for ~20,400 posts (proposed bar ≤300 MB).
+- [x] Madeira lookup time (proposed ≤200 ms).
 - [ ] 40-match precision with Wikidata aliases, against the research's 37/40 (proposed ≥90%).
 - [ ] How many of the 55 research places (≥3 blogs) Wikidata nearby plus filters still returns.
-- [ ] **Verdict:** keep the schema, cap sub-spans, or add OSM names. **PR 5 waits for this.**
+- [x] **Verdict:** keep the schema, cap sub-spans, or add OSM names. **PR 5 waits for this.**
 
 **Verify:** results document reviewed by the owner.
 
 ---
 
-## PR 3 — Map Shell Behind the Flag (≈4 h) · needs: PR 1
+## PR 3 — Map Shell Behind the Flag (≈6 h) · needs: PR 1
 
 **Goal:** with `WRITERS_MAP=1`, every destination shows the new map with fixture data. With it off, Waze is unchanged.
 
@@ -137,7 +149,24 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./cmd/design-preview`.
 
-**PR 3 done when:** both flag states pass tests; preview shows the shell.
+### 3d. Lay out the card like the mockup — 2 h · *after 3a, 3b*
+- [ ] Done
+
+**Owns:** `public/redesign/writers-map-layout.css`, `views/map_card.go.tpl` (layout markup only, with 3b's agreement)
+
+- Header: "Writers' Map", subtitle, green **"Always ready"** pill in the `status` slot (turns amber for partial, grey for unavailable).
+- ≥1024 px: map ≈60% and `panel` slot ≈40% side by side, equal height. <1024 px: panel stacks under the map as a card.
+- Chip row overlaid top-left of the map (`layers` slot); "All writers" select top-right.
+- Map chrome: zoom, north arrow, scale bar, basemap thumbnail toggle (OSM / Esri World Imagery or another free imagery tile with attribution).
+- Empty panel state: "Pick a place on the map".
+
+**Acceptance**
+- [ ] Preview at 375 and 1440 px matches the mockup's layout (not its photos).
+- [ ] No horizontal scroll at 375 px.
+
+**Verify:** preview check side by side with the mockup.
+
+**PR 3 done when:** both flag states pass tests; preview shows the shell in the mockup layout.
 
 ---
 
@@ -284,9 +313,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 7 — Map UI Features (≈13.5 h) · needs: PR 3 · *runs on the fake source, parallel with PRs 4–6*
+## PR 7 — Map UI Features (≈22.5 h) · needs: PR 3 · *runs on the fake source, parallel with PRs 4–6*
 
-### 7a. Build pins and panels — 3 h
+### 7a. Build pins and panels — 4 h
 - [ ] Done
 
 **Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl`, `internal/adapters/httpserver/placepanel_test.go`
@@ -295,6 +324,8 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Base panel: description, photo with credit, Wikipedia link.
 - Writer panel adds "Mentioned by N writers", the summary labelled *AI summary* when present, and one link per writer's post with a language label. **No quoted blog text.**
 - Save button slot `data-save-qid`.
+- **Mockup look:** writer pins terracotta with pen icon, base pins green; top places labelled; clusters with a count.
+- **Panel order:** photo + close · name · *kind · area* · Want to visit (heart) · writer monograms (initials, colour from host; "+N") with "Mentioned by N writers" · description · **AI summary** card · **From Travel Writers** (post title, blog name, language chip, external-link icon; first 2, then "View all (N)") · "Plan with these places".
 
 **Acceptance**
 - [ ] Every writer is listed with a post link.
@@ -316,12 +347,14 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** template test for the emitted data; preview check.
 
-### 7c. Add writers' itinerary layers — 2 h
+### 7c. Add writers' itinerary layers and the walk card — 3 h
 - [ ] Done
 
 **Owns:** `public/redesign/map-itineraries.js`, `public/redesign/map-itineraries.css`
 
 - Lists itineraries in the `layers` slot; one is drawn at a time, with ordered pins and lines, labelled as the writer's route and linked to the post; hidden when there are none.
+- Route drawn as a dashed terracotta line.
+- **Walk card** bottom-left of the map: route name, from → to, km and walking time, "View full route" (fits the map to the route).
 
 **Verify:** preview check with fixture itineraries.
 
@@ -353,6 +386,48 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - [ ] More included places than days can hold → extra ones listed as "also suggested", not dropped silently.
 
 **Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`; preview check.
+
+### 7f. Add layer chips and the writer filter — 2 h · *after 7a*
+- [ ] Done
+
+**Owns:** `public/redesign/map-layers.js`, `public/redesign/map-layers.css`
+
+- Chips: **Base places**, **Writers' places**, **Summaries** (only places with `has_summary`; hidden while `WRITERS_AI` is off), **My plan** (badge with day count; disabled until a plan exists).
+- "All writers" select lists blog names; picking one shows only that writer's pins.
+- Chip state is buttons with `aria-pressed`; remembered per tab in `sessionStorage` (try/catch).
+
+**Acceptance**
+- [ ] Every chip toggles its layer without redrawing the others.
+- [ ] Writer filter + Writers' chip off → no writer pins, no error.
+
+**Verify:** preview check.
+
+### 7g. Enrich the itinerary cards — 3 h · *after 7b, 7e*
+- [ ] Done
+
+**Owns:** `internal/planner/schedule.go`, `internal/planner/schedule_test.go`, `internal/adapters/api/openmeteo_forecast.go`, `openmeteo_forecast_test.go` (daily max temperature and weather code only), `views/itinerary_body.go.tpl` (after 7b)
+
+- Per day: **max temperature and condition** (Open-Meteo `temperature_2m_max`, `weather_code`; free) next to the walking km.
+- Per stop: **time slot** from a 9:00 start, a visit length per kind and walking time; **walking minutes to the next stop** (4.5 km/h on straight-line distance × 1.3).
+- Tag chip: **Writers' pick** when writers mention the stop (via `WriterMapSource`), else the kind (Historic site, Museum …).
+- **View on map** button: scrolls to the map and turns on **My plan**.
+
+**Acceptance**
+- [ ] Plans without forecast data show no temperature, not "0°".
+- [ ] Time slots never pass 19:00; extra stops move to "also suggested".
+
+**Verify:** `go test ./internal/planner/... ./internal/adapters/...`; preview check.
+
+### 7h. Add "Suggested based on writers" chips — 2 h · *after 7e*
+- [ ] Done
+
+**Owns:** `views/trip_card.go.tpl` (chip row only, after 7b), `internal/adapters/httpserver/trip_themes.go`, `trip_themes_test.go`
+
+- Up to 4 theme chips under the plan form (e.g. Iconic sites, Local neighbourhoods, Great food, Scenic views), built from the kinds of the destination's top writer places.
+- Picking chips adds those places to `Include` (7e) before "Generate personalized plan".
+- Hidden on base-only destinations.
+
+**Verify:** `go test ./internal/adapters/httpserver/ -run Themes`; preview check.
 
 **Integrator for PR 7:** whoever lands last adds the script and style tags to `views/index.go.tpl` and runs the full preview journey on fixture data.
 
@@ -399,6 +474,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Owns:** `cmd/design-preview/fixture.go`, `README.md`, `docs/architecture.md`, `CHANGELOG.md`
 
 - Journey at 375 and 1440 px and keyboard-only: search → pins → panel → post link → save → plan → day layer → writer itinerary → plan with these places.
+- Final screenshots next to [the mockup](../docs/ideas/writers-map-mockup.png); differences other than the planned ones (plan, **Target Output**) are fixed or listed.
 
 **Verify:** `go test ./cmd/design-preview`; `make test lint build`.
 
@@ -471,4 +547,3 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - [ ] Owner switches `WRITERS_AI=1`.
 
 **PR 9 done when:** summaries show on live writer pins and the first monthly run is recorded.
-

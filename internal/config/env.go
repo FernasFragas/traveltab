@@ -4,9 +4,13 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/joho/godotenv"
 )
+
+// dotEnvOnce makes loadDotEnv read the file at most once per process.
+var dotEnvOnce sync.Once
 
 type WeatherServiceKeys struct {
 	OpenWeatherAPIKey string
@@ -18,6 +22,8 @@ type WeatherServiceKeys struct {
 	AmadeusSecret     string
 	GeoapifyAPIKey    string
 	OverpassURLs      []string
+	LLMGatewayURL     string
+	LLMGatewayKey     string
 }
 
 type MateoMaticsSecrets struct {
@@ -28,13 +34,7 @@ type MateoMaticsSecrets struct {
 func LoadEnvKey() (weatherServiceKeys *WeatherServiceKeys) {
 	weatherServiceKeys = &WeatherServiceKeys{}
 
-	// Load .env file only in development
-	if os.Getenv("ENV") != "production" {
-		err := godotenv.Load()
-		if err != nil {
-			log.Println("Error loading .env file", err.Error())
-		}
-	}
+	loadDotEnv()
 
 	weatherServiceKeys.OpenWeatherAPIKey = os.Getenv("WEATHER_API_KEY")
 
@@ -55,8 +55,23 @@ func LoadEnvKey() (weatherServiceKeys *WeatherServiceKeys) {
 	// Empty unless someone points the planner at their own Overpass servers; cmd/web then
 	// falls back to the public ones.
 	weatherServiceKeys.OverpassURLs = splitList(os.Getenv("OVERPASS_URLS"))
+	weatherServiceKeys.LLMGatewayURL = os.Getenv("LLM_GATEWAY_URL")
+	weatherServiceKeys.LLMGatewayKey = os.Getenv("LLM_GATEWAY_KEY")
 
 	return weatherServiceKeys
+}
+
+// loadDotEnv reads the .env file once, only in development, so each loader can call it.
+func loadDotEnv() {
+	if os.Getenv("ENV") == "production" {
+		return
+	}
+	dotEnvOnce.Do(func() {
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Error loading .env file", err.Error())
+		}
+	})
 }
 
 // splitList reads a comma-separated setting, dropping the spaces around each entry and any
