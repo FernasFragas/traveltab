@@ -74,9 +74,9 @@ type Itinerary struct {
 
 // SourceStatus reports the latest known state of one allowlisted writer source.
 type SourceStatus struct {
-	Host      string    `json:"host"`
-	Status    string    `json:"status"`
-	CheckedAt time.Time `json:"checked_at,omitempty"`
+	Host      string     `json:"host"`
+	Status    string     `json:"status"`
+	CheckedAt *time.Time `json:"checked_at,omitempty"` // nil when the source was never checked
 }
 
 // Summary contains the only blog-derived prose retained by the writers' map.

@@ -1,4 +1,4 @@
-package writermap
+package writermaptest
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"weatherservice/internal/writermap"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +18,7 @@ func TestFakeSource_DestinationReturnsTheFixturePlaces(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult}
 
-	result, err := source.Destination(context.Background(), Area{Name: "Madeira"})
+	result, err := source.Destination(context.Background(), writermap.Area{Name: "Madeira"})
 
 	require.NoError(t, err)
 	assert.Len(t, result.Places, 15)
@@ -29,36 +31,46 @@ func TestFakeSourceSwitches(t *testing.T) {
 		complete := fixture.DestinationResult
 		complete.Complete = true
 		source := &FakeSource{Result: complete, Partial: true}
-		result, err := source.Destination(context.Background(), Area{})
+		result, err := source.Destination(context.Background(), writermap.Area{})
 		require.NoError(t, err)
 		assert.False(t, result.Complete)
 	})
 	t.Run("empty", func(t *testing.T) {
 		source := &FakeSource{Result: fixture.DestinationResult, Empty: true}
-		result, err := source.Destination(context.Background(), Area{})
+		result, err := source.Destination(context.Background(), writermap.Area{})
 		require.NoError(t, err)
 		assert.Empty(t, result.Places)
 		assert.True(t, result.Complete)
 	})
 	t.Run("unavailable", func(t *testing.T) {
 		source := &FakeSource{Unavailable: true}
-		_, err := source.Destination(context.Background(), Area{})
+		_, err := source.Destination(context.Background(), writermap.Area{})
 		assert.ErrorIs(t, err, ErrFakeUnavailable)
 	})
 	t.Run("slow and cancellable", func(t *testing.T) {
 		source := &FakeSource{Delay: time.Second}
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		_, err := source.Destination(ctx, Area{})
+		_, err := source.Destination(ctx, writermap.Area{})
 		assert.ErrorIs(t, err, context.Canceled)
 	})
+}
+
+func TestFakeSource_EmptyDestinationKeepsSourceStatuses(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeSource{Result: fixture.DestinationResult, Empty: true}
+
+	result, err := source.Destination(context.Background(), writermap.Area{})
+
+	require.NoError(t, err)
+	assert.Equal(t, fixture.SourceStatuses, result.SourceStatuses)
 }
 
 func TestFakeSource_DelayElapsesThenReturnsData(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult, Delay: 10 * time.Millisecond}
 
-	result, err := source.Destination(context.Background(), Area{})
+	result, err := source.Destination(context.Background(), writermap.Area{})
 
 	require.NoError(t, err)
 	assert.Len(t, result.Places, 15)
@@ -67,7 +79,7 @@ func TestFakeSource_DelayElapsesThenReturnsData(t *testing.T) {
 func TestFakeSource_EditingAResultNameLeavesTheFakeUnchanged(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult, Partial: true}
-	result, err := source.Destination(context.Background(), Area{})
+	result, err := source.Destination(context.Background(), writermap.Area{})
 	require.NoError(t, err)
 
 	result.Places[0].Names[0] = "changed"
@@ -78,19 +90,19 @@ func TestFakeSource_EditingAResultNameLeavesTheFakeUnchanged(t *testing.T) {
 func TestFakeSource_ReplacingAResultPlaceLeavesTheFakeUnchanged(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult}
-	result, err := source.Destination(context.Background(), Area{})
+	result, err := source.Destination(context.Background(), writermap.Area{})
 	require.NoError(t, err)
 
-	result.Places[0] = Place{QID: "Q0"}
+	result.Places[0] = writermap.Place{QID: "Q0"}
 
-	assert.Equal(t, "Q799", source.Result.Places[0].QID)
+	assert.Equal(t, "Q30188", source.Result.Places[0].QID)
 }
 
 func TestFakeSourcePlace_ReturnsThePlaceWithItsSummary(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult, Summaries: fixture.Summaries}
 
-	place, summary, err := source.Place(context.Background(), Area{Name: "Madeira"}, "Q206626")
+	place, summary, err := source.Place(context.Background(), writermap.Area{Name: "Madeira"}, "Q473169")
 
 	require.NoError(t, err)
 	assert.Equal(t, "Pico Ruivo", place.Names[0])
@@ -102,7 +114,7 @@ func TestFakeSourcePlace_ReturnsNilSummaryWhenNoneExists(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult, Summaries: fixture.Summaries}
 
-	_, summary, err := source.Place(context.Background(), Area{Name: "Madeira"}, "Q1792734")
+	_, summary, err := source.Place(context.Background(), writermap.Area{Name: "Madeira"}, "Q34799706")
 
 	require.NoError(t, err)
 	assert.Nil(t, summary)
@@ -112,9 +124,9 @@ func TestFakeSourcePlace_UnknownQIDReturnsNotFound(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult}
 
-	place, summary, err := source.Place(context.Background(), Area{}, "Q0")
+	place, summary, err := source.Place(context.Background(), writermap.Area{}, "Q0")
 
-	assert.ErrorIs(t, err, ErrPlaceNotFound)
+	assert.ErrorIs(t, err, writermap.ErrPlaceNotFound)
 	assert.Nil(t, place)
 	assert.Nil(t, summary)
 }
@@ -123,9 +135,9 @@ func TestFakeSourcePlace_EmptyDestinationReturnsNotFound(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult, Empty: true}
 
-	place, _, err := source.Place(context.Background(), Area{}, "Q206626")
+	place, _, err := source.Place(context.Background(), writermap.Area{}, "Q473169")
 
-	assert.ErrorIs(t, err, ErrPlaceNotFound)
+	assert.ErrorIs(t, err, writermap.ErrPlaceNotFound)
 	assert.Nil(t, place)
 }
 
@@ -133,7 +145,7 @@ func TestFakeSourcePlace_UnavailableReturnsError(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 	source := &FakeSource{Result: fixture.DestinationResult, Unavailable: true}
 
-	place, _, err := source.Place(context.Background(), Area{}, "Q206626")
+	place, _, err := source.Place(context.Background(), writermap.Area{}, "Q473169")
 
 	assert.ErrorIs(t, err, ErrFakeUnavailable)
 	assert.Nil(t, place)
@@ -142,7 +154,7 @@ func TestFakeSourcePlace_UnavailableReturnsError(t *testing.T) {
 func TestFakeSummarizer_ReturnsConfiguredText(t *testing.T) {
 	summarizer := &FakeSummarizer{Text: "A fixture summary."}
 
-	text, err := summarizer.Summarize(context.Background(), Place{QID: "Q799"}, []Passage{{Text: "transient"}})
+	text, err := summarizer.Summarize(context.Background(), writermap.Place{QID: "Q30188"}, []writermap.Passage{{Text: "transient"}})
 
 	require.NoError(t, err)
 	assert.Equal(t, "A fixture summary.", text)
@@ -153,7 +165,7 @@ func TestFakeSummarizer_ReturnsConfiguredError(t *testing.T) {
 	wantErr := errors.New("summary unavailable")
 	summarizer := &FakeSummarizer{Err: wantErr}
 
-	_, err := summarizer.Summarize(context.Background(), Place{}, nil)
+	_, err := summarizer.Summarize(context.Background(), writermap.Place{}, nil)
 
 	assert.ErrorIs(t, err, wantErr)
 	assert.Equal(t, 1, summarizer.Calls)
@@ -176,21 +188,29 @@ func TestMadeiraFixture_PlaceHasAliases(t *testing.T) {
 func TestMadeiraFixture_PlaceIsMentionedInEnglishAndPortuguese(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 
-	assert.Equal(t, "en", fixture.Mentions["Q206626"][0].Language)
-	assert.Equal(t, "pt", fixture.Mentions["Q206626"][1].Language)
+	assert.Equal(t, "en", fixture.Mentions["Q473169"][0].Language)
+	assert.Equal(t, "pt", fixture.Mentions["Q473169"][1].Language)
 }
 
 func TestMadeiraFixture_SomeWriterPlacesHaveNoSummary(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 
-	assert.NotEmpty(t, fixture.Summaries["Q206626"].EnglishText)
-	assert.Empty(t, fixture.Summaries["Q1792734"].EnglishText)
+	assert.NotEmpty(t, fixture.Summaries["Q473169"].EnglishText)
+	assert.Empty(t, fixture.Summaries["Q34799706"].EnglishText)
 }
 
 func TestMadeiraFixture_IsIncomplete(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
 
 	assert.False(t, fixture.Complete)
+}
+
+func TestMadeiraFixture_SourceStatusesUseContractValues(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+
+	for _, status := range fixture.SourceStatuses {
+		assert.Contains(t, []string{"active", "partial", "blocked", "removed"}, status.Status, status.Host)
+	}
 }
 
 func loadMadeiraFixture(t *testing.T) madeiraFixture {
@@ -203,6 +223,6 @@ func loadMadeiraFixture(t *testing.T) madeiraFixture {
 }
 
 type madeiraFixture struct {
-	DestinationResult
-	Summaries map[string]Summary `json:"summaries"`
+	writermap.DestinationResult
+	Summaries map[string]writermap.Summary `json:"summaries"`
 }

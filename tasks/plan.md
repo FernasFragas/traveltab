@@ -156,8 +156,8 @@ flowchart LR
 
 ### Rules for Agents
 - **Own only your listed files.** Shared files belong to the PR's integrator subtask: `server.go` routes, `cmd/web/main.go`, `database.go`, `map_card.go.tpl`, `env.go`, `flags.go`.
-- **Cross-PR shared files:** PRs 3, 4, 5 and 9 each add a few wiring lines to `cmd/web/main.go`. Keep those edits small, one function per PR (`wireWritersMap`, `wireBaseLayer`, `wireWriterSync`, `wireSummaries`), and rebase on merge.
-- **Contracts are frozen after PR 1.** Need a change? Stop and raise a contract PR; everyone rebases.
+- **Cross-PR shared files:** PRs 3, 4, 5 and 9 each add a few wiring lines to `cmd/web/main.go`. Keep those edits small, one function per PR (`wireWritersMap`, `wireBaseLayer`, `wireWriterSync`, `wireSummaries`); the owner rebases on merge.
+- **Contracts are frozen after PR 1.** Need a change? Stop and ask the owner for a contract PR; the owner rebases open branches.
 - **One worktree and branch per subtask** (`writers-map/pr<N>-<letter>`). The integrator merges subtasks into `writers-map/pr<N>`, runs `make test lint build`, and opens the PR.
 - **Tests never hit the network.** Use the PR 1 fixture, the fake source, the fake summarizer, `httptest`, and recorded responses.
 - **Flags stay off** until PR 8d (`WRITERS_MAP`, `WRITERS_SYNC`) and 9d (`WRITERS_AI`). No subtask may change production behavior while the flags are off.

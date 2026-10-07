@@ -54,7 +54,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ### 1c. Add the Madeira fixture, fake source and fake summarizer — 1 h · *after 1b*
 - [x] Done
 
-**Owns:** `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`
+**Owns:** `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`
 
 - About 15 places (base-only and writer pins), EN and PT writers, summaries on some writer pins and none on others, 2 itineraries, mixed source statuses.
 - A fake `Summarizer` that returns a canned sentence or an error.
@@ -67,14 +67,14 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Owns:** `internal/config/env.go`, `internal/config/env_test.go`, `internal/config/flags.go`, `internal/config/flags_test.go`
 
-- Add `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI`, plus `LLM_GATEWAY_URL` / `LLM_GATEWAY_KEY` (unused until 9c); all default off/empty. Merge 1a–1c, run `make test lint build`, open the PR.
+- Add `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI`, plus `LLM_GATEWAY_URL` / `LLM_GATEWAY_KEY` (unused until 9c); all default off/empty. Bring 1a–1c together in the working tree and run `make test lint build`; the owner commits and opens the PR.
 
 **Verify:** `go test ./internal/config/...`; CI green.
 
 ### 1e. Add the fields the mockup needs — 1 h · *contract change, before the owner review*
 - [ ] Done
 
-**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/fake.go`, `internal/writermap/fake_test.go`, `internal/writermap/testdata/madeira.json`, `docs/writers-map-contract.md`
+**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `docs/writers-map-contract.md`
 
 - GeoJSON properties gain `writers` (host array, for the "All writers" filter) and `has_summary` (for the Summaries layer).
 - Place panel gains `area` (Wikidata P131 label, shown as *kind · area*) and per-writer `blog_name` (from `writerdata/sources.json`).

@@ -1,4 +1,4 @@
-package writermap
+package writermaptest
 
 import (
 	"context"
@@ -6,21 +6,30 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"weatherservice/internal/application"
+	"weatherservice/internal/writermap"
+)
+
+// The fakes must keep matching the ports they stand in for.
+var (
+	_ application.WriterMapSource = (*FakeSource)(nil)
+	_ application.Summarizer      = (*FakeSummarizer)(nil)
 )
 
 var ErrFakeUnavailable = errors.New("fake writer map source unavailable")
 
 // FakeSource serves deterministic data for previews and offline tests.
 type FakeSource struct {
-	Result      DestinationResult
-	Summaries   map[string]Summary
+	Result      writermap.DestinationResult
+	Summaries   map[string]writermap.Summary
 	Delay       time.Duration
 	Partial     bool
 	Unavailable bool
 	Empty       bool
 }
 
-func (f *FakeSource) Destination(ctx context.Context, _ Area) (*DestinationResult, error) {
+func (f *FakeSource) Destination(ctx context.Context, _ writermap.Area) (*writermap.DestinationResult, error) {
 	if err := f.wait(ctx); err != nil {
 		return nil, err
 	}
@@ -28,7 +37,13 @@ func (f *FakeSource) Destination(ctx context.Context, _ Area) (*DestinationResul
 		return nil, ErrFakeUnavailable
 	}
 	if f.Empty {
-		return &DestinationResult{Places: []Place{}, WriterCounts: map[string]int{}, Itineraries: []Itinerary{}, SourceStatuses: append([]SourceStatus(nil), f.Result.SourceStatuses...), Complete: true}, nil
+		return &writermap.DestinationResult{
+			Places:         []writermap.Place{},
+			WriterCounts:   map[string]int{},
+			Itineraries:    []writermap.Itinerary{},
+			SourceStatuses: f.Result.SourceStatuses,
+			Complete:       true,
+		}, nil
 	}
 	result := cloneResult(f.Result)
 	if f.Partial {
@@ -37,7 +52,7 @@ func (f *FakeSource) Destination(ctx context.Context, _ Area) (*DestinationResul
 	return &result, nil
 }
 
-func (f *FakeSource) Place(ctx context.Context, _ Area, qid string) (*Place, *Summary, error) {
+func (f *FakeSource) Place(ctx context.Context, _ writermap.Area, qid string) (*writermap.Place, *writermap.Summary, error) {
 	if err := f.wait(ctx); err != nil {
 		return nil, nil, err
 	}
@@ -45,7 +60,7 @@ func (f *FakeSource) Place(ctx context.Context, _ Area, qid string) (*Place, *Su
 		return nil, nil, ErrFakeUnavailable
 	}
 	if f.Empty {
-		return nil, nil, ErrPlaceNotFound
+		return nil, nil, writermap.ErrPlaceNotFound
 	}
 	for _, place := range f.Result.Places {
 		if place.QID == qid {
@@ -58,7 +73,22 @@ func (f *FakeSource) Place(ctx context.Context, _ Area, qid string) (*Place, *Su
 			return &placeCopy, nil, nil
 		}
 	}
-	return nil, nil, fmt.Errorf("%w: %s", ErrPlaceNotFound, qid)
+	return nil, nil, fmt.Errorf("%w: %s", writermap.ErrPlaceNotFound, qid)
+}
+
+// FakeSummarizer returns configured prose or an error without retaining input passages.
+type FakeSummarizer struct {
+	Text  string
+	Err   error
+	mu    sync.Mutex
+	Calls int
+}
+
+func (f *FakeSummarizer) Summarize(_ context.Context, _ writermap.Place, _ []writermap.Passage) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.Calls++
+	return f.Text, f.Err
 }
 
 func (f *FakeSource) wait(ctx context.Context) error {
@@ -77,26 +107,11 @@ func (f *FakeSource) wait(ctx context.Context) error {
 
 // cloneResult copies the places and their names, so callers can edit them. The other fields
 // are shared with the fake and must be treated as read-only.
-func cloneResult(in DestinationResult) DestinationResult {
+func cloneResult(in writermap.DestinationResult) writermap.DestinationResult {
 	out := in
-	out.Places = append([]Place(nil), in.Places...)
+	out.Places = append([]writermap.Place(nil), in.Places...)
 	for i := range out.Places {
 		out.Places[i].Names = append([]string(nil), in.Places[i].Names...)
 	}
 	return out
-}
-
-// FakeSummarizer returns configured prose or an error without retaining input passages.
-type FakeSummarizer struct {
-	Text  string
-	Err   error
-	mu    sync.Mutex
-	Calls int
-}
-
-func (f *FakeSummarizer) Summarize(_ context.Context, _ Place, _ []Passage) (string, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.Calls++
-	return f.Text, f.Err
 }

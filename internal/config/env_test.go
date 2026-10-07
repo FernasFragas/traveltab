@@ -90,6 +90,7 @@ func TestWeatherServiceKeys_HoldsNoFeatureFlags(t *testing.T) {
 	}
 }
 
+// Changes the working directory and the log output for the whole process: never t.Parallel().
 func TestLoaders_LogAMissingDotEnvOnlyOnce(t *testing.T) {
 	dotEnvOnce = sync.Once{}
 	t.Cleanup(func() { dotEnvOnce = sync.Once{} })
@@ -99,8 +100,9 @@ func TestLoaders_LogAMissingDotEnvOnlyOnce(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(workDir) })
 	t.Setenv("ENV", "development")
 	var logs bytes.Buffer
+	previousOutput := log.Writer()
 	log.SetOutput(&logs)
-	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	t.Cleanup(func() { log.SetOutput(previousOutput) })
 
 	LoadEnvKey()
 	LoadFeatureFlags()

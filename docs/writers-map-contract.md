@@ -11,6 +11,11 @@ coordinates use decimal degrees (latitude, then longitude). QIDs are Wikidata it
   Writer matches are `Mentions`, keyed by QID: one entry per post with writer host, post
   reference, URL, title, language and the matched character positions. Mentions never carry post
   text.
+- Each `SourceStatuses` entry has a `status` of `active` (the last sync finished), `partial` (the
+  last sync stopped part-way), `blocked` (403 or `robots.txt`; no more requests) or `removed`
+  (taken down; rows purged). `checked_at` is left out when the source was never checked. The
+  allowlist in `writerdata/sources.json` uses `active`, `blocked` and `removed`; `partial` only
+  appears at runtime.
 - `WriterMapSource.Place(ctx, area, qid)` returns panel place data and an optional summary. A
   missing summary is represented by `nil`; this is a normal state. An unknown QID returns an error
   wrapping `writermap.ErrPlaceNotFound`, never a `nil` place without an error.
