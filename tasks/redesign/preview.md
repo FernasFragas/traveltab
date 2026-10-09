@@ -12,6 +12,7 @@ booking destinations work. Browser rendering of every named scenario and a full 
 Run from the repository root:
 
 ```sh
+make assets   # once, and after package.json changes: browser libraries for /vendor/
 go run ./cmd/design-preview -addr 127.0.0.1:8087 -map-addr 127.0.0.1:8088
 ```
 
@@ -180,13 +181,15 @@ destination photo runs and their evidence are in the
 
 ## Browser prerequisites
 
-Browser checks use Node 24's built-in WebSocket and Chromium's DevTools Protocol. No frontend
-package manager is required. Download the pinned HTMX script once; each check verifies its bytes
-against the SRI hash in `views/index.go.tpl`:
+Browser checks use Node 24's built-in WebSocket and Chromium's DevTools Protocol. The page
+loads Bootstrap, bootstrap-icons and htmx from `/vendor/`, so install them once (and after any
+`package.json` change) before starting the preview:
 
 ```sh
-curl -fL --max-time 30 https://unpkg.com/htmx.org@1.9.11 -o /tmp/traveltab-htmx-1.9.11.js
+make assets   # npm ci --ignore-scripts, then copy the five files into public/vendor/
 ```
+
+The checks read the expected htmx version from `package.json`.
 
 Start the preview as above and an isolated Chromium profile in another terminal. Use a dedicated
 debugging port and a fresh profile, separate from your regular browser. For example:
@@ -199,15 +202,19 @@ Use your installed Chromium or Brave executable if it has a different name. In a
 run the interaction and four-width acceptance checks against the default preview:
 
 ```sh
-HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node tasks/redesign/checks/interaction-regressions.mjs
-HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node tasks/redesign/checks/browser-smoke.mjs
+PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node tasks/redesign/checks/interaction-regressions.mjs
+PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node tasks/redesign/checks/browser-smoke.mjs
 ```
 
 The browser scripts attach to an `about:blank` tab. Browser smoke writes screenshots and JSON
 under `tasks/artifacts/redesign/final-verification/default/`; it overwrites that scenario's
-existing evidence, which is the historical September repair record, so do not re-run it casually. For the fallback run, restart the preview with `-scenario fallback` and set
+existing evidence, which is the historical September repair record, so do not re-run it casually;
+set `OUTPUT_DIR=/some/scratch/dir` to write elsewhere. For the fallback run, restart the preview with `-scenario fallback` and set
 `SCENARIO=fallback` on the browser-smoke command. See the [recorded result matrix](../artifacts/redesign/final-verification/README.md)
 for the tested configuration and external-service limits.
+
+CI runs these two checks the same way (`.github/workflows/browser.yml`, headless Chrome) on PRs
+that change `package.json` or `package-lock.json`, including Dependabot PRs.
 
 ## Destination photo browser checks
 
@@ -220,7 +227,7 @@ optional:
 ```sh
 go run ./cmd/design-preview -addr 127.0.0.1:8087 -map-addr 127.0.0.1:8088
 go run ./cmd/design-preview -addr 127.0.0.1:8089 -map-addr 127.0.0.1:8090 -slow   # optional
-HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js PREVIEW_URL=http://127.0.0.1:8087 \
+PREVIEW_URL=http://127.0.0.1:8087 \
   SLOW_PREVIEW_URL=http://127.0.0.1:8089 CDP_PORT=9227 node tasks/redesign/checks/destination-photos.mjs
 ```
 
@@ -247,7 +254,7 @@ temporary profile (never your regular browser). Optionally start a second previe
 ```sh
 go run ./cmd/design-preview -addr 127.0.0.1:8087 -map-addr 127.0.0.1:8088
 go run ./cmd/design-preview -addr 127.0.0.1:8089 -map-addr 127.0.0.1:8090 -scenario fallback   # optional
-HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js PREVIEW_URL=http://127.0.0.1:8087 \
+PREVIEW_URL=http://127.0.0.1:8087 \
   FALLBACK_PREVIEW_URL=http://127.0.0.1:8089 CDP_PORT=9227 node tasks/redesign/checks/guides.mjs
 ```
 
@@ -261,11 +268,11 @@ text colour in both states, no exceptions, and (with the second preview) the fal
 
 ## Accessibility audit and scenario screenshots
 
-Two scripts start their own preview processes (one per scenario, free localhost ports) and need only the isolated browser and the pinned HTMX file described above. Their evidence and a requirement matrix are in [final-verification-2](../artifacts/redesign/final-verification-2/README.md).
+Two scripts start their own preview processes (one per scenario, free localhost ports) and need only the isolated browser and the browser libraries installed by `make assets`. Their evidence and a requirement matrix are in [final-verification-2](../artifacts/redesign/final-verification-2/README.md).
 
 ```sh
-CDP_PORT=9227 HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js node tasks/redesign/checks/scenarios.mjs
-CDP_PORT=9227 HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js [AXE_PATH=/scratch/axe.min.js] node tasks/redesign/checks/a11y-audit.mjs
+CDP_PORT=9227 node tasks/redesign/checks/scenarios.mjs
+CDP_PORT=9227 [AXE_PATH=/scratch/axe.min.js] node tasks/redesign/checks/a11y-audit.mjs
 ```
 
 - `scenarios.mjs` screenshots and **asserts** every scenario above at 375 and 1440 px: the 12 data variants (initial and planned, plus five days, expanded videos and failed third-party images for the relevant ones), the table rows (Porto, Coimbra, both Parises by search and shared URL, search failure, 500, 400, shared plan, ICS/KML responses, local map identity), the photo fixtures (Nophoto, Photoerror, Brokenimage, Tokyo, Tavira), Longguide, and the `-slow` loading states. A mismatch fails the run. Third-party images are replaced by a generated gradient and the YouTube embed is blocked. Screenshots are WebP under `final-verification-2/scenarios/`; rerunning overwrites them.
@@ -279,7 +286,7 @@ fixtures; Paris, Porto, Tokyo and Tavira have real coordinates), then:
 
 ```sh
 go run ./cmd/design-preview -addr 127.0.0.1:8087 -map-addr 127.0.0.1:8088 -live-photos
-HTMX_PATH=/tmp/traveltab-htmx-1.9.11.js PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 \
+PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 \
   node tasks/redesign/checks/destination-photos-live.mjs
 ```
 

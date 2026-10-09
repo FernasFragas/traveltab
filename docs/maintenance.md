@@ -6,6 +6,75 @@ Package boundaries are in [architecture.md](architecture.md) and the UI contract
 [September 2026 results](../tasks/project-fix-results.md) record its verification and limits.
 Open work is listed under [Next up](#next-up).
 
+## Dependency and vulnerability checks
+
+Dependabot checks Go modules, GitHub Actions, Docker base images and the three browser
+libraries every Monday. Minor and patch Go/npm updates are grouped; major updates stay
+separate. Version updates have a cooldown (14 days for Go/npm major releases, seven for
+minor releases and three for patches; seven days for Actions and Docker). Security updates
+are not delayed by cooldown. Review and merge every PR manually; auto-merge is not enabled.
+
+| Tool | Coverage | Runs |
+|---|---|---|
+| govulncheck | Vulnerable Go code reachable from the application | CI after tests; also Mondays 06:00 UTC on `main` |
+| npm audit | Browser libraries in `package-lock.json` (HIGH and CRITICAL) | CI after govulncheck; also Mondays 06:00 UTC on `main` |
+| Browser checks | `interaction-regressions.mjs` and `browser-smoke.mjs` in headless Chrome against the design preview | PRs that change `package.json` or `package-lock.json` (`browser.yml`); screenshots are uploaded on failure |
+| Trivy | Debian packages and Go dependencies in the built image | CI after the Docker build; also Mondays 06:00 UTC on `main`. Pushes and weekly runs upload to the Security tab |
+
+For a failed scan, read the advisory and its fixed versions, update the affected module or
+image, then rerun the failing scanner and `make test lint build`. `go mod tidy` alone does
+not upgrade dependencies. For standard-library findings, update both the `toolchain` in
+`go.mod` and the builder tag in `Dockerfile`. The runtime image applies available Debian
+updates during its build; rebuild with `--pull --no-cache` when a cached layer predates a
+security fix. Trivy fails on fixable HIGH/CRITICAL findings. Do not suppress a fixable
+finding; an exception in `.trivyignore` needs a specific advisory and a reason why it has
+no fix and does not affect the application.
+
+Run the scanners locally:
+
+```sh
+go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+npm audit --audit-level=high
+docker build -t traveltab .
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.70.0 image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 traveltab
+```
+
+Trivy 0.70.0 matches the pinned action's default scanner. The Trivy action and the SARIF
+uploader use full commit hashes with release comments so Dependabot can update them.
+PR scans do not upload SARIF; fork and Dependabot PRs can use their read-only tokens.
+
+The root `package.json` pins Bootstrap, bootstrap-icons and htmx exactly, and
+`package-lock.json` records an integrity hash for each package. `make assets` (run by
+`make test` and `make run`), CI and the Docker build install them with
+`npm ci --ignore-scripts`: npm rejects a package whose hash doesn't match, and package
+install scripts never run. `npm run vendor` then copies only the five files the page loads
+into `public/vendor/` (git-ignored build output), which the existing `public/` route serves.
+The rest of `node_modules/` is never published, and the image does not contain it. A
+Dependabot browser-library PR needs no manual step. `TestNewAppServer_ServesBrowserLibraries`
+fails if a file the page loads is missing, and `TestNewAppServer_HidesOtherPackageFiles`
+fails if package files become public. If a major release moves a file, `npm run vendor`
+fails; update the path in the `vendor` script in `package.json`, `views/index.go.tpl` and
+the test. Server tests only prove the files are served; the browser checks prove the
+planner, history and video interactions still work with the new version. `npm ci` makes installs reproducible but does not check for known vulnerabilities,
+and the image keeps no npm manifests, so Trivy cannot see these libraries. `npm audit` in CI
+and Dependabot alerts cover them through `package-lock.json`. Google Fonts remains external and is not tracked.
+
+A Go minor upgrade (for example 1.28) arrives through the Docker builder tag. Raise the
+`go` and `toolchain` lines in `go.mod` by hand in the same PR, run `go mod tidy`, and verify
+both CI and Docker use the intended toolchain. The initial rollout uses Go 1.27.2 because
+the plan's 1.27.1 has [standard-library vulnerabilities](https://pkg.go.dev/vuln/GO-2026-6617).
+
+Owner rollout steps: in Settings → Code security, enable Dependency graph, Dependabot
+alerts and Dependabot security updates. After merging, check Insights → Dependency graph
+→ Dependabot for all four ecosystems and any configuration errors. Confirm Trivy
+results appear under Security → Code scanning. These hosted checks require the owner to
+merge/push the changes; local validation cannot establish their result.
+
+The weekly run rescans `main` with fresh vulnerability databases and a freshly built image;
+it does not rebuild or redeploy the running Fly.io machine. GitHub disables scheduled
+workflows after 60 days without repository activity; re-enable CI under Actions if that
+happens.
+
 ## Accessibility limits
 
 - **Focus order below 900px.** The planner is shown before the map through CSS `order`, but the

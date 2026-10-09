@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Rescan weekly so newly disclosed vulnerabilities fail CI even without new commits.
+  schedule:
+    - cron: '0 6 * * 1'
 
 permissions:
   contents: read
@@ -35,7 +38,7 @@ jobs:
 
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.4.0
+          version: v2.14.0
 
   test:
     name: Test and build
@@ -47,9 +50,21 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # make test installs the browser libraries with npm ci.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
       # Tests stub every provider API, so no secrets are needed.
       - name: Test
         run: make test
+
+      - name: Vulnerability check
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+      # The image keeps no npm manifests, so Trivy can't see the browser libraries.
+      - name: Browser library audit
+        run: npm audit --audit-level=high
 
       - name: Build
         run: make build
@@ -57,8 +72,28 @@ jobs:
   docker:
     name: Docker image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v7
 
       - name: Build image
         run: docker build -t traveltab .
+
+      - name: Scan image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: traveltab
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-results.sarif
+          limit-severities-for-sarif: true
+
+      - name: Upload image findings
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy-results.sarif

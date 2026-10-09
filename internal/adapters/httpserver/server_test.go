@@ -247,6 +247,37 @@ func TestNewAppServer(t *testing.T) {
 	assert.Equal(t, mockVideos, server.videoStreamReporters)
 }
 
+// The page loads these browser libraries; npm installs them from package-lock.json.
+func TestNewAppServer_ServesBrowserLibraries(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	server, _, _ := createTestServer(ctrl)
+
+	for _, path := range []string{
+		"/vendor/bootstrap/dist/css/bootstrap.min.css",
+		"/vendor/bootstrap-icons/font/bootstrap-icons.min.css",
+		"/vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff2",
+		"/vendor/bootstrap-icons/font/fonts/bootstrap-icons.woff",
+		"/vendor/htmx.org/dist/htmx.min.js",
+	} {
+		status, body := doRequest(t, server, httptest.NewRequest("GET", path, nil))
+
+		assert.Equal(t, http.StatusOK, status, path)
+		assert.NotEmpty(t, body, path)
+	}
+}
+
+// Only the copied files are public; the rest of each npm package stays private.
+func TestNewAppServer_HidesOtherPackageFiles(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	server, _, _ := createTestServer(ctrl)
+
+	status, _ := doRequest(t, server, httptest.NewRequest("GET", "/vendor/bootstrap/package.json", nil))
+
+	assert.Equal(t, http.StatusNotFound, status)
+}
+
 // Tests for Listen
 func TestListen(t *testing.T) {
 	server := &Server{

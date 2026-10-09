@@ -3,7 +3,7 @@
 // variants, the routes in the scenario table, the destination photo fixtures and the city guide
 // fixtures, at 375 and 1440 px, initial and planned states where they apply.
 //
-//   CDP_PORT=9327 HTMX_PATH=/tmp/htmx.js [OUTPUT_DIR=dir] node <this file>
+//   CDP_PORT=9327 [OUTPUT_DIR=dir] node <this file>
 //
 // The script starts (and stops) its own preview processes on free localhost ports, one per
 // scenario, and attaches to an isolated Chromium/Brave with its own debugging port and temporary
