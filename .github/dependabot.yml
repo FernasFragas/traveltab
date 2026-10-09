@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    cooldown: { semver-major-days: 14, semver-minor-days: 7, semver-patch-days: 3 }
+    groups:
+      go-minor-patch: { update-types: [minor, patch] }
+      go-security: { applies-to: security-updates, patterns: ["*"] }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7 }
+    groups:
+      actions: { patterns: ["*"] }
+
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    cooldown: { default-days: 7 }
+
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    cooldown: { semver-major-days: 14, semver-minor-days: 7, semver-patch-days: 3 }
+    groups:
+      web-minor-patch: { update-types: [minor, patch] }
+      web-security: { applies-to: security-updates, patterns: ["*"] }
