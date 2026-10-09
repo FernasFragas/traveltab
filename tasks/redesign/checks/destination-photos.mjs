@@ -1,23 +1,19 @@
 #!/usr/bin/env node
 // Browser acceptance for destination photos against the deterministic design preview.
 //
-//   HTMX_PATH=/tmp/htmx.js PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node <this file>
+//   PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node <this file>
 //
 // Run the default scenario. Set SLOW_PREVIEW_URL to a second preview started with -slow to add the
 // overlapping-request check. The fixture photo source is local, so this proves the page's photo
 // behaviour and says nothing about Wikimedia; live lookups are checked separately.
 import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 
 const base = process.env.PREVIEW_URL || 'http://127.0.0.1:8087';
 const slowBase = process.env.SLOW_PREVIEW_URL || '';
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Use a local fixture');
-assert.ok(process.env.HTMX_PATH, 'Set HTMX_PATH to the pinned 1.9.11 script');
-const htmx = await readFile(process.env.HTMX_PATH);
-const template = await readFile(new URL('../../../views/index.go.tpl', import.meta.url), 'utf8');
-const hash = template.match(/htmx.org@1\.9\.11" integrity="sha384-([^"]+)"/)?.[1];
-assert.equal(createHash('sha384').update(htmx).digest('base64'), hash, 'Pinned HTMX integrity');
+const { dependencies } = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8'));
+const htmxVersion = dependencies['htmx.org'];
 const output = new URL(process.env.OUTPUT_DIR || '../../artifacts/destination-photos/fixture/', import.meta.url);
 await mkdir(output, { recursive: true });
 const tabs = await (await fetch(`http://127.0.0.1:${process.env.CDP_PORT || 9227}/json/list`, { signal: AbortSignal.timeout(5000) })).json();
@@ -47,13 +43,6 @@ ws.addEventListener('message', event => {
     message.error ? item.reject(message.error) : item.resolve(message.result);
   } else if (message.method === 'Runtime.exceptionThrown') {
     errors.push(message.params.exceptionDetails.exception?.description || JSON.stringify(message.params.exceptionDetails));
-  } else if (message.method === 'Fetch.requestPaused') {
-    const { requestId, request } = message.params;
-    const action = request.url === 'https://unpkg.com/htmx.org@1.9.11'
-      ? call('Fetch.fulfillRequest', { requestId, responseCode: 200, body: htmx.toString('base64'), responseHeaders: [
-        { name: 'Content-Type', value: 'text/javascript' }, { name: 'Access-Control-Allow-Origin', value: '*' }] })
-      : call('Fetch.continueRequest', { requestId });
-    action.catch(error => errors.push(String(error)));
   }
 });
 const evaluate = async expression => {
@@ -167,14 +156,13 @@ const searchAndSettle = async (term, title, extra = 'true') => {
 const loaded = 'document.querySelector(".destination-image")?.complete && document.querySelector(".destination-image").naturalWidth > 0';
 const navigate = async url => {
   await call('Page.navigate', { url });
-  await until("document.readyState === 'complete' && window.htmx?.version === '1.9.11' && !!document.querySelector('.destination-title')");
+  await until(`document.readyState === 'complete' && window.htmx?.version === ${JSON.stringify(htmxVersion)} && !!document.querySelector('.destination-title')`);
 };
 const results = [];
 const check = (width, label) => console.log(`PASS ${width}px: ${label}`);
 try {
   await call('Page.enable'); await call('Runtime.enable'); await call('Network.enable');
   await call('Network.setCacheDisabled', { cacheDisabled: true });
-  await call('Fetch.enable', { patterns: [{ urlPattern: 'https://unpkg.com/htmx.org@1.9.11' }] });
   const browser = (await call('Browser.getVersion')).product;
   console.log(`Environment: ${browser}`);
 
@@ -355,10 +343,9 @@ try {
   }
 
   assert.deepEqual(errors, [], 'Unexpected JavaScript exceptions');
-  await writeFile(new URL('browser-results.json', output), JSON.stringify({ browser, htmx: '1.9.11', base, slowBase, results, errors }, null, 2));
+  await writeFile(new URL('browser-results.json', output), JSON.stringify({ browser, htmx: htmxVersion, base, slowBase, results, errors }, null, 2));
   console.log('PASS: destination photo browser acceptance, no JavaScript exceptions');
   console.log(`Evidence: ${output.pathname}`);
 } finally {
-  await call('Fetch.disable').catch(() => {});
   ws.close();
 }

@@ -22,8 +22,13 @@ lint: ## Check formatting and run golangci-lint
 	@command -v golangci-lint >/dev/null || { echo "golangci-lint is not installed: https://golangci-lint.run/welcome/install/"; exit 1; }
 	golangci-lint run ./...
 
+.PHONY: assets
+assets: ## Install browser libraries from package-lock.json into public/vendor
+	npm ci --ignore-scripts
+	npm run vendor
+
 .PHONY: test
-test: ## Run all tests with the race detector (loads .env)
+test: assets ## Run all tests with the race detector (loads .env)
 	@# Tests run from each package folder, so the app can't find .env on its own.
 	@if [ -f .env ]; then set -a; . ./.env; set +a; fi; \
 	go test -race -count=1 ./...
@@ -33,7 +38,7 @@ build: ## Build the web app into bin/
 	go build -o $(BINARY) ./cmd/web
 
 .PHONY: run
-run: ## Run the web app locally on :8080 (reads .env)
+run: assets ## Run the web app locally on :8080 (reads .env)
 	go run ./cmd/web
 
 .PHONY: clean

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Browser acceptance for reviewed city guides against the deterministic design preview.
 //
-//   HTMX_PATH=/tmp/htmx.js PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node <this file>
+//   PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node <this file>
 //
 // Run the default scenario. Set FALLBACK_PREVIEW_URL to a second preview started with
 // -scenario fallback to add the "no guide anywhere" check. The preview embeds the same reviewed
@@ -10,16 +10,12 @@
 // tasks/guides-review.md). Screenshots and JSON go to tasks/artifacts/guides/ (or OUTPUT_DIR).
 import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 
 const base = process.env.PREVIEW_URL || 'http://127.0.0.1:8087';
 const fallbackBase = process.env.FALLBACK_PREVIEW_URL || '';
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Use a local fixture');
-assert.ok(process.env.HTMX_PATH, 'Set HTMX_PATH to the pinned 1.9.11 script');
-const htmx = await readFile(process.env.HTMX_PATH);
-const template = await readFile(new URL('../../../views/index.go.tpl', import.meta.url), 'utf8');
-const hash = template.match(/htmx.org@1\.9\.11" integrity="sha384-([^"]+)"/)?.[1];
-assert.equal(createHash('sha384').update(htmx).digest('base64'), hash, 'Pinned HTMX integrity');
+const { dependencies } = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8'));
+const htmxVersion = dependencies['htmx.org'];
 const guides = JSON.parse(await readFile(new URL('../../../guides/guides.json', import.meta.url), 'utf8'));
 const output = new URL(process.env.OUTPUT_DIR || '../../artifacts/guides/', import.meta.url);
 await mkdir(output, { recursive: true });
@@ -50,13 +46,6 @@ ws.addEventListener('message', event => {
     message.error ? item.reject(message.error) : item.resolve(message.result);
   } else if (message.method === 'Runtime.exceptionThrown') {
     errors.push(message.params.exceptionDetails.exception?.description || JSON.stringify(message.params.exceptionDetails));
-  } else if (message.method === 'Fetch.requestPaused') {
-    const { requestId, request } = message.params;
-    const action = request.url === 'https://unpkg.com/htmx.org@1.9.11'
-      ? call('Fetch.fulfillRequest', { requestId, responseCode: 200, body: htmx.toString('base64'), responseHeaders: [
-        { name: 'Content-Type', value: 'text/javascript' }, { name: 'Access-Control-Allow-Origin', value: '*' }] })
-      : call('Fetch.continueRequest', { requestId });
-    action.catch(error => errors.push(String(error)));
   }
 });
 const evaluate = async expression => {
@@ -193,14 +182,13 @@ const searchAndSettle = async (term, title) => {
 };
 const navigate = async url => {
   await call('Page.navigate', { url });
-  await until("document.readyState === 'complete' && window.htmx?.version === '1.9.11' && !!document.querySelector('.destination-title')");
+  await until(`document.readyState === 'complete' && window.htmx?.version === ${JSON.stringify(htmxVersion)} && !!document.querySelector('.destination-title')`);
 };
 const results = [];
 const check = (width, label) => console.log(`PASS ${width}px: ${label}`);
 try {
   await call('Page.enable'); await call('Runtime.enable'); await call('Network.enable');
   await call('Network.setCacheDisabled', { cacheDisabled: true });
-  await call('Fetch.enable', { patterns: [{ urlPattern: 'https://unpkg.com/htmx.org@1.9.11' }] });
   const browser = (await call('Browser.getVersion')).product;
   console.log(`Environment: ${browser}`);
 
@@ -335,10 +323,9 @@ try {
   }
 
   assert.deepEqual(errors, [], 'Unexpected JavaScript exceptions');
-  await writeFile(new URL('browser-results.json', output), JSON.stringify({ browser, htmx: '1.9.11', base, fallbackBase, results, errors }, null, 2));
+  await writeFile(new URL('browser-results.json', output), JSON.stringify({ browser, htmx: htmxVersion, base, fallbackBase, results, errors }, null, 2));
   console.log('PASS: city guide browser acceptance, no JavaScript exceptions');
   console.log(`Evidence: ${output.pathname}`);
 } finally {
-  await call('Fetch.disable').catch(() => {});
   ws.close();
 }

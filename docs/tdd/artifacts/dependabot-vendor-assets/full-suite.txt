@@ -1,0 +1,34 @@
+npm ci --ignore-scripts
+
+added 4 packages, and audited 5 packages in 1s
+
+3 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm run vendor
+
+> vendor
+> rm -rf public/vendor && mkdir -p public/vendor/bootstrap/dist/css public/vendor/bootstrap-icons/font/fonts public/vendor/htmx.org/dist && cp node_modules/bootstrap/dist/css/bootstrap.min.css public/vendor/bootstrap/dist/css/ && cp node_modules/bootstrap-icons/font/bootstrap-icons.min.css public/vendor/bootstrap-icons/font/ && cp node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2 node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff public/vendor/bootstrap-icons/font/fonts/ && cp node_modules/htmx.org/dist/htmx.min.js public/vendor/htmx.org/dist/
+
+ok  	weatherservice/cmd/design-preview	2.881s
+?   	weatherservice/cmd/guides	[no test files]
+?   	weatherservice/cmd/loadtest-server	[no test files]
+?   	weatherservice/cmd/placetypes	[no test files]
+?   	weatherservice/cmd/web	[no test files]
+?   	weatherservice/guides	[no test files]
+ok  	weatherservice/internal/adapters/api	3.177s
+ok  	weatherservice/internal/adapters/httpserver	2.279s
+ok  	weatherservice/internal/adapters/sqlite	2.072s
+ok  	weatherservice/internal/application	1.188s
+ok  	weatherservice/internal/config	1.185s
+ok  	weatherservice/internal/guides	1.433s
+ok  	weatherservice/internal/placetypes	1.323s
+ok  	weatherservice/internal/planner	1.968s
+ok  	weatherservice/internal/slug	1.246s
+ok  	weatherservice/internal/writermap	1.195s
+ok  	weatherservice/internal/writermap/writermaptest	1.374s
+ok  	weatherservice/writerdata	1.252s
+golangci-lint run ./...
+0 issues.
+go build -o bin/traveltab ./cmd/web

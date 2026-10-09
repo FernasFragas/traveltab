@@ -1,0 +1,119 @@
+{
+  "browser": "Chrome/155.0.8059.40",
+  "results": [
+    {
+      "width": 375,
+      "assets": [
+        {
+          "path": "bootstrap/dist/css/bootstrap.min.css",
+          "status": 200,
+          "size": 194901
+        },
+        {
+          "path": "bootstrap-icons/font/bootstrap-icons.min.css",
+          "status": 200,
+          "size": 85875
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff2",
+          "status": 200,
+          "size": 130396
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff",
+          "status": 200,
+          "size": 176032
+        },
+        {
+          "path": "htmx.org/dist/htmx.min.js",
+          "status": 200,
+          "size": 48036
+        }
+      ],
+      "overflow": 375,
+      "viewport": 375,
+      "bootstrap": true,
+      "icons": true,
+      "iconFamily": "bootstrap-icons",
+      "htmx": "/vendor/htmx.org/dist/htmx.min.js",
+      "form": {
+        "x": 14,
+        "y": 512.453125,
+        "width": 347,
+        "height": 434.578125,
+        "top": 512.453125,
+        "right": 361,
+        "bottom": 947.03125,
+        "left": 14
+      },
+      "map": {
+        "x": 14,
+        "y": 963.03125,
+        "width": 347,
+        "height": 196,
+        "top": 963.03125,
+        "right": 361,
+        "bottom": 1159.03125,
+        "left": 14
+      }
+    },
+    {
+      "width": 1440,
+      "assets": [
+        {
+          "path": "bootstrap/dist/css/bootstrap.min.css",
+          "status": 200,
+          "size": 194901
+        },
+        {
+          "path": "bootstrap-icons/font/bootstrap-icons.min.css",
+          "status": 200,
+          "size": 85875
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff2",
+          "status": 200,
+          "size": 130396
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff",
+          "status": 200,
+          "size": 176032
+        },
+        {
+          "path": "htmx.org/dist/htmx.min.js",
+          "status": 200,
+          "size": 48036
+        }
+      ],
+      "overflow": 1425,
+      "viewport": 1440,
+      "bootstrap": true,
+      "icons": true,
+      "iconFamily": "bootstrap-icons",
+      "htmx": "/vendor/htmx.org/dist/htmx.min.js",
+      "form": {
+        "x": 720.5,
+        "y": 477.890625,
+        "width": 557,
+        "height": 269.6875,
+        "top": 477.890625,
+        "right": 1277.5,
+        "bottom": 747.578125,
+        "left": 720.5
+      },
+      "map": {
+        "x": 147.5,
+        "y": 477.890625,
+        "width": 557,
+        "height": 269.6875,
+        "top": 477.890625,
+        "right": 704.5,
+        "bottom": 747.578125,
+        "left": 147.5
+      }
+    }
+  ],
+  "exceptions": [],
+  "consoleErrors": []
+}

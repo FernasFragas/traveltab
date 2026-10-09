@@ -2,17 +2,13 @@
 // Browser acceptance against the deterministic design preview.
 import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 
 const base = process.env.PREVIEW_URL || 'http://127.0.0.1:8087';
 const scenario = process.env.SCENARIO || 'default';
 assert.ok(['default', 'fallback'].includes(scenario));
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(base).hostname));
-assert.ok(process.env.HTMX_PATH, 'Set HTMX_PATH to the pinned 1.9.11 script');
-const htmx = await readFile(process.env.HTMX_PATH);
-const template = await readFile(new URL('../../../views/index.go.tpl', import.meta.url), 'utf8');
-const hash = template.match(/htmx.org@1\.9\.11" integrity="sha384-([^"]+)"/)?.[1];
-assert.equal(createHash('sha384').update(htmx).digest('base64'), hash);
+const { dependencies } = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8'));
+const htmxVersion = dependencies['htmx.org'];
 // OUTPUT_DIR redirects the evidence, so a re-run need not overwrite the recorded September results.
 const output = process.env.OUTPUT_DIR ? new URL(`file://${process.env.OUTPUT_DIR.replace(/\/?$/, '/')}`) : new URL(`../../artifacts/redesign/final-verification/${scenario}/`, import.meta.url);
 await mkdir(output, { recursive: true });
@@ -49,11 +45,8 @@ ws.addEventListener('message', event => {
     failedResources.push(message.params.errorText);
   } else if (message.method === 'Fetch.requestPaused') {
     const { requestId, request } = message.params;
-    const action = request.url === 'https://unpkg.com/htmx.org@1.9.11'
-      ? call('Fetch.fulfillRequest', { requestId, responseCode: 200, body: htmx.toString('base64'), responseHeaders: [
-        { name: 'Content-Type', value: 'text/javascript' }, { name: 'Access-Control-Allow-Origin', value: '*' }] })
-      : new URL(request.url).pathname === '/plan' && planMode === 'fail'
-        ? call('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' })
+    const action = new URL(request.url).pathname === '/plan' && planMode === 'fail'
+      ? call('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' })
       : new URL(request.url).pathname === '/plan' && planMode === 'delay'
         ? new Promise(resolve => setTimeout(resolve, 800)).then(() => call('Fetch.continueRequest', { requestId }))
       : call('Fetch.continueRequest', { requestId });
@@ -123,12 +116,12 @@ const results = [];
 try {
   await call('Page.enable'); await call('Runtime.enable'); await call('Network.enable');
   await call('Network.setCacheDisabled', { cacheDisabled: true });
-  await call('Fetch.enable', { patterns: [{ urlPattern: 'https://unpkg.com/htmx.org@1.9.11' }, { urlPattern: '*/plan*' }] });
+  await call('Fetch.enable', { patterns: [{ urlPattern: '*/plan*' }] });
   const browser = (await call('Browser.getVersion')).product;
   for (const [width, height] of [[375,812],[768,1024],[1100,1000],[1440,1000]]) {
     await call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width <= 768 });
     await call('Page.navigate', { url: `${base}/?browser-acceptance=${Date.now()}` });
-    await until("document.readyState === 'complete' && window.htmx?.version === '1.9.11' && !!document.querySelector('.destination-title')");
+    await until(`document.readyState === 'complete' && window.htmx?.version === ${JSON.stringify(htmxVersion)} && !!document.querySelector('.destination-title')`);
     const initial = await inspect();
     assert.equal(initial.title, 'Lisbon'); assert.ok(initial.photo > 0, 'Lisbon hero must load');
     assert.deepEqual(initial.sections, [1,1,1,1]); assert.equal(initial.idsUnique, true);
@@ -183,7 +176,7 @@ try {
       assert.equal(download.status, 200, `Export must download: ${url}`);
     }
     await call('Page.navigate', { url: sharedURL });
-    await until("document.readyState === 'complete' && window.htmx?.version === '1.9.11' && document.querySelectorAll('.itinerary-day').length === 3");
+    await until(`document.readyState === 'complete' && window.htmx?.version === ${JSON.stringify(htmxVersion)} && document.querySelectorAll('.itinerary-day').length === 3`);
     assert.equal((await inspect()).title, 'Lisbon', 'Shared page reload keeps selected trip');
     assert.equal(await evaluate("document.querySelector('.trip-form').elements.start.value"), links.start);
     await evaluate("document.querySelector('.trip-select').focus()");
@@ -223,7 +216,7 @@ try {
     assert.equal((await inspect()).title, 'Porto', 'Search failure retains current destination');
   }
   assert.deepEqual(errors, [], 'Unexpected JavaScript exceptions');
-  await writeFile(new URL('browser-results.json', output), JSON.stringify({ browser, htmx: '1.9.11', scenario, base, results, errors, failedResources }, null, 2));
+  await writeFile(new URL('browser-results.json', output), JSON.stringify({ browser, htmx: htmxVersion, scenario, base, results, errors, failedResources }, null, 2));
   console.log(`PASS ${scenario}: interactions, reduced motion, 200% zoom, no JavaScript exceptions`);
   console.log(`Evidence: ${output.pathname}`);
 } finally {

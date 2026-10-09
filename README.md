@@ -24,7 +24,7 @@ The redesigned interface and September 2026 repairs are implemented. [Verificati
 
 | Layer      | Choice                                                                 |
 |------------|------------------------------------------------------------------------|
-| Language   | Go 1.23                                                                |
+| Language   | Go 1.27                                                                |
 | Web        | [Fiber v2](https://gofiber.io/) with `html/template` views (`views/*.go.tpl`) |
 | Frontend   | [HTMX](https://htmx.org/), Bootstrap 5 utilities, Bootstrap Icons, custom CSS       |
 | Cache      | SQLite (`mattn/go-sqlite3`) storing gzip-compressed JSON per city      |
@@ -198,7 +198,8 @@ adapter owns its database connection and supplies cached planner sources. See th
 
 ### Prerequisites
 
-- Go 1.23+
+- Go 1.27+
+- Node 24 with npm, to install the browser libraries (Bootstrap, bootstrap-icons, htmx)
 - A C toolchain (`gcc` / Xcode Command Line Tools), because `go-sqlite3` needs CGO
 - API keys for OpenWeather and YouTube Data API v3. The trip planner needs none.
 
@@ -225,8 +226,11 @@ YOUTUBE_NEW=your-youtube-data-api-key
 ### 2. Run
 
 ```bash
+make assets   # npm ci --ignore-scripts, then copy the five browser-library files to public/vendor/
 go run ./cmd/web
 ```
+
+`make run` does both.
 
 Open http://localhost:8080. The SQLite cache file `weatherservice.db` is created in the working directory on first run.
 
@@ -248,15 +252,17 @@ fly deploy
 
 `fly.toml` keeps one machine always running and mounts a volume (`weather_data_inc`) at `/data`.
 `.dockerignore` excludes `docs/`, `tasks/`, and Markdown files from the build context sent to
-Fly.io. The final image contains only the app binary, templates, and public assets.
+Fly.io. The final image contains only the app binary, templates, public assets, and the five browser-library
+files copied to `public/vendor/`.
 
 ## Tests
 
 ```bash
+make assets
 go test ./...
 ```
 
-Tests use stub providers and recorded city responses from `internal/planner/testdata/cities/`.
+The server test for `/vendor/` needs the files `make assets` copies into `public/vendor/`. Tests use stub providers and recorded city responses from `internal/planner/testdata/cities/`.
 The design-preview route tests open a temporary localhost listener, but need no internet or API
 keys. Run `go test -race -count=1 ./...` to include the race detector, or `make test`, which also
 loads a local `.env` when present. The [preview guide](tasks/redesign/preview.md) gives the HTTP
