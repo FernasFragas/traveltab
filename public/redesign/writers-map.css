@@ -1,0 +1,40 @@
+/* Core map and keyboard list. Card layout is supplied by writers-map-layout.css. */
+[data-map-canvas] {
+    width: 100%;
+    min-height: 320px;
+    height: 420px;
+    background: #e7e8df;
+}
+
+[data-map-slot="status"]:not([hidden]) {
+    margin: 0.5rem 0;
+    color: var(--tt-muted, #666158);
+}
+
+[data-map-slot="list"] ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+[data-map-slot="list"] button {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--tt-border, #d5d0c7);
+    border-radius: var(--tt-radius, 8px);
+    background: var(--tt-surface, #fff);
+    color: var(--tt-ink, #252525);
+    cursor: pointer;
+}
+
+[data-map-slot="list"] button:focus-visible {
+    outline: 3px solid var(--tt-accent, #a64027);
+    outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+    [data-map-canvas] { height: 340px; }
+}
