@@ -1,0 +1,1089 @@
+{
+ "run": "2026-10-10",
+ "hosts": {
+  "almadeviajante.com": {
+   "scanned": 537,
+   "kept": 24,
+   "status": "ok"
+  },
+  "www.viajecomigo.com": {
+   "scanned": 744,
+   "kept": 64,
+   "status": "ok"
+  },
+  "www.vortexmag.net": {
+   "scanned": 944,
+   "kept": 66,
+   "status": "ok"
+  },
+  "viagensasolta.com": {
+   "scanned": 112,
+   "kept": 7,
+   "status": "ok"
+  },
+  "www.portugalist.com": {
+   "scanned": 47,
+   "kept": 18,
+   "status": "ok"
+  },
+  "www.nomadicmatt.com": {
+   "scanned": 0,
+   "kept": 0,
+   "status": "ok"
+  },
+  "theplanetd.com": {
+   "scanned": 5,
+   "kept": 4,
+   "status": "ok"
+  },
+  "www.earthtrekkers.com": {
+   "scanned": 161,
+   "kept": 23,
+   "status": "partial: The read operation timed out"
+  },
+  "www.saltinourhair.com": {
+   "scanned": 29,
+   "kept": 22,
+   "status": "ok"
+  },
+  "travellemming.com": {
+   "scanned": 0,
+   "kept": 0,
+   "status": "robots.txt disallows"
+  },
+  "www.thecrowdedplanet.com": {
+   "scanned": 1,
+   "kept": 0,
+   "status": "ok"
+  },
+  "www.adventurouskate.com": {
+   "scanned": 1,
+   "kept": 0,
+   "status": "ok"
+  }
+ },
+ "posts": 228,
+ "gazetteer_places": 214,
+ "mentioned": 97,
+ "ge3": 49,
+ "ge4": 37,
+ "single": 26,
+ "nearby_radius_km": 70,
+ "nearby_places": 1504,
+ "nearby_type_kept": 587,
+ "nearby_cap": 200,
+ "consensus_in_radius": 49,
+ "consensus_type_kept": 24,
+ "consensus_in_cap": 22,
+ "precision_sample": [
+  {
+   "name": "Paul do Mar",
+   "blog": "viagensasolta.com",
+   "post_id": 6928,
+   "matched": "Paul do Mar",
+   "correct": true
+  },
+  {
+   "name": "Paul do Mar",
+   "blog": "www.viajecomigo.com",
+   "post_id": 7023,
+   "matched": "Paul do Mar",
+   "correct": true
+  },
+  {
+   "name": "São Jorge",
+   "blog": "www.portugalist.com",
+   "post_id": 61415,
+   "matched": "Sao Jorge",
+   "correct": false,
+   "actually": "São Jorge island, Azores"
+  },
+  {
+   "name": "Jardim Tropical Monte Palace",
+   "blog": "almadeviajante.com",
+   "post_id": 105382,
+   "matched": "Jardim Tropical Monte Palace",
+   "correct": true
+  },
+  {
+   "name": "Boa Ventura",
+   "blog": "almadeviajante.com",
+   "post_id": 6135,
+   "matched": "Boaventura",
+   "correct": true
+  },
+  {
+   "name": "Calheta",
+   "blog": "www.saltinourhair.com",
+   "post_id": 171386,
+   "matched": "Calheta",
+   "correct": false,
+   "actually": "Ponta da Calheta, Porto Santo"
+  },
+  {
+   "name": "Ribeira Brava",
+   "blog": "www.viajecomigo.com",
+   "post_id": 78874,
+   "matched": "Ribeira Brava",
+   "correct": true
+  },
+  {
+   "name": "Teleférico do Funchal",
+   "blog": "viagensasolta.com",
+   "post_id": 6467,
+   "matched": "Monte",
+   "correct": true
+  },
+  {
+   "name": "Achadas da Cruz",
+   "blog": "www.saltinourhair.com",
+   "post_id": 151775,
+   "matched": "Achadas da Cruz",
+   "correct": true
+  },
+  {
+   "name": "Estreito da Calheta",
+   "blog": "almadeviajante.com",
+   "post_id": 31844,
+   "matched": "Estreito da Calheta",
+   "correct": true
+  },
+  {
+   "name": "São Martinho",
+   "blog": "www.earthtrekkers.com",
+   "post_id": 60412,
+   "matched": "Sao Martinho",
+   "correct": true
+  },
+  {
+   "name": "Reserva Natural Parcial do Garajau",
+   "blog": "www.vortexmag.net",
+   "post_id": 110185,
+   "matched": "Garajau",
+   "correct": false,
+   "actually": "Garajau headland (legend), not the reserve"
+  },
+  {
+   "name": "Porto Moniz",
+   "blog": "almadeviajante.com",
+   "post_id": 105382,
+   "matched": "Porto Moniz",
+   "correct": true
+  },
+  {
+   "name": "Santa Luzia",
+   "blog": "www.viajecomigo.com",
+   "post_id": 83154,
+   "matched": "Santa Luzia",
+   "correct": false,
+   "actually": "Pitos de Santa Luzia, Vila Real"
+  },
+  {
+   "name": "Calheta",
+   "blog": "www.earthtrekkers.com",
+   "post_id": 60006,
+   "matched": "Calheta",
+   "correct": true
+  },
+  {
+   "name": "Monte",
+   "blog": "www.earthtrekkers.com",
+   "post_id": 60385,
+   "matched": "Monte",
+   "correct": false,
+   "actually": "Bom Jesus do Monte, Braga"
+  },
+  {
+   "name": "Porto da Cruz",
+   "blog": "almadeviajante.com",
+   "post_id": 6131,
+   "matched": "Porto da Cruz",
+   "correct": true
+  },
+  {
+   "name": "Praia da Ponta do Sol",
+   "blog": "www.vortexmag.net",
+   "post_id": 83308,
+   "matched": "Praia da Ponta do Sol",
+   "correct": true
+  },
+  {
+   "name": "Calheta",
+   "blog": "www.viajecomigo.com",
+   "post_id": 78874,
+   "matched": "Calheta",
+   "correct": true
+  },
+  {
+   "name": "Balcões",
+   "blog": "www.saltinourhair.com",
+   "post_id": 154406,
+   "matched": "Balcoes",
+   "correct": true
+  },
+  {
+   "name": "Teleférico do Funchal",
+   "blog": "www.earthtrekkers.com",
+   "post_id": 60385,
+   "matched": "Monte",
+   "correct": false,
+   "actually": "Bom Jesus do Monte, Braga (via the cable car's 'Monte' alias)"
+  },
+  {
+   "name": "Forte de São Tiago",
+   "blog": "almadeviajante.com",
+   "post_id": 31844,
+   "matched": "Fortaleza de Sao Tiago",
+   "correct": true
+  },
+  {
+   "name": "Boa Ventura",
+   "blog": "www.saltinourhair.com",
+   "post_id": 154733,
+   "matched": "Boaventura",
+   "correct": true
+  },
+  {
+   "name": "Seixal",
+   "blog": "www.viajecomigo.com",
+   "post_id": 67972,
+   "matched": "Seixal",
+   "correct": true
+  },
+  {
+   "name": "Arieiro",
+   "blog": "www.vortexmag.net",
+   "post_id": 94012,
+   "matched": "Pico do Areeiro",
+   "correct": true
+  },
+  {
+   "name": "Estreito de Câmara de Lobos",
+   "blog": "almadeviajante.com",
+   "post_id": 31836,
+   "matched": "Estreito de Camara de Lobos",
+   "correct": true
+  },
+  {
+   "name": "Santo António da Serra",
+   "blog": "www.saltinourhair.com",
+   "post_id": 155053,
+   "matched": "Santo Antonio Da Serra",
+   "correct": true
+  },
+  {
+   "name": "Teleférico do Funchal",
+   "blog": "www.saltinourhair.com",
+   "post_id": 151775,
+   "matched": "Monte",
+   "correct": false,
+   "actually": "Monte parish, matched to the cable car's 'Monte' alias"
+  },
+  {
+   "name": "Parque Natural da Madeira",
+   "blog": "www.portugalist.com",
+   "post_id": 61415,
+   "matched": "Madeira Natural Park",
+   "correct": true
+  },
+  {
+   "name": "Convento de Santa Clara",
+   "blog": "almadeviajante.com",
+   "post_id": 31940,
+   "matched": "Convento de Santa Clara",
+   "correct": true
+  },
+  {
+   "name": "Achada do Teixeira",
+   "blog": "www.vortexmag.net",
+   "post_id": 94012,
+   "matched": "Achada do Teixeira",
+   "correct": true
+  },
+  {
+   "name": "Mercado dos Lavradores",
+   "blog": "almadeviajante.com",
+   "post_id": 105382,
+   "matched": "Mercado dos Lavradores",
+   "correct": true
+  },
+  {
+   "name": "Santa Luzia",
+   "blog": "www.saltinourhair.com",
+   "post_id": 155892,
+   "matched": "Santa Luzia",
+   "correct": true
+  },
+  {
+   "name": "Museu CR7",
+   "blog": "www.viajecomigo.com",
+   "post_id": 49354,
+   "matched": "Museu CR7",
+   "correct": true
+  },
+  {
+   "name": "Cristo Rei",
+   "blog": "www.vortexmag.net",
+   "post_id": 6140,
+   "matched": "Cristo Rei",
+   "correct": true
+  },
+  {
+   "name": "Carros de cesto do Monte",
+   "blog": "www.viajecomigo.com",
+   "post_id": 39943,
+   "matched": "Carros de Cesto",
+   "correct": true
+  },
+  {
+   "name": "Pico do Facho",
+   "blog": "www.saltinourhair.com",
+   "post_id": 171386,
+   "matched": "Pico do Facho",
+   "correct": true
+  },
+  {
+   "name": "Monte",
+   "blog": "www.viajecomigo.com",
+   "post_id": 24774,
+   "matched": "Monte",
+   "correct": false,
+   "actually": "Bom Jesus do Monte, Braga"
+  },
+  {
+   "name": "Reserva Natural Parcial do Garajau",
+   "blog": "www.saltinourhair.com",
+   "post_id": 154733,
+   "matched": "Garajau",
+   "correct": false,
+   "actually": "Garajau beach, not the reserve"
+  },
+  {
+   "name": "São Vicente",
+   "blog": "viagensasolta.com",
+   "post_id": 6928,
+   "matched": "Sao Vicente",
+   "correct": true
+  }
+ ],
+ "consensus": [
+  {
+   "name": "São Jorge",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q1088866"
+   ],
+   "blogs": 8,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Monte",
+   "osm_kind": "place=suburb",
+   "qids": [
+    "Q1179064"
+   ],
+   "blogs": 7,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Ponta do Sol",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q943911"
+   ],
+   "blogs": 7,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q13217644"
+   ]
+  },
+  {
+   "name": "Teleférico do Funchal",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q3289157"
+   ],
+   "blogs": 7,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q13409250",
+    "Q44667495"
+   ]
+  },
+  {
+   "name": "25 Fontes",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q4632165"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q107529920",
+    "Q34038"
+   ]
+  },
+  {
+   "name": "Arieiro",
+   "osm_kind": "natural=peak",
+   "qids": [
+    "Q1192102"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q8502"
+   ]
+  },
+  {
+   "name": "Balcões",
+   "osm_kind": "tourism=viewpoint",
+   "qids": [
+    "Q19296457"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q6017969"
+   ]
+  },
+  {
+   "name": "Cabo Girão",
+   "osm_kind": "tourism=viewpoint",
+   "qids": [
+    "Q856866"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q107679",
+    "Q15069452",
+    "Q185113",
+    "Q6017969",
+    "Q796174"
+   ]
+  },
+  {
+   "name": "Calheta",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q757078"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q13217644"
+   ]
+  },
+  {
+   "name": "Caniçal",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q857987"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296",
+    "Q486972"
+   ]
+  },
+  {
+   "name": "Cristo Rei",
+   "osm_kind": "tourism=artwork",
+   "qids": [
+    "Q823766"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q29168169"
+   ]
+  },
+  {
+   "name": "Faial",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q995608"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Jardim Tropical Monte Palace",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q43179137"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q167346"
+   ]
+  },
+  {
+   "name": "Porto Moniz",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q221412"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q13217644"
+   ]
+  },
+  {
+   "name": "Ribeira Brava",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q250139",
+    "Q5436125"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q13217644",
+    "Q210272",
+    "Q39715"
+   ]
+  },
+  {
+   "name": "Ribeiro Frio",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q1248968"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q3257686"
+   ]
+  },
+  {
+   "name": "Ruivo",
+   "osm_kind": "natural=peak",
+   "qids": [
+    "Q473169"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q8502"
+   ]
+  },
+  {
+   "name": "Seixal",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q221244"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "São Lourenço",
+   "osm_kind": "place=neighbourhood",
+   "qids": [
+    "Q109359177"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q98929991"
+   ]
+  },
+  {
+   "name": "São Vicente",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q304464"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q13217644"
+   ]
+  },
+  {
+   "name": "Torres",
+   "osm_kind": "natural=peak",
+   "qids": [
+    "Q775217"
+   ],
+   "blogs": 6,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q8502"
+   ]
+  },
+  {
+   "name": "Achada do Teixeira",
+   "osm_kind": "tourism=viewpoint",
+   "qids": [
+    "Q9580033"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q8502"
+   ]
+  },
+  {
+   "name": "Convento de Santa Clara",
+   "osm_kind": "amenity=place_of_worship",
+   "qids": [
+    "Q12029520"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q1128397",
+    "Q126807",
+    "Q210272",
+    "Q24398318",
+    "Q44613"
+   ]
+  },
+  {
+   "name": "Forte de São Tiago",
+   "osm_kind": "historic=fort",
+   "qids": [
+    "Q3510244"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q1785071",
+    "Q210272"
+   ]
+  },
+  {
+   "name": "Mercado dos Lavradores",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q2063403"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q132510",
+    "Q210272",
+    "Q811979"
+   ]
+  },
+  {
+   "name": "Nazaré",
+   "osm_kind": "place=suburb",
+   "qids": [
+    "Q116985252"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": false,
+   "types": [
+    "Q123705"
+   ]
+  },
+  {
+   "name": "Porto da Cruz",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q932115"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Santa Luzia",
+   "osm_kind": "place=suburb",
+   "qids": [
+    "Q2652604"
+   ],
+   "blogs": 5,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Carros de cesto do Monte",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q9697780"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1067164",
+    "Q106839123"
+   ]
+  },
+  {
+   "name": "Curral das Freiras",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q602368"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296",
+    "Q486972"
+   ]
+  },
+  {
+   "name": "Madalena do Mar",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q2991252"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Museu CR7",
+   "osm_kind": "tourism=museum",
+   "qids": [
+    "Q16911681"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q33506"
+   ]
+  },
+  {
+   "name": "Praia Formosa",
+   "osm_kind": "natural=beach",
+   "qids": [
+    "Q10352428"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q1059407",
+    "Q107529920",
+    "Q18751767",
+    "Q40080"
+   ]
+  },
+  {
+   "name": "Praia da Calheta",
+   "osm_kind": "natural=beach",
+   "qids": [
+    "Q10352574"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q18751767"
+   ]
+  },
+  {
+   "name": "Sé do Funchal",
+   "osm_kind": "amenity=place_of_worship",
+   "qids": [
+    "Q1004331"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q210272",
+    "Q2977"
+   ]
+  },
+  {
+   "name": "Teleférico do Jardim Botânico",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q1875811"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q13409250"
+   ]
+  },
+  {
+   "name": "Véu da Noiva",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q17294134"
+   ],
+   "blogs": 4,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q34038"
+   ]
+  },
+  {
+   "name": "Boa Ventura",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q2469790"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Estreito de Câmara de Lobos",
+   "osm_kind": "place=town",
+   "qids": [
+    "Q2991222"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Farol da Ponta do Pargo",
+   "osm_kind": "man_made=lighthouse",
+   "qids": [
+    "Q10280133"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q210272",
+    "Q39715"
+   ]
+  },
+  {
+   "name": "Jardim Botânico da Madeira Engenheiro Rui Vieira",
+   "osm_kind": "tourism=attraction",
+   "qids": [
+    "Q894636"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q167346",
+    "Q210272"
+   ]
+  },
+  {
+   "name": "Jardim do Mar",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q1062773"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "Nossa Senhora do Monte",
+   "osm_kind": "amenity=place_of_worship",
+   "qids": [
+    "Q2001649"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q210272",
+    "Q317557"
+   ]
+  },
+  {
+   "name": "Parque Natural da Madeira",
+   "osm_kind": "leisure=nature_reserve",
+   "qids": [
+    "Q3138597"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q43229",
+    "Q473972",
+    "Q728904"
+   ]
+  },
+  {
+   "name": "Paul do Mar",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q946382"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296",
+    "Q3257686"
+   ]
+  },
+  {
+   "name": "Ponta do Rosto",
+   "osm_kind": "tourism=viewpoint",
+   "qids": [
+    "Q108259734"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": false,
+   "types": [
+    "Q107529920",
+    "Q6017969"
+   ]
+  },
+  {
+   "name": "Reserva Natural Parcial do Garajau",
+   "osm_kind": "leisure=nature_reserve",
+   "qids": [
+    "Q1008156"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": true,
+   "in_cap": true,
+   "types": [
+    "Q473972",
+    "Q63372803"
+   ]
+  },
+  {
+   "name": "Santo António da Serra",
+   "osm_kind": "place=village",
+   "qids": [
+    "Q589802"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  },
+  {
+   "name": "São Gonçalo",
+   "osm_kind": "place=suburb",
+   "qids": [
+    "Q2652513"
+   ],
+   "blogs": 3,
+   "in_radius": true,
+   "type_kept": false,
+   "in_cap": false,
+   "types": [
+    "Q1131296"
+   ]
+  }
+ ],
+ "precision_correct": 31
+}

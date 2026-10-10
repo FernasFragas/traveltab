@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -107,7 +107,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 ## PR 2 — Index Spike · needs: none · *parallel with PR 1*
 
 ### 2a. Measure index size, lookup speed and precision · single agent
-- [ ] Done
+- [x] Done
 
 **Owns:** `tasks/writers-map-spike/` (throwaway), `tasks/writers-map-results.md`
 
@@ -116,11 +116,11 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Acceptance — record in the results doc:**
 - [x] MB and rows per 1,000 posts, and the projection for ~20,400 posts (proposed bar ≤300 MB).
 - [x] Madeira lookup time (proposed ≤200 ms).
-- [ ] 40-match precision with Wikidata aliases, against the research's 37/40 (proposed ≥90%).
-- [ ] How many of the 55 research places (≥3 blogs) Wikidata nearby plus filters still returns.
+- [x] 40-match precision with Wikidata aliases, against the research's 37/40 (proposed ≥90%). *Recorded October 10: 31/40, fails the bar.*
+- [x] How many of the 55 research places (≥3 blogs) Wikidata nearby plus filters still returns. *Recorded October 10: the re-run finds 49; 24 pass the type filter, 22 are inside the cap.*
 - [x] **Verdict:** keep the schema, cap sub-spans, or add OSM names. **PR 5 waits for this.**
 
-**Verify:** results document reviewed by the owner.
+**Verify:** results document reviewed by the owner (approved October 10, 2026).
 
 ---
 
@@ -209,12 +209,13 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 - Implements `application.BasePlaceSource`.
 - SPARQL `wikibase:around`: ≈40 km for cities (overrides first for islands/regions), visitable-class filter, infrastructure excluded, capped at ~200 ranked by sitelinks (writer count re-ranks later in 6a).
+- The type filter and cap apply to **base pins only**. The unfiltered nearby list (P31 types kept) is also returned as the gazetteer for writer matching, so 6a can keep writer-mentioned places of any type (owner decision, October 10, 2026; see [the results](writers-map-results.md)).
 - Visitable classes come from the planner's generated list (`planner.PlaceTypes`, skipping `never`), not a second list.
 - Returns en/pt labels and aliases, English description, P18 image with Commons credit (reuse `wikimedia.go` parsing), sitelinks, the English Wikipedia URL, and opening hours when present (P3025 open days with P8626/P8627 opening and closing times, as one short line like "Open daily · 9:00 – 18:00").
 - Retry-After honored; identified user agent.
 
 **Acceptance**
-- [ ] Madeira fixture includes Pico Ruivo, Cabo Girão and Câmara de Lobos, and excludes the airport.
+- [ ] Madeira fixture's base pins include Pico Ruivo and Cabo Girão and exclude the airport; Câmara de Lobos (a municipality/freguesia) is in the gazetteer but not a base pin.
 - [ ] Missing image, description, Wikipedia link or opening hours → field left empty.
 
 **Verify:** `go test ./internal/adapters/api/...`.
@@ -318,12 +319,17 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Pure function: places (aliases) plus index rows go in; mentions per place, writer counts and itineraries come out.
 - Rules from the research: case rule, stoplist, nested-name suppression by position, overrides.
 - Re-rank places: writer count first, then sitelinks; keep the ~200 cap.
+- **Writer-mentioned places skip the type filter**, like planner boosts; a Deny type still drops them (owner decision, October 10, 2026).
+- **Destination context rule:** a mention counts only when its post (or section) is about the destination, not just a same-name place elsewhere in Portugal. Use indexed destination phrases (e.g. "Madeira", "Funchal") per post.
 
 **Acceptance**
 - [ ] "São Pedro de Alcântara" doesn't count as "Alcântara".
 - [ ] "praia" in running text doesn't match.
 - [ ] The three Clérigos entries merge into one.
 - [ ] Itinerary days are ordered by first mention.
+- [ ] São Jorge, Monte, Ponta do Sol and Teleférico do Funchal show as writer pins although their types aren't in `PlaceTypes`.
+- [ ] "Bom Jesus do Monte" in a post about Braga doesn't count for Monte (Madeira).
+- [ ] **Precision:** 40 random first mentions on the real Madeira gazetteer, hand-reviewed, ≥90% right place (2a baseline: 31/40, 34/40 with the alias fixes).
 
 **Verify:** `go test ./internal/writermap/...`.
 
