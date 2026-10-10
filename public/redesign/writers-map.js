@@ -7,6 +7,8 @@
     // mapDestination/mapTileUrl/mapAttribution, and the contract's named slots.
     var leafletCSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     var leafletJS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    var imageryTiles = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg';
+    var imageryAttribution = 'EOxCloudless <a href="https://cloudless.eox.at">cloudless.eox.at</a> by <a href="https://eox.at">EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2016 &amp; 2017), <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>';
     var osmTiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     var osmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
     var layers = new Map();
@@ -142,11 +144,18 @@
             map = window.L.map(canvas, { scrollWheelZoom: false }).setView([latitude, longitude], 12);
             window.L.control.scale({ imperial: false }).addTo(map);
         }
-        var tileURL = (shell.dataset.mapTileUrl || osmTiles).replace(/%7B([zxy])%7D/gi, '{$1}');
-        tileLayer = window.L.tileLayer(tileURL, {
+        var tileURL = (shell.dataset.mapTileUrl || imageryTiles).replace(/%7B([zxy])%7D/gi, '{$1}');
+        var layer = window.L.tileLayer(tileURL, {
             maxZoom: 19,
-            attribution: shell.dataset.mapAttribution || osmAttribution
-        }).addTo(map);
+            attribution: shell.dataset.mapAttribution || (tileURL === osmTiles ? osmAttribution : imageryAttribution)
+        });
+        tileLayer = layer;
+        if (tileURL !== osmTiles) layer.on('tileerror', function () {
+            if (tileLayer !== layer) return;
+            map.removeLayer(layer);
+            tileLayer = window.L.tileLayer(osmTiles, { maxZoom: 19, attribution: osmAttribution }).addTo(map);
+        });
+        layer.addTo(map);
     }
 
     function loadPlaces(currentRequest) {

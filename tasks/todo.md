@@ -168,7 +168,10 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `go test ./cmd/design-preview`.
 
 ### 3e. Choose a free satellite/terrain basemap · **blocks 3d**
-- [ ] Done
+- [x] Done
+
+**Implementation (2026-10-11):** EOX 2016 imagery selected and verified in the preview; terms are
+recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 
 **Owns:** `docs/maintenance.md` (basemap section), `public/redesign/writers-map.js` (tile URL default and attribution only, after 3a)
 
