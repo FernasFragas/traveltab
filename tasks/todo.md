@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, needs owner review), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -85,7 +85,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `go test ./internal/writermap/... ./writerdata/`.
 
 ### 1f. Add the fields the Funchal mockup needs · *contract change, owner review*
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/1f-funchal-fields.tdd.md); contract approved October 10, 2026
 
 **Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/destinationdata_test.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `docs/writers-map-contract.md`
 
@@ -98,9 +98,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Fixture filled: some places with opening hours, some without.
 - The contract was frozen on October 8, so this lands as its own small contract PR after owner review.
 
-**Verify:** `go test ./internal/writermap/...`; **owner reviews the contract change**.
+**Verify:** `go test ./internal/writermap/...`; **owner reviewed and approved the contract change October 10, 2026**.
 
-**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off. **Done:** contract approved October 8, 2026. 1f follows as a contract PR.
+**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off. **Done:** contract approved October 8, 2026. The separate 1f contract change was approved October 10, 2026.
 
 ---
 
