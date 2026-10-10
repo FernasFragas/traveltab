@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 size and lookup measurements are recorded; coverage of the 55 research places remains unavailable and PR 5 stays gated. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, needs owner review), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -14,15 +14,15 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Run from the repo root: `make build`, `make test`, `make lint`.
 - **Tests never hit the network:** use the PR 1 fixture, the fake source, the fake summarizer, `httptest` and recorded responses.
 - **No post text stored, logged or committed:** names, positions and AI summaries only.
-- Past 2× an estimate or 5 files → split here first.
+- Past 5 files → split here first.
 
 ---
 
-## PR 1 — Contracts, Data and Flags (≈5 h) · needs: none
+## PR 1 — Contracts, Data and Flags · needs: none
 
 **Goal:** freeze everything parallel work depends on. No user-visible change.
 
-### 1a. Write the source data and policy — 1 h
+### 1a. Write the source data and policy
 - [x] Done
 
 **Owns:** `writerdata/sources.json`, `writerdata/overrides.json`, `writerdata/embed.go`, `docs/maintenance.md`
@@ -33,7 +33,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `make build`; document review.
 
-### 1b. Define the types, ports and contract — 1.5 h
+### 1b. Define the types, ports and contract
 - [x] Done
 
 **Owns:** `internal/writermap/destinationdata.go`, `internal/application/writermap.go`, `docs/writers-map-contract.md`
@@ -51,7 +51,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `make build`; **owner reviews the contract doc** (approved October 8, 2026).
 
-### 1c. Add the Madeira fixture, fake source and fake summarizer — 1 h · *after 1b*
+### 1c. Add the Madeira fixture, fake source and fake summarizer · *after 1b*
 - [x] Done
 
 **Owns:** `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`
@@ -62,7 +62,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/writermap/...`.
 
-### 1d. Add the feature flags — 0.5 h · **integrator**
+### 1d. Add the feature flags · **integrator**
 - [x] Done
 
 **Owns:** `internal/config/env.go`, `internal/config/env_test.go`, `internal/config/flags.go`, `internal/config/flags_test.go`
@@ -71,7 +71,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/config/...`; CI green.
 
-### 1e. Add the fields the mockup needs — 1 h · *contract change, before the owner review*
+### 1e. Add the fields the mockup needs · *contract change, before the owner review*
 - [x] Done — [TDD evidence](../docs/tdd/1e-mockup-fields.tdd.md)
 
 **Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/destinationdata_test.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `writerdata/sources.json`, `writerdata/embed_test.go`, `docs/writers-map-contract.md`
@@ -84,13 +84,29 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/writermap/... ./writerdata/`.
 
-**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off. **Done:** contract approved October 8, 2026.
+### 1f. Add the fields the Funchal mockup needs · *contract change, owner review*
+- [ ] Done
+
+**Owns:** `internal/writermap/destinationdata.go`, `internal/writermap/destinationdata_test.go`, `internal/writermap/writermaptest/fake.go`, `internal/writermap/writermaptest/fake_test.go`, `internal/writermap/writermaptest/testdata/madeira.json`, `docs/writers-map-contract.md`
+
+- Place panel gains `opening_hours` (optional text, from Wikidata P3025/P8626/P8627) and `wikipedia_url` (optional).
+- Plan stops gain `distance_km` from the previous stop (straight line, as in the planner; 0 for the first stop).
+- **Remove the 1e fields the Funchal layout no longer uses:**
+  - `writers_pick` on plan stops (the "Writers' pick" chip is gone)
+  - GeoJSON `writers` (the "All writers" filter is gone) and `has_summary` (the Summaries chip is gone)
+  - itinerary-day `distance_km` and `walk_minutes` (the walk card is gone)
+- Fixture filled: some places with opening hours, some without.
+- The contract was frozen on October 8, so this lands as its own small contract PR after owner review.
+
+**Verify:** `go test ./internal/writermap/...`; **owner reviews the contract change**.
+
+**PR 1 done when:** contract doc (with 1e) approved; fixture and fakes build; flags default off. **Done:** contract approved October 8, 2026. 1f follows as a contract PR.
 
 ---
 
-## PR 2 — Index Spike (≈3 h) · needs: none · *parallel with PR 1*
+## PR 2 — Index Spike · needs: none · *parallel with PR 1*
 
-### 2a. Measure index size, lookup speed and precision — 3 h · single agent
+### 2a. Measure index size, lookup speed and precision · single agent
 - [ ] Done
 
 **Owns:** `tasks/writers-map-spike/` (throwaway), `tasks/writers-map-results.md`
@@ -108,11 +124,11 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 3 — Map Shell Behind the Flag (≈6 h) · needs: PR 1
+## PR 3 — Map Shell Behind the Flag · needs: PR 1
 
 **Goal:** with `WRITERS_MAP=1`, every destination shows the new map with fixture data. With it off, Waze is unchanged.
 
-### 3a. Write the core map JS and CSS — 1.5 h
+### 3a. Write the core map JS and CSS
 - [ ] Done
 
 **Owns:** `public/redesign/writers-map.js`, `public/redesign/writers-map.css`
@@ -125,7 +141,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** exercised by 3c.
 
-### 3b. Wire the template and fixture endpoints — 1.5 h · **integrator**
+### 3b. Wire the template and fixture endpoints · **integrator**
 - [ ] Done
 
 **Owns:** `views/map_card.go.tpl`, `views/index.go.tpl`, `views/place_panel.go.tpl` (minimal; 7a builds it out), `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/writermap_test.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
@@ -137,7 +153,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/adapters/httpserver/...` (flag on and off; bad slug → 404; bad coordinates → 400; escaping).
 
-### 3c. Add the design-preview scenario — 1 h
+### 3c. Add the design-preview scenario
 - [ ] Done
 
 **Owns:** `cmd/design-preview/writersmap.go`, `cmd/design-preview/writersmap_test.go`
@@ -151,30 +167,42 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./cmd/design-preview`.
 
-### 3d. Lay out the card like the mockup — 2 h · *after 3a, 3b*
+### 3e. Choose a free satellite/terrain basemap · **blocks 3d**
+- [ ] Done
+
+**Owns:** `docs/maintenance.md` (basemap section), `public/redesign/writers-map.js` (tile URL default and attribution only, after 3a)
+
+- Check the terms of candidate imagery sources (Esri World Imagery, EOX Sentinel-2 cloudless, others found) for free use on this site: licence, attribution, request limits, key needed or not.
+- Free sources only: no paid plans, no keys tied to billing.
+- Record the choice and its attribution in `docs/maintenance.md`; the tile URL stays configurable with OSM as the fallback.
+- **No source fits → stop and ask the owner.** Never ship a source without clear terms.
+
+**Verify:** owner reviews the recorded terms; preview shows the imagery with its attribution.
+
+### 3d. Lay out the card like the Funchal mockup · *after 3a, 3b, 3e*
 - [ ] Done
 
 **Owns:** `public/redesign/writers-map-layout.css`, `views/map_card.go.tpl` (layout markup only, with 3b's agreement)
 
-- Header: "Writers' Map", subtitle, green **"Always ready"** pill in the `status` slot (turns amber for partial, grey for unavailable).
-- ≥1024 px: map ≈60% and `panel` slot ≈40% side by side, equal height. <1024 px: panel stacks under the map as a card.
-- Chip row overlaid top-left of the map (`layers` slot); "All writers" select top-right.
-- Map chrome: zoom, north arrow, scale bar, basemap thumbnail toggle (OSM / satellite). **Check first** that the imagery source's terms allow free use on this site (Esri World Imagery is not confirmed); if no free source fits, leave the satellite option out.
+- Header: "Writers' Map" with an **info icon** (tooltip explains the four layers). No status pill: the `status` slot is a short inline message, shown only for partial or unavailable data.
+- ≥1024 px: map ≈65% and `panel` slot side by side, equal height. <1024 px: panel stacks under the map as a card.
+- Legend-chip row top-right above the map (`layers` slot).
+- Basemap from 3e. Map chrome: zoom and scale bar only.
 - Empty panel state: "Pick a place on the map".
 
 **Acceptance**
-- [ ] Preview at 375 and 1440 px matches the mockup's layout (not its photos).
+- [ ] Preview at 375 and 1440 px matches the Funchal mockup's layout (not its photos).
 - [ ] No horizontal scroll at 375 px.
 
-**Verify:** preview check side by side with the mockup.
+**Verify:** preview check side by side with the Funchal mockup.
 
-**PR 3 done when:** both flag states pass tests; preview shows the shell in the mockup layout.
+**PR 3 done when:** both flag states pass tests; preview shows the shell in the Funchal layout on the satellite basemap.
 
 ---
 
-## PR 4 — Base Layer (≈5 h) · needs: PR 1
+## PR 4 — Base Layer · needs: PR 1
 
-### 4a. Write the Wikidata nearby adapter — 2.5 h
+### 4a. Write the Wikidata nearby adapter
 - [ ] Done
 
 **Owns:** `internal/adapters/api/wikidatanearby.go`, `wikidatanearby_test.go`, `internal/adapters/api/testdata/wikidata_*.json`
@@ -182,16 +210,16 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - Implements `application.BasePlaceSource`.
 - SPARQL `wikibase:around`: ≈40 km for cities (overrides first for islands/regions), visitable-class filter, infrastructure excluded, capped at ~200 ranked by sitelinks (writer count re-ranks later in 6a).
 - Visitable classes come from the planner's generated list (`planner.PlaceTypes`, skipping `never`), not a second list.
-- Returns en/pt labels and aliases, English description, P18 image with Commons credit (reuse `wikimedia.go` parsing), and sitelinks.
+- Returns en/pt labels and aliases, English description, P18 image with Commons credit (reuse `wikimedia.go` parsing), sitelinks, the English Wikipedia URL, and opening hours when present (P3025 open days with P8626/P8627 opening and closing times, as one short line like "Open daily · 9:00 – 18:00").
 - Retry-After honored; identified user agent.
 
 **Acceptance**
 - [ ] Madeira fixture includes Pico Ruivo, Cabo Girão and Câmara de Lobos, and excludes the airport.
-- [ ] Missing image or description → field left empty.
+- [ ] Missing image, description, Wikipedia link or opening hours → field left empty.
 
 **Verify:** `go test ./internal/adapters/api/...`.
 
-### 4b. Add the cache decorator — 1.5 h
+### 4b. Add the cache decorator
 - [ ] Done
 
 **Owns:** `internal/adapters/sqlite/wikidatanearby.go`, `wikidatanearby_test.go`
@@ -203,7 +231,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test -race ./internal/adapters/sqlite/...` (20 concurrent callers → 1 query).
 
-### 4c. Warm from search suggestions — 1 h · **integrator**
+### 4c. Warm from search suggestions · **integrator**
 - [ ] Done
 
 **Owns:** `internal/adapters/httpserver/suggest.go`, `suggest_test.go`, `cmd/web/main.go` (wiring only)
@@ -216,9 +244,9 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 5 — Writers Index and Monthly Sync (≈9 h) · needs: PR 1, **PR 2 verdict**
+## PR 5 — Writers Index and Monthly Sync · needs: PR 1, **PR 2 verdict**
 
-### 5a. Create the index tables and store — 2 h
+### 5a. Create the index tables and store
 - [ ] Done
 
 **Owns:** `internal/adapters/sqlite/writerindex.go`, `writerindex_test.go`
@@ -233,7 +261,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/adapters/sqlite/...`.
 
-### 5b. Extract name phrases and day headings — 2.5 h
+### 5b. Extract name phrases and day headings
 - [ ] Done
 
 **Owns:** `internal/writermap/extract.go`, `extract_test.go`, `internal/writermap/testdata/posts/`
@@ -246,7 +274,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/writermap/...`.
 
-### 5c. Write the WordPress client and host limiter — 2 h
+### 5c. Write the WordPress client and host limiter
 - [ ] Done
 
 **Owns:** `internal/adapters/api/wordpress.go`, `wordpress_test.go`, `internal/adapters/api/hostlimiter.go`, `hostlimiter_test.go`
@@ -257,7 +285,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test -race` with `httptest` covering pages, 400 past the last page, 403, timeout and robots disallow.
 
-### 5d. Build the monthly sync job — 2.5 h · *after 5a–5c* · **integrator**
+### 5d. Build the monthly sync job · *after 5a–5c* · **integrator**
 - [ ] Done
 
 **Owns:** `internal/writermap/sync.go`, `sync_test.go`, `internal/adapters/sqlite/database.go` (table creation call), `cmd/web/main.go` (start only when `WRITERS_SYNC` is on)
@@ -278,11 +306,11 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 6 — Matching and the Real Source (≈5.5 h) · needs: PR 4, PR 5
+## PR 6 — Matching and the Real Source · needs: PR 4, PR 5
 
 > **6a can start right after PR 1** against the fixture, and waits in its branch until PR 6 opens. On-demand excerpts were dropped on October 6 — summaries (PR 9) replace them.
 
-### 6a. Write the matcher and itinerary assembly — 2.5 h · *early*
+### 6a. Write the matcher and itinerary assembly · *early*
 - [ ] Done
 
 **Owns:** `internal/writermap/match.go`, `match_test.go`, `internal/writermap/itinerary.go`, `itinerary_test.go`
@@ -299,7 +327,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/writermap/...`.
 
-### 6b. Compose the real source and wire it — 3 h · **integrator**
+### 6b. Compose the real source and wire it · **integrator**
 - [ ] Done
 
 **Owns:** `internal/writermap/source.go`, `source_test.go`, `internal/adapters/sqlite/writerdestination.go`, `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
@@ -318,33 +346,33 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 7 — Map UI Features (≈22.5 h) · needs: PR 3 · *runs on the fake source, parallel with PRs 4–6*
+## PR 7 — Map UI Features · needs: PR 3 · *runs on the fake source, parallel with PRs 4–6*
 
-### 7a. Build pins and panels — 4 h
+### 7a. Build pins and the place panel
 - [ ] Done
 
 **Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl` (builds out 3b's minimal template), `internal/adapters/httpserver/placepanel_test.go`
 
-- Writer pins drawn above base pins and sized by writer count.
-- Base panel: description, photo with credit, Wikipedia link.
-- Writer panel adds "Mentioned by N writers", the summary labelled *AI summary* when present, and one link per writer's post with a language label. **No quoted blog text.**
-- Save button slot `data-save-qid`.
-- **Mockup look:** writer pins terracotta with pen icon, base pins green; top places labelled; clusters with a count.
-- **Panel order:** photo + close · name · *kind · area* · Want to visit (heart) · writer monograms (initials, colour from host; "+N") with "Mentioned by N writers" · description · **AI summary** card · **From Travel Writers** (post title, blog name, language chip, external-link icon; first 2, then "View all (N)") · "Plan with these places".
+- Writer pins drawn above base pins.
+- **Pin look:** writer pins orange with their writer count, notable (base) places blue; big places labelled. Plan pins (7b) are green numbered and itinerary pins (7c) purple numbered.
+- **Panel order:** photo + close · name · *kind · area* · writer monograms (initials, colour from host; "+N") with "Mentioned by N writers" · **AI summary** (labelled) · description · **opening hours** (when present) · **View on Wikipedia** · **Save to plan** (primary, `data-save-qid`) · **View writers' posts (N)**.
+- "View writers' posts (N)" expands the full list: post title, blog name, language chip, external-link icon. **No quoted blog text.**
+- Base-only panel: description, photo with credit, opening hours, Wikipedia link, Save to plan.
 
 **Acceptance**
-- [ ] Every writer is listed with a post link.
-- [ ] A writer pin without a summary shows links only, with no empty box.
+- [ ] Every writer is listed with a post link once the list is expanded.
+- [ ] A writer pin without a summary shows no empty summary box.
+- [ ] A place without opening hours or Wikipedia link shows no empty row.
 - [ ] A base-only destination shows "No writer mentions here yet".
 
 **Verify:** `go test ./internal/adapters/httpserver/ -run PlacePanel`; preview at 375 and 1440 px.
 
-### 7b. Draw the day plan layer — 3 h
+### 7b. Draw the day plan layer
 - [ ] Done
 
 **Owns:** `public/redesign/map-dayplan.js`, `views/itinerary_body.go.tpl`, `views/trip_card.go.tpl`
 
-- The plan response emits stop coordinates per day; the script fires `travelmap:plan-updated` and draws numbered pins per day with a day toggle.
+- The plan response emits stop coordinates per day; the script fires `travelmap:plan-updated` and draws green numbered pins per day with a day toggle.
 
 **Acceptance**
 - [ ] Generating, regenerating and clearing a plan leave no duplicate layers.
@@ -352,39 +380,39 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** template test for the emitted data; preview check.
 
-### 7c. Add writers' itinerary layers and the walk card — 3 h
+### 7c. Add writers' itinerary layers
 - [ ] Done
 
 **Owns:** `public/redesign/map-itineraries.js`, `public/redesign/map-itineraries.css`
 
-- Lists itineraries in the `layers` slot; one is drawn at a time, with ordered pins and lines, labelled as the writer's route and linked to the post; hidden when there are none.
-- Route drawn as a dashed terracotta line.
-- **Walk card** bottom-left of the map: route name, from → to, km and walking time, "View full route" (fits the map to the route).
+- One writer's itinerary is drawn at a time: purple numbered pins in order and a line between them, labelled as the writer's route and linked to the post.
+- The **Writers' itineraries** chip (7f) shows the layer; when there are several, a small picker in the `layers` slot chooses one. Hidden when there are none.
 
 **Verify:** preview check with fixture itineraries.
 
-### 7d. Add "Want to visit" — 2 h
+### 7d. Add "Save to plan"
 - [ ] Done
 
 **Owns:** `public/redesign/map-saved.js`
 
-- Binds `data-save-qid` buttons; "Saved" list in the `saved` slot; `localStorage` wrapped in try/catch.
+- Binds `data-save-qid` buttons; saved QIDs kept in `localStorage` (try/catch). The button toggles to "Saved".
+- On the next plan request the saved QIDs are added as `include` (via `htmx:configRequest`), so 7e seeds them into the days.
+- A line next to the plan form: "N saved places will be included", with a clear link.
 
 **Acceptance**
 - [ ] Saves survive a reload.
-- [ ] Blocked storage hides the buttons.
-- [ ] No server calls.
+- [ ] Blocked storage hides the buttons and the line.
+- [ ] Saving makes no server call; only the plan request carries the QIDs.
 
 **Verify:** preview check, including a private window.
 
-### 7e. Add "Plan with these places" — 3.5 h
+### 7e. Seed saved places into the plan (`Include`)
 - [ ] Done
 
-**Owns:** `internal/planner/types.go`, `internal/planner/build.go` (seeding only), `internal/planner/build_test.go`, `internal/adapters/httpserver/trip.go` (query parsing in `planTrip`), `trip_test.go`, `public/redesign/map-itineraries.js` (button only, after 7c)
+**Owns:** `internal/planner/types.go`, `internal/planner/build.go` (seeding only), `internal/planner/build_test.go`, `internal/adapters/httpserver/trip.go` (query parsing in `planTrip`), `trip_test.go`
 
-- `planner.Request` gains `Include []Place` (max ~12); `Build` places them into days first (by writer day where possible), then fills with nearby places as today.
-- `/plan` accepts the QIDs in the query string, resolved through `WriterMapSource.Place` (the fake in PR 7, the real source after PR 6); unknown QIDs are ignored. The URL is shareable.
-- Button on each writer's itinerary layer.
+- `planner.Request` gains `Include []Place` (max ~12); `Build` places them into days first (nearest together where possible), then fills with nearby places as today.
+- `/plan` accepts the QIDs in the query string (`include`), resolved through `WriterMapSource.Place` (the fake in PR 7, the real source after PR 6); unknown QIDs are ignored. The URL is shareable.
 
 **Acceptance**
 - [ ] All included places appear in the plan; requests without `Include` produce today's plans byte-for-byte.
@@ -392,57 +420,75 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`; preview check.
 
-### 7f. Add layer chips and the writer filter — 2 h · *after 7a*
+### 7f. Add the legend chips · *after 7a*
 - [ ] Done
 
 **Owns:** `public/redesign/map-layers.js`, `public/redesign/map-layers.css`
 
-- Chips: **Base places**, **Writers' places**, **Summaries** (only places with `has_summary`; hidden while `WRITERS_AI` is off), **My plan** (badge with day count; disabled until a plan exists).
-- "All writers" select lists blog names; picking one shows only that writer's pins.
+- Four chips that toggle their layer: **Notable places** (blue) · **Writers' pins** (orange) · **Your day plan** (green; disabled until a plan exists) · **Writers' itineraries** (purple; hidden when there are none).
 - Chip state is buttons with `aria-pressed`; remembered per tab in `sessionStorage` (try/catch).
 
 **Acceptance**
 - [ ] Every chip toggles its layer without redrawing the others.
-- [ ] Writer filter + Writers' chip off → no writer pins, no error.
+- [ ] All chips off → empty map, no error.
 
 **Verify:** preview check.
 
-### 7g. Enrich the itinerary cards — 3 h · *after 7b, 7e*
+### 7g. Rework the itinerary rows · *after 7b, 7e, 7i*
 - [ ] Done
 
-**Owns:** `internal/planner/schedule.go`, `internal/planner/schedule_test.go`, `internal/adapters/api/openmeteo_forecast.go`, `openmeteo_forecast_test.go` (daily max temperature and weather code only), `views/itinerary_body.go.tpl` (after 7b)
+**Owns:** `views/itinerary_body.go.tpl` (after 7b), `internal/adapters/httpserver/itinerary_test.go`
 
-- Per day: **max temperature and condition** (Open-Meteo `temperature_2m_max`, `weather_code`; free) next to the walking km.
-- Per stop: **time slot** from a 9:00 start, a visit length per kind and walking time; **walking minutes to the next stop** (4.5 km/h on straight-line distance × 1.3).
-- Tag chip: **Writers' pick** when writers mention the stop (via `WriterMapSource`), else the kind (Historic site, Museum …).
-- **View on map** button: scrolls to the map and turns on **My plan**.
+- Buttons: **Export to calendar** (existing ICS) and **View on map** (scrolls to the map and turns on **Your day plan**).
+- Per day: number, date, **max temperature and condition** (from 7i's daily forecast), km walking, collapse toggle.
+- Per stop: number, Commons photo, name, *kind · distance from the previous stop* (`distance_km`, 1f), short description.
 
 **Acceptance**
-- [ ] Plans without forecast data show no temperature, not "0°".
-- [ ] Time slots never pass 19:00; extra stops move to "also suggested".
+- [ ] Days without forecast data show no temperature, not "0°".
+- [ ] The first stop of a day shows no distance.
 
-**Verify:** `go test ./internal/planner/... ./internal/adapters/...`; preview check.
+**Verify:** `go test ./internal/adapters/httpserver/ -run Itinerary`; preview check.
 
-### 7h. Add "Suggested based on writers" chips — 2 h · *after 7e*
+### 7i. Build the hero and the richer weather card
 - [ ] Done
 
-**Owns:** `views/trip_card.go.tpl` (chip row only, after 7b), `internal/adapters/httpserver/trip_themes.go`, `trip_themes_test.go`
+**Owns:** `views/weather_display.go.tpl`, `views/weather_card.go.tpl`, `public/redesign/destination.css`, `views/index.go.tpl` (header order only), `internal/adapters/api/openweather.go`, `openweather_test.go`, `internal/adapters/api/openmeteo_forecast.go`, `openmeteo_forecast_test.go`, `internal/adapters/httpserver/presentation.go`, `presentation_test.go`
 
-- Up to 4 theme chips under the plan form (e.g. Iconic sites, Local neighbourhoods, Great food, Scenic views), built from the kinds of the destination's top writer places.
-- Picking chips adds those places to `Include` (7e) before "Generate personalized plan".
-- Hidden on base-only destinations.
+- **Header:** brand · search · tabs (search moves before the tabs).
+- **Hero:** full-width photo; city, *region, country* (region from the geocoder's `admin1`), one-line description (manifest tagline, else the Wikidata description).
+- **Weather card over the hero:** temperature, condition, **feels like** and **wind** (already parsed in `openweather.go`), humidity, **sunset**.
+- **4-day forecast:** day, icon, high/low from Open-Meteo daily (`temperature_2m_max`, `temperature_2m_min`, `weather_code`; free), added next to today's `precipitation_sum`.
+- Phone: the weather card stacks under the photo.
 
-**Verify:** `go test ./internal/adapters/httpserver/ -run Themes`; preview check.
+**Acceptance**
+- [ ] Any city shows region and country; a city without a region shows country only.
+- [ ] Forecast unavailable → the card shows current weather only, no empty row.
+
+**Verify:** `go test ./internal/adapters/api/... ./internal/adapters/httpserver/...`; preview at 375 and 1440 px.
+
+### 7k. Add travelers to the plan form · *after 7b, 7e*
+- [ ] Done
+
+**Owns:** `views/trip_card.go.tpl` (travelers field only, after 7b), `internal/planner/stays.go`, `internal/planner/stays_test.go`, `internal/adapters/httpserver/trip.go` (travelers parsing only, after 7e)
+
+- **Travelers** select (1–8, default 2) next to Start date and End date.
+- Passed to `BookingURL` as `group_adults`; kept in the shareable `/plan` URL.
+
+**Acceptance**
+- [ ] The Booking link carries the chosen number of travelers.
+- [ ] A missing or invalid value falls back to 2.
+
+**Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`.
 
 **Integrator for PR 7:** whoever lands last adds the script and style tags to `views/index.go.tpl` and runs the full preview journey on fixture data.
 
-**PR 7 done when:** with `WRITERS_MAP=1`, the full UI works on fixture data.
+**PR 7 done when:** with `WRITERS_MAP=1`, the full UI works on fixture data and matches the Funchal mockup's layout.
 
 ---
 
-## PR 8 — Verify and Launch (≈9 h) · needs: PR 6, PR 7
+## PR 8 — Verify and Launch · needs: PR 6, PR 7
 
-### 8a. Add resilience tests — 3 h
+### 8a. Add resilience tests
 - [ ] Done
 
 **Owns:** `internal/writermap/resilience_test.go`, `internal/adapters/httpserver/writermap_resilience_test.go`
@@ -455,7 +501,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test -race ./...`.
 
-### 8b. Measure live behavior — 3 h
+### 8b. Measure live behavior
 - [ ] Done
 
 **Owns:** `tasks/writers-map-results.md`
@@ -468,18 +514,19 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - [ ] Search latency warm and cold for Madeira, Lisbon, a non-Portuguese city, and a city with no writers.
 - [ ] Panel open time (local read only).
 - [ ] Live 40-match precision.
+- [ ] Share of Madeira and Lisbon places with Wikidata opening hours.
 - [ ] 20 itinerary posts parsed.
 - [ ] The owner sets the targets and the launch date.
 
 **Verify:** results document.
 
-### 8c. Run journeys and write docs — 3 h
+### 8c. Run journeys and write docs
 - [ ] Done
 
 **Owns:** `cmd/design-preview/fixture.go`, `README.md`, `docs/architecture.md`, `CHANGELOG.md`
 
-- Journey at 375 and 1440 px and keyboard-only: search → pins → panel → post link → save → plan → day layer → writer itinerary → plan with these places.
-- Final screenshots next to [the mockup](../docs/ideas/writers-map-mockup.png); differences other than the planned ones (plan, **Target Output**) are fixed or listed.
+- Journey at 375 and 1440 px and keyboard-only, on at least two cities: search → hero + weather → pins → panel → writers' posts → save to plan → plan with travelers → day layer → writer itinerary.
+- Final screenshots next to [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>); differences other than the planned ones (plan, **Target Output**) are fixed or listed.
 
 **Verify:** `go test ./cmd/design-preview`; `make test lint build`.
 
@@ -495,11 +542,11 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 ---
 
-## PR 9 — AI Summaries via LLM Gateway (≈9 h) · needs: PR 5, PR 6 · **9c needs the LLM Gateway project**
+## PR 9 — AI Summaries via LLM Gateway · needs: PR 5, PR 6 · **9c needs the LLM Gateway project**
 
 **Goal:** an English 2–3 sentence "what writers say" summary per writer pin, made monthly on the server. Not on the launch path: 9a–9b merge with `WRITERS_AI` off; 9c–9d wait for LLM Gateway.
 
-### 9a. Cut passages around mentions — 2 h · *early, after PR 1*
+### 9a. Cut passages around mentions · *early, after PR 1*
 - [ ] Done
 
 **Owns:** `internal/writermap/passages.go`, `passages_test.go`, `internal/writermap/testdata/posts/` (add only)
@@ -513,7 +560,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test ./internal/writermap/...`.
 
-### 9b. Build the summary job and store — 3 h · *after 5d, 9a* · **integrator**
+### 9b. Build the summary job and store · *after 5d, 9a* · **integrator**
 - [ ] Done
 
 **Owns:** `internal/writermap/summaries.go`, `summaries_test.go`, `internal/adapters/sqlite/writersummaries.go`, `writersummaries_test.go`, `internal/adapters/sqlite/database.go` (table creation call), `cmd/web/main.go` (`wireSummaries`, only when `WRITERS_AI` is on)
@@ -530,7 +577,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **PR 9a–9b done when:** merged with `WRITERS_AI` off; the fake summarizer fills Madeira locally.
 
-### 9c. Write the LLM Gateway adapter — 2 h · ***blocked on the LLM Gateway project***
+### 9c. Write the LLM Gateway adapter · ***blocked on the LLM Gateway project***
 - [ ] Done
 
 **Owns:** `internal/adapters/api/llmgateway.go`, `llmgateway_test.go`
@@ -540,7 +587,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 
 **Verify:** `go test` with `httptest` covering success, timeout, 4xx/5xx.
 
-### 9d. Check quality and switch AI on — 2 h · *after 9c* · owner sign-off
+### 9d. Check quality and switch AI on · *after 9c* · owner sign-off
 - [ ] Done
 
 **Owns:** `tasks/writers-map-results.md`
