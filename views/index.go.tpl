@@ -20,11 +20,13 @@
     <link rel="stylesheet" href="/redesign/discovery.css">
     <link rel="stylesheet" href="/redesign/search.css">
     <link rel="stylesheet" href="/redesign/guide.css">
+    <link rel="stylesheet" href="/redesign/writers-map.css">
     <script defer src="/vendor/htmx.org/dist/htmx.min.js"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
     <script defer src="/redesign/discovery.js"></script>
     <script defer src="/redesign/search.js"></script>
+    <script defer src="/redesign/writers-map.js"></script>
 </head>
 <body>
     <a class="tt-skip-link" href="#overview">Skip to trip overview</a>
