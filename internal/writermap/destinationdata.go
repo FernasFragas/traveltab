@@ -6,9 +6,6 @@ import (
 	"time"
 )
 
-// WalkSpeedKMH converts an itinerary day's straight-line distance into walking minutes.
-const WalkSpeedKMH = 5.0
-
 // ErrPlaceNotFound means the destination has no place with the requested QID.
 var ErrPlaceNotFound = errors.New("place not found")
 
@@ -34,17 +31,19 @@ type DestinationResult struct {
 
 // Place is a Wikidata place with the names and metadata used by matching and panels.
 type Place struct {
-	QID         string   `json:"qid"`
-	Names       []string `json:"names"`
-	Lat         float64  `json:"lat"`
-	Lon         float64  `json:"lon"`
-	Kind        string   `json:"kind,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Area        string   `json:"area,omitempty"` // Wikidata P131 label, e.g. "Câmara de Lobos"
-	Photo       string   `json:"photo,omitempty"`
-	PhotoCredit string   `json:"photo_credit,omitempty"`
-	PhotoURL    string   `json:"photo_url,omitempty"`
-	Sitelinks   int      `json:"sitelinks,omitempty"`
+	QID          string   `json:"qid"`
+	Names        []string `json:"names"`
+	Lat          float64  `json:"lat"`
+	Lon          float64  `json:"lon"`
+	Kind         string   `json:"kind,omitempty"`
+	Description  string   `json:"description,omitempty"`
+	Area         string   `json:"area,omitempty"` // Wikidata P131 label, e.g. "Câmara de Lobos"
+	OpeningHours string   `json:"opening_hours,omitempty"`
+	WikipediaURL string   `json:"wikipedia_url,omitempty"`
+	Photo        string   `json:"photo,omitempty"`
+	PhotoCredit  string   `json:"photo_credit,omitempty"`
+	PhotoURL     string   `json:"photo_url,omitempty"`
+	Sitelinks    int      `json:"sitelinks,omitempty"`
 }
 
 // Mention records that a writer's post mentions a place. Post content is never included.
@@ -77,12 +76,9 @@ type Itinerary struct {
 	Days       []ItineraryDay `json:"days"`
 }
 
-// ItineraryDay is one day of a writer route. QIDs are in first-mention order. DistanceKM is the
-// straight-line distance between consecutive stops, and WalkMinutes is that distance at WalkSpeedKMH.
+// ItineraryDay is one day of a writer route. QIDs are in first-mention order.
 type ItineraryDay struct {
-	QIDs        []string `json:"qids"`
-	DistanceKM  float64  `json:"distance_km"`
-	WalkMinutes int      `json:"walk_minutes"`
+	QIDs []string `json:"qids"`
 }
 
 // SourceStatus reports the latest known state of one allowlisted writer source.

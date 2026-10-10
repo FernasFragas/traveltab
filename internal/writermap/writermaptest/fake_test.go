@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"math"
 	"os"
 	"testing"
 	"time"
 
-	"weatherservice/internal/planner"
 	"weatherservice/internal/writermap"
 	"weatherservice/writerdata"
 
@@ -111,6 +109,21 @@ func TestFakeSourcePlace_ReturnsThePlaceWithItsSummary(t *testing.T) {
 	assert.Equal(t, "Pico Ruivo", place.Names[0])
 	require.NotNil(t, summary)
 	assert.Contains(t, summary.EnglishText, "high mountain hike")
+}
+
+func TestFakeSourcePlace_ReturnsOptionalPanelDetails(t *testing.T) {
+	fixture := loadMadeiraFixture(t)
+	source := &FakeSource{Result: fixture.DestinationResult}
+
+	withHours, _, err := source.Place(context.Background(), writermap.Area{Name: "Madeira"}, "Q43179137")
+	require.NoError(t, err)
+	assert.Equal(t, "Open daily · 9:00 – 18:00", withHours.OpeningHours)
+	assert.Empty(t, withHours.WikipediaURL)
+
+	withoutHours, _, err := source.Place(context.Background(), writermap.Area{Name: "Madeira"}, "Q25444")
+	require.NoError(t, err)
+	assert.Empty(t, withoutHours.OpeningHours)
+	assert.NotEmpty(t, withoutHours.WikipediaURL)
 }
 
 func TestFakeSourcePlace_ReturnsNilSummaryWhenNoneExists(t *testing.T) {
@@ -277,21 +290,19 @@ func TestMadeiraFixture_BlogNamesMatchTheSourcesFile(t *testing.T) {
 	}
 }
 
-func TestMadeiraFixture_DayDistanceAndWalkTimeMatchTheStops(t *testing.T) {
-	fixture := loadMadeiraFixture(t)
-	places := map[string]planner.Place{}
-	for _, place := range fixture.Places {
-		places[place.QID] = planner.Place{ID: place.QID, Lat: place.Lat, Lon: place.Lon}
+func TestMadeiraFixture_ItineraryDaysOnlyCarryStops(t *testing.T) {
+	data, err := os.ReadFile("testdata/madeira.json")
+	require.NoError(t, err)
+	var fixture struct {
+		Itineraries []struct {
+			Days []map[string]any `json:"days"`
+		} `json:"itineraries"`
 	}
-
+	require.NoError(t, json.Unmarshal(data, &fixture))
 	for _, itinerary := range fixture.Itineraries {
-		for i, day := range itinerary.Days {
-			want := 0.0
-			for j := 1; j < len(day.QIDs); j++ {
-				want += planner.DistanceKM(places[day.QIDs[j-1]], places[day.QIDs[j]])
-			}
-			assert.InDelta(t, want, day.DistanceKM, 0.05, "%s day %d", itinerary.PostRef, i+1)
-			assert.Equal(t, int(math.Round(day.DistanceKM*60/writermap.WalkSpeedKMH)), day.WalkMinutes, "%s day %d", itinerary.PostRef, i+1)
+		for _, day := range itinerary.Days {
+			assert.Len(t, day, 1)
+			assert.Contains(t, day, "qids")
 		}
 	}
 }

@@ -1,8 +1,9 @@
 # Writers' Map Contracts
 
-**Status:** approved by the owner on 2026-10-08 and **frozen**. A change needs a contract PR
-(see **Rules for Agents** in [the plan](../tasks/plan.md)). The Go types and ports exist; the
-HTTP routes, plan-stop flag, browser API and template hooks below are planned and not yet served.
+**Status:** original contract approved by the owner on 2026-10-08. The separate 1f contract
+change was approved by the owner on 2026-10-10 (see **Rules for Agents** in
+[the plan](../tasks/plan.md)). The Go types and ports exist; the HTTP routes, plan-stop distance,
+browser API and template hooks below are planned and not yet served.
 
 This document is the integration boundary for the writers' map. Go models live in
 `internal/writermap`; application ports live in `internal/application/writermap.go`. All
@@ -15,11 +16,10 @@ coordinates use decimal degrees (latitude, then longitude). QIDs are Wikidata it
   Writer matches are `Mentions`, keyed by QID: one entry per post with writer host, blog name
   (the source's `name` in `writerdata/sources.json`), post reference, URL, title, language and the
   matched character positions. Mentions never carry post text. A place carries `area`, its Wikidata
-  P131 (located in) label, when known.
+  P131 (located in) label, plus optional `opening_hours` (from P3025/P8626/P8627) and
+  `wikipedia_url` (English Wikipedia), when known.
 - `Itineraries` are writer routes, one entry per post. Each of its `days` has `qids` (stops in
-  first-mention order), `distance_km` (straight-line distance between consecutive stops, as in the
-  planner) and `walk_minutes` (that distance at `writermap.WalkSpeedKMH`, 5 km/h, rounded). The
-  writer's walk card shows one day.
+  first-mention order).
 - Each `SourceStatuses` entry has a `status` of `active` (the last sync finished), `partial` (the
   last sync stopped part-way), `blocked` (403 or `robots.txt`; no more requests) or `removed`
   (taken down; rows purged). `checked_at` is left out when the source was never checked. The
@@ -67,8 +67,6 @@ coordinates are `[longitude, latitude]`. `properties` contains:
 | `photo_url` | string | Image URL, when present |
 | `sitelinks` | integer | Wikimedia sitelink count |
 | `writer_count` | integer | Distinct writer hosts mentioning the place |
-| `writers` | string array | Those writer hosts, for the "All writers" filter; empty for base places |
-| `has_summary` | boolean | Whether the place has an AI summary, for the Summaries layer |
 | `panel_url` | string | URL to fetch panel fragment |
 
 The top-level `complete` boolean indicates whether all configured sources were checked. A result
@@ -77,7 +75,9 @@ can contain useful features while incomplete.
 ## Place panel
 
 `GET /map/:dest/:qid?lat=…&lon=…` returns an HTML fragment with the place name, *kind · area* when known,
-optional description and attributed photo, writer count, optional AI summary, and writer links.
+optional description and attributed photo, writer count, optional AI summary, optional opening hours,
+an optional English Wikipedia link, and writer links. Missing opening hours or Wikipedia URL leave
+no empty row or link in the panel.
 Each writer link carries `href`, `title`, `host`, `blog_name` and `language`; the blog name is
 shown under the post title and the language as a label. The summary block is
 omitted entirely when no summary exists and is labelled **AI summary** when present. No source post
@@ -85,9 +85,8 @@ text or excerpts appear in the fragment. The save control exposes `data-save-qid
 
 ## Plan stops
 
-Each stop in the trip plan's itinerary carries `writers_pick`, true when the stop's QID has a
-writer count of 1 or more. The itinerary card shows it as a **Writers' pick** chip. Stops without
-a QID, or with no writer mentions, are `false`.
+Each stop in the trip plan's itinerary carries `distance_km`, the straight-line distance from the
+previous stop in the same day, as calculated by `planner.DistanceKM`. The first stop has `0`.
 
 ## Browser extension API
 
