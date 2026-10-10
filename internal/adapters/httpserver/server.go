@@ -24,13 +24,15 @@ type Server struct {
 	weatherReporters     application.Reporter[application.GeneralWeatherInfo]
 	videoStreamReporters application.Reporter[application.VideosStream]
 
-	tripPlanner    application.TripPlanner
-	photoSource    application.DestinationPhotoSource
-	placeSuggester application.PlaceSuggester
-	suggestions    *suggestionCache
-	guideSource    application.CityGuideSource
-	now            func() time.Time
-	newCityLimiter *newCityLimiter
+	tripPlanner       application.TripPlanner
+	photoSource       application.DestinationPhotoSource
+	placeSuggester    application.PlaceSuggester
+	suggestions       *suggestionCache
+	guideSource       application.CityGuideSource
+	writerMapSource   application.WriterMapSource
+	writersMapEnabled bool
+	now               func() time.Time
+	newCityLimiter    *newCityLimiter
 }
 
 type TemplateData struct {
@@ -85,6 +87,8 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 	app.Get("/stats", server.showStats)
 
 	app.Get("/plan", server.planTrip)
+	app.Get("/map/:dest.geojson", server.writerMapGeoJSON)
+	app.Get("/map/:dest/:qid", server.writerMapPlace)
 
 	app.Get("/trip/:slug.ics", server.exportICS)
 
@@ -140,6 +144,7 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 
 	data, _ := s.loadDestination(ctx, generalInfo)
 	view := s.destinationPresentation(data.GeneralInfo, data.Videos, photo)
+	writerMap := s.writerMapCard(data.GeneralInfo)
 
 	// Check if it's an HTMX request
 	if ctx.Get("HX-Request") == "true" {
@@ -150,6 +155,7 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 			"GeneralInfo":  data.GeneralInfo,
 			"Videos":       data.Videos,
 			"Trip":         s.tripCardFor(data.GeneralInfo),
+			"WriterMap":    writerMap,
 		})
 	}
 
@@ -160,6 +166,7 @@ func (s *Server) listGeneralInfo(ctx *fiber.Ctx) error {
 		"GeneralInfo":  data.GeneralInfo,
 		"Videos":       data.Videos,
 		"Trip":         s.tripCardFor(data.GeneralInfo),
+		"WriterMap":    writerMap,
 	})
 }
 

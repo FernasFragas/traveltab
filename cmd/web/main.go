@@ -10,6 +10,7 @@ import (
 	"weatherservice/internal/application"
 	"weatherservice/internal/config"
 	"weatherservice/internal/guides"
+	"weatherservice/internal/writermap/writermaptest"
 )
 
 const port = ":8080"
@@ -43,6 +44,7 @@ func main() {
 		}
 	}()
 	server := httpserver.NewAppServer(reporters, videoStreamReporters, storage)
+	wireWritersMap(server)
 	server.SetPlaceSuggester(api.NewOpenMeteoGeocodingAPI(nil))
 
 	// The trip planner reads free, keyless sources. Each one goes through the SQLite cache, so a
@@ -70,6 +72,12 @@ func main() {
 	err = server.Listen(port)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func wireWritersMap(server *httpserver.Server) {
+	if config.LoadFeatureFlags().WritersMap {
+		server.SetWriterMapSource(writermaptest.NewMadeiraSource(), true)
 	}
 }
 

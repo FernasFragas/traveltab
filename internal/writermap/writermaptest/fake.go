@@ -2,6 +2,8 @@ package writermaptest
 
 import (
 	"context"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -20,6 +22,21 @@ var (
 )
 
 var ErrFakeUnavailable = errors.New("fake writer map source unavailable")
+
+//go:embed testdata/madeira.json
+var madeiraJSON []byte
+
+// NewMadeiraSource serves the compiled fixture in previews and flagged deployments.
+func NewMadeiraSource() *FakeSource {
+	var fixture struct {
+		writermap.DestinationResult
+		Summaries map[string]writermap.Summary `json:"summaries"`
+	}
+	if err := json.Unmarshal(madeiraJSON, &fixture); err != nil {
+		panic("invalid embedded Madeira fixture: " + err.Error())
+	}
+	return &FakeSource{Result: fixture.DestinationResult, Summaries: fixture.Summaries}
+}
 
 // FakeSource serves deterministic data for previews and offline tests.
 type FakeSource struct {

@@ -157,6 +157,7 @@ func (s *Server) tripPage(ctx *fiber.Ctx) error {
 		"PageTitle":       tripPageTitle(data.GeneralInfo.City, days, planned),
 		"PageDescription": tripPageDescription(data.GeneralInfo.City, days, planned),
 		"CanonicalURL":    "/trip/" + slug,
+		"WriterMap":       s.writerMapCard(data.GeneralInfo),
 	})
 }
 
