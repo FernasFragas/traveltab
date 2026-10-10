@@ -1,8 +1,15 @@
 {{ if .WriterMap -}}
+<link rel="stylesheet" href="/redesign/writers-map-layout.css">
 <div class="map-card" data-writers-map data-map-destination="{{ .WriterMap.Destination }}" data-map-lat="{{ .WriterMap.Lat }}" data-map-lon="{{ .WriterMap.Lon }}" data-map-url="{{ .WriterMap.URL }}"{{ with .WriterMap.TileURL }} data-map-tile-url="{{ . }}"{{ end }}{{ with .WriterMap.Attribution }} data-map-attribution="{{ . }}"{{ end }}>
-    <h3>Writers' Map</h3>
-    <div data-map-slot="layers"></div>
-    <div data-map-slot="status" role="status" hidden></div>
+    <div class="writers-map-heading">
+        <h3>Writers' Map</h3>
+        <span class="writers-map-help">
+            <button type="button" class="writers-map-info" aria-label="About map layers" aria-describedby="writers-map-layer-help"><i class="bi bi-info-circle" aria-hidden="true"></i></button>
+            <span id="writers-map-layer-help" class="writers-map-tooltip" role="tooltip">Explore notable places, writers' pins, your day plan, and writers' itineraries.</span>
+        </span>
+        <div data-map-slot="status" role="status" hidden></div>
+        <div data-map-slot="layers"></div>
+    </div>
     <div data-map-canvas></div>
     <div data-map-slot="panel"><p>Pick a place on the map</p></div>
     <div data-map-slot="saved"></div>
