@@ -31,6 +31,8 @@ type Server struct {
 	guideSource       application.CityGuideSource
 	writerMapSource   application.WriterMapSource
 	writersMapEnabled bool
+	writerMapTileURL  string
+	writerMapTileAttr string
 	now               func() time.Time
 	newCityLimiter    *newCityLimiter
 }

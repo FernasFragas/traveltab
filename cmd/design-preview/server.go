@@ -30,6 +30,10 @@ func newPreviewServerWithPhotos(mapOrigin string, slow bool, scenario string) (*
 	photos := &fixturePhotos{origin: mapOrigin, scenario: scenario}
 	server.SetDestinationPhotoSource(photos)
 	server.SetCityGuideSource(newFixtureGuides(scenario))
+	if scenario == "writers-map" {
+		server.SetWriterMapSource(newWriterMapPreviewSource(), true)
+		server.SetWriterMapTiles(mapOrigin+"fixture-tiles/{z}/{x}/{y}.png", "Local fixture tiles")
+	}
 	return server, photos, func() {}
 }
 

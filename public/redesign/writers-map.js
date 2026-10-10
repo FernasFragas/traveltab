@@ -142,7 +142,8 @@
             map = window.L.map(canvas, { scrollWheelZoom: false }).setView([latitude, longitude], 12);
             window.L.control.scale({ imperial: false }).addTo(map);
         }
-        tileLayer = window.L.tileLayer(shell.dataset.mapTileUrl || osmTiles, {
+        var tileURL = (shell.dataset.mapTileUrl || osmTiles).replace(/%7B([zxy])%7D/gi, '{$1}');
+        tileLayer = window.L.tileLayer(tileURL, {
             maxZoom: 19,
             attribution: shell.dataset.mapAttribution || osmAttribution
         }).addTo(map);

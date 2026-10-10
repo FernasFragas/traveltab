@@ -50,6 +50,7 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 		lat, lon      float64
 	}{
 		{"Tokyo", "jp", 35.6895, 139.6917}, {"Tavira", "pt", 37.1264, -7.6506}, {"Porto", "pt", 41.1494, -8.6108},
+		{"Madeira", "pt", 32.65, -16.9},
 	} {
 		if strings.EqualFold(city, place.name) {
 			city, country, lat, lon = place.name, place.country, place.lat, place.lon
@@ -232,7 +233,7 @@ func fixtureDelay(ctx context.Context, delay time.Duration) error {
 
 func validScenario(name string) bool {
 	switch name {
-	case "default", "photos-missing", "forecast-absent", "forecast-uncertain", "stays-0", "stays-1", "stays-6", "stays-unavailable", "videos-0", "videos-1", "videos-10", "fallback":
+	case "default", "photos-missing", "forecast-absent", "forecast-uncertain", "stays-0", "stays-1", "stays-6", "stays-unavailable", "videos-0", "videos-1", "videos-10", "fallback", "writers-map":
 		return true
 	default:
 		return false

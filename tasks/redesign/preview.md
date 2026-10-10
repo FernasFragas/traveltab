@@ -35,6 +35,21 @@ Stop the process with Ctrl-C when done. Use separate unused ports if another pre
 
 ## Stable destinations and routes
 
+For the writers' map preview, run with `-scenario writers-map`. Search **Madeira** for the
+embedded fixture with writer mentions, **Porto** for a base-only place, and **Coimbra** for an
+unavailable source. The map and place endpoints use the real handlers. Its tile URL points to
+`/fixture-tiles/{z}/{x}/{y}.png` on the local fixture origin; every valid XYZ path returns a
+synthetic tile, so the preview does not request live map tiles. The default scenario still shows
+the Waze fixture. With an isolated Chromium/Brave CDP browser running, verify both widths and
+two HTMX destination swaps with:
+
+```sh
+CDP_PORT=9227 node tasks/redesign/checks/writers-map-preview.browser.mjs
+```
+
+The script starts its own `writers-map` preview. Leaflet itself loads from the production
+unpkg URL; the GeoJSON and tiles are local.
+
 - **Lisbon** is the default, with country code `pt`, the local production hero, coordinates
   38.7223, -9.1393, six videos and four stays.
 - **Porto** has a fixture destination photo and always has zero videos, including under video-count
