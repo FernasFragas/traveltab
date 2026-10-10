@@ -183,7 +183,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Verify:** owner reviews the recorded terms; preview shows the imagery with its attribution.
 
 ### 3d. Lay out the card like the Funchal mockup · *after 3a, 3b, 3e*
-- [ ] Done
+- [x] Done
 
 **Owns:** `public/redesign/writers-map-layout.css`, `views/map_card.go.tpl` (layout markup only, with 3b's agreement)
 
@@ -194,8 +194,8 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Empty panel state: "Pick a place on the map".
 
 **Acceptance**
-- [ ] Preview at 375 and 1440 px matches the Funchal mockup's layout (not its photos).
-- [ ] No horizontal scroll at 375 px.
+- [x] Preview at 375 and 1440 px matches the Funchal mockup's layout (not its photos).
+- [x] No horizontal scroll at 375 px.
 
 **Verify:** preview check side by side with the Funchal mockup.
 
