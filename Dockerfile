@@ -1,5 +1,5 @@
 # ---------- Browser libraries ----------
-FROM node:24.18.1-bookworm-slim AS assets
+FROM node:26.9.0-bookworm-slim AS assets
 
 WORKDIR /app
 COPY package.json package-lock.json ./
