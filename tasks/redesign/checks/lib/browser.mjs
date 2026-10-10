@@ -7,7 +7,6 @@
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import { createServer } from 'node:net';
 import { inflateSync, deflateSync, crc32 } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
@@ -65,12 +64,8 @@ const syntheticPNG = mode => {
 };
 
 // Attaches to the first about:blank page of the isolated browser.
-export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227, htmxPath = process.env.HTMX_PATH } = {}) => {
-  assert.ok(htmxPath, 'Set HTMX_PATH to the pinned 1.9.11 script');
-  const htmx = await readFile(htmxPath);
-  const template = await readFile(new URL('views/index.go.tpl', `file://${repoRoot}`), 'utf8');
-  const integrity = template.match(/htmx.org@1\.9\.11" integrity="sha384-([^"]+)"/)?.[1];
-  assert.equal(createHash('sha384').update(htmx).digest('base64'), integrity, 'Pinned HTMX integrity');
+export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227 } = {}) => {
+  const { dependencies } = JSON.parse(await readFile(new URL('package.json', `file://${repoRoot}`), 'utf8'));
   const tabs = await (await fetch(`http://127.0.0.1:${cdpPort}/json/list`, { signal: AbortSignal.timeout(5000) })).json();
   const tab = tabs.find(t => t.type === 'page');
   assert.ok(tab, 'Start an isolated Chromium/Brave with an about:blank tab');
@@ -107,10 +102,7 @@ export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227, htmxPath
       const { requestId, request } = message.params;
       const url = new URL(request.url);
       let action;
-      if (request.url === 'https://unpkg.com/htmx.org@1.9.11') {
-        action = call('Fetch.fulfillRequest', { requestId, responseCode: 200, body: htmx.toString('base64'), responseHeaders: [
-          { name: 'Content-Type', value: 'text/javascript' }, { name: 'Access-Control-Allow-Origin', value: '*' }] });
-      } else if (state.overrides.has(url.pathname) && ['127.0.0.1', 'localhost'].includes(url.hostname)) {
+      if (state.overrides.has(url.pathname) && ['127.0.0.1', 'localhost'].includes(url.hostname)) {
         action = call('Fetch.fulfillRequest', { requestId, ...state.overrides.get(url.pathname) });
       } else if (thirdParty.includes(url.hostname)) {
         action = url.hostname === 'www.youtube-nocookie.com' || state.imageMode === 'block'
@@ -140,11 +132,11 @@ export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227, htmxPath
   };
   await call('Page.enable'); await call('Runtime.enable'); await call('Network.enable');
   await call('Network.setCacheDisabled', { cacheDisabled: true });
-  await call('Fetch.enable', { patterns: [{ urlPattern: 'https://unpkg.com/htmx.org@1.9.11' }, { urlPattern: 'http://127.0.0.1:*/*' },
+  await call('Fetch.enable', { patterns: [{ urlPattern: 'http://127.0.0.1:*/*' },
     ...thirdParty.map(host => ({ urlPattern: `https://${host}/*` }))] });
   const product = (await call('Browser.getVersion')).product;
   const viewport = (width, height, extra = {}) => call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width <= 768, ...extra });
-  const ready = () => until("document.readyState === 'complete' && window.htmx?.version === '1.9.11' && !!document.querySelector('.destination-title, .tt-empty-state, .trip-card')");
+  const ready = () => until(`document.readyState === 'complete' && window.htmx?.version === ${JSON.stringify(dependencies["htmx.org"])} && !!document.querySelector('.destination-title, .tt-empty-state, .trip-card')`);
   // Waits until the hero image (when there is one) has either loaded or failed, and fonts are ready.
   const settle = async () => {
     await evaluate('document.fonts.ready.then(() => true)');

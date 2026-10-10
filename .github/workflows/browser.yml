@@ -1,0 +1,68 @@
+name: Browser checks
+
+# Server tests prove the browser libraries are served; these checks prove the page still
+# works with them. They run when a PR changes the libraries (including Dependabot PRs).
+on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/browser.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Browser smoke
+    runs-on: ubuntu-latest
+    env:
+      PREVIEW_URL: http://127.0.0.1:8087
+      CDP_PORT: 9227
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install browser libraries
+        run: make assets
+
+      # The deterministic design preview uses fixtures; the checks block external requests.
+      # --no-sandbox: Ubuntu's AppArmor blocks Chrome's sandbox on hosted runners.
+      - name: Start preview and Chrome
+        run: |
+          go build -o "$RUNNER_TEMP/preview" ./cmd/design-preview
+          "$RUNNER_TEMP/preview" &
+          google-chrome --headless=new --no-sandbox --remote-debugging-port="$CDP_PORT" \
+            --user-data-dir="$RUNNER_TEMP/chrome" about:blank &
+          for _ in $(seq 1 60); do
+            curl -sf -o /dev/null "$PREVIEW_URL/styles.css" &&
+              curl -sf -o /dev/null "http://127.0.0.1:$CDP_PORT/json/version" && exit 0
+            sleep 0.5
+          done
+          echo "Preview or Chrome did not start"; exit 1
+
+      - name: Interaction regressions
+        run: node tasks/redesign/checks/interaction-regressions.mjs
+
+      - name: Browser smoke
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/browser-smoke
+        run: node tasks/redesign/checks/browser-smoke.mjs
+
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-smoke
+          path: ${{ runner.temp }}/browser-smoke

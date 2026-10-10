@@ -4,7 +4,7 @@
 // pixels behind every line of text (so photo overlays, gradients and chips are covered), focus
 // rings from before/after screenshots, and names/landmarks from the browser's accessibility tree.
 //
-//   CDP_PORT=9327 HTMX_PATH=/tmp/htmx.js [AXE_PATH=/path/to/axe.min.js] [OUTPUT_DIR=dir] node <this file>
+//   CDP_PORT=9327 [AXE_PATH=/path/to/axe.min.js] [OUTPUT_DIR=dir] node <this file>
 //
 // The script starts (and stops) its own preview processes on free localhost ports and attaches to
 // an isolated Chromium/Brave that has its own debugging port and temporary profile. AXE_PATH is

@@ -1,24 +1,18 @@
 // Run the default design preview (six Lisbon videos; Porto has a fixture photo and no videos) and an isolated Chromium.
-// HTMX_PATH is the exact pinned local script; external requests are blocked (no playback proof).
-// PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 HTMX_PATH=/tmp/htmx.js node <this file>
+// Browser libraries are served locally; external requests are blocked (no playback proof).
+// PREVIEW_URL=http://127.0.0.1:8087 CDP_PORT=9227 node <this file>
 // For negative-control runs, PLANNER_PATH and DISCOVERY_PATH can supply local JS variants.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 
 const base = process.env.PREVIEW_URL || 'http://127.0.0.1:8087';
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Use a local fixture');
-assert.ok(process.env.HTMX_PATH, 'HTMX_PATH must point to HTMX 1.9.11');
-const script = await readFile(process.env.HTMX_PATH);
+const { dependencies } = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8'));
 // Optional local variants prove that the assertions fail against each original bug.
 const overrides = new Map();
 for (const [name, path] of [['planner.js', process.env.PLANNER_PATH], ['discovery.js', process.env.DISCOVERY_PATH]]) {
   if (path) overrides.set(`/redesign/${name}`, (await readFile(path)).toString('base64'));
 }
-const template = await readFile(new URL('../../../views/index.go.tpl', import.meta.url), 'utf8');
-const integrity = template.match(/htmx.org@1\.9\.11" integrity="sha384-([^"]+)"/)?.[1];
-assert.ok(integrity, 'Template must pin HTMX 1.9.11 with SRI');
-assert.equal(createHash('sha384').update(script).digest('base64'), integrity, 'Pinned HTMX integrity');
 const tabs = await (await fetch(`http://127.0.0.1:${process.env.CDP_PORT || 9227}/json/list`, { signal: AbortSignal.timeout(5000) })).json();
 const tab = tabs.find(tab => tab.type === 'page');
 assert.ok(tab, 'Start a separate Chromium instance with an about:blank tab');
@@ -56,9 +50,6 @@ ws.addEventListener('message', event => {
         responseHeaders: [{ name: 'Content-Type', value: 'text/javascript' }] });
     } else if (['127.0.0.1', 'localhost'].includes(url.hostname)) {
       action = call('Fetch.continueRequest', { requestId });
-    } else if (url.href === 'https://unpkg.com/htmx.org@1.9.11') {
-      action = call('Fetch.fulfillRequest', { requestId, responseCode: 200, body: script.toString('base64'),
-        responseHeaders: [{ name: 'Content-Type', value: 'text/javascript' }, { name: 'Access-Control-Allow-Origin', value: '*' }] });
     } else {
       action = call('Fetch.failRequest', { requestId, errorReason: 'BlockedByClient' });
     }
@@ -142,7 +133,7 @@ try {
   await call('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
   await call('Page.navigate', { url: `${base}/?interaction-regression=${Date.now()}` });
   await until('document.readyState === "complete" && !!window.htmx && !!window.travelTabPlannerWired && !!window.travelTabDiscoveryWired');
-  assert.equal(await evaluate('htmx.version'), '1.9.11');
+  assert.equal(await evaluate('htmx.version'), dependencies['htmx.org']);
   console.log(`Environment: ${(await call('Browser.getVersion')).product}; HTMX ${await evaluate('htmx.version')}`);
   await activateVideo();
   console.log('PASS: valid initial video, title, expected embed URL, repeated activation');

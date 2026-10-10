@@ -4,6 +4,9 @@
 *.db
 *.db-*
 bin
+.tmp
+node_modules
+public/vendor
 
 # Keep repository documentation out of the deployment build context.
 docs

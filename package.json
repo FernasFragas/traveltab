@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "vendor": "rm -rf public/vendor && mkdir -p public/vendor/bootstrap/dist/css public/vendor/bootstrap-icons/font/fonts public/vendor/htmx.org/dist && cp node_modules/bootstrap/dist/css/bootstrap.min.css public/vendor/bootstrap/dist/css/ && cp node_modules/bootstrap-icons/font/bootstrap-icons.min.css public/vendor/bootstrap-icons/font/ && cp node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2 node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff public/vendor/bootstrap-icons/font/fonts/ && cp node_modules/htmx.org/dist/htmx.min.js public/vendor/htmx.org/dist/"
+  },
+  "dependencies": {
+    "bootstrap": "5.2.3",
+    "bootstrap-icons": "1.11.3",
+    "htmx.org": "1.9.11"
+  }
+}

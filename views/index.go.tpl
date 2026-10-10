@@ -9,8 +9,8 @@
     <meta name="theme-color" content="#F7F3EB">
     <link rel="icon" href="/traveltab.png" type="image/png">
     <!-- Bootstrap utilities support the existing planner until task 04 replaces it. -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="/vendor/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/font/bootstrap-icons.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="/redesign/discovery.css">
     <link rel="stylesheet" href="/redesign/search.css">
     <link rel="stylesheet" href="/redesign/guide.css">
-    <script defer src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+    <script defer src="/vendor/htmx.org/dist/htmx.min.js"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
     <script defer src="/redesign/discovery.js"></script>
