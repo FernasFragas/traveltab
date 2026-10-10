@@ -208,6 +208,6 @@ flowchart LR
 - **Spike thresholds** (300 MB, 200 ms, 90%): proposed, not agreed.
 - **Target date:** not set.
 - **Look and feel:** [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) is the target for every city, with the differences listed under **Target Output**. *Decided October 10, 2026* (replaces the October 7 Lisbon mockup).
-- **Satellite basemap:** required. *Decided October 10, 2026; source open (3e).*
+- **Satellite basemap:** required; EOX 2016 EOxCloudless selected with attribution and OSM fallback. *Requirement decided October 10, 2026; source accepted October 11, 2026 (3e).*
 - **Travelers:** on the plan form, passed to the Booking link. *Decided October 10, 2026.*
 - **Light/dark toggle and header saved counter:** not built. *Decided October 10, 2026.*

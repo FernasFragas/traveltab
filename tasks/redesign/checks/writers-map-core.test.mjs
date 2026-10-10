@@ -16,6 +16,40 @@ test('loads pinned Leaflet assets when a map shell appears', () => {
   assert.equal(app.assets('LINK')[0].crossOrigin, 'anonymous');
 });
 
+test('uses the freely licensed satellite tiles and their required credit by default', async () => {
+  const app = browser();
+  app.run();
+  app.mount();
+  await app.flush();
+  const tile = app.maps[0].tiles[0];
+  assert.equal(tile.url, 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg');
+  assert.match(tile.options.attribution, /EOxCloudless.*EOX IT Services GmbH.*Contains modified Copernicus Sentinel data 2016 &amp; 2017/);
+  assert.match(tile.options.attribution, /https:\/\/creativecommons.org\/licenses\/by\/4.0\//);
+});
+
+test('keeps configured tiles and attribution and falls back to OSM after an imagery error', async () => {
+  const app = browser();
+  app.run();
+  const shell = app.mount();
+  shell.root.dataset.mapTileUrl = '/tiles/{z}/{x}/{y}.png';
+  shell.root.dataset.mapAttribution = 'Configured tiles';
+  await app.flush();
+  assert.equal(app.maps[0].tiles[0].url, '/tiles/{z}/{x}/{y}.png');
+  assert.equal(app.maps[0].tiles[0].options.attribution, 'Configured tiles');
+  app.maps[0].tiles[0].emit('tileerror');
+  assert.equal(app.maps[0].tiles.at(-1).url, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+  assert.match(app.maps[0].tiles.at(-1).options.attribution, /OpenStreetMap/);
+});
+
+test('credits OSM when its URL is configured without an explicit credit', async () => {
+  const app = browser();
+  app.run();
+  const shell = app.mount();
+  shell.root.dataset.mapTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  await app.flush();
+  assert.match(app.maps[0].tiles[0].options.attribution, /OpenStreetMap/);
+});
+
 test('renders a keyboard list, emits selection, and shows partial data status', async () => {
   const app = browser();
   app.run();
@@ -24,7 +58,7 @@ test('renders a keyboard list, emits selection, and shows partial data status', 
   app.loadLeaflet();
   await app.flush();
   assert.equal(app.maps.length, 1);
-  assert.equal(app.maps[0].tiles[0].url, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+  assert.equal(app.maps[0].tiles[0].url, 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg');
   assert.equal(app.events[0].type, 'travelmap:ready');
   assert.equal(shell.status.textContent, 'Some map sources are unavailable.');
   const button = shell.list.children[0].children[0].children[0];
@@ -131,7 +165,12 @@ function browser({ failFetch = false, preloaded = true, delayFirstFetch = false 
         return map;
       },
       control: { scale() { return { addTo() {} }; } },
-      tileLayer(url, options) { return { url, options, addTo(map) { map.tiles.push(this); return this; } }; }
+      tileLayer(url, options) { return {
+        url, options,
+        on(name, callback) { this.listeners ??= new Map(); this.listeners.set(name, callback); return this; },
+        emit(name) { this.listeners?.get(name)?.(); },
+        addTo(map) { map.tiles.push(this); return this; }
+      }; }
     }
   };
   if (!preloaded) delete window.L;

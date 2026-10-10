@@ -142,10 +142,44 @@ happens.
 
 ## Writers' map
 
-**Status (2026-10-08):** only the contracts, fixture, embedded source data and flags exist
-(PR 1 in [tasks/todo.md](../tasks/todo.md)). There is no sync job, WordPress client, summary pass
-or map route yet, so the sync, robots and takedown rules below are requirements for that work, not
-current behaviour.
+**Status (2026-10-11):** the map shell and fixture routes exist. There is no sync job, WordPress
+client or summary pass yet, so the sync, robots and takedown rules below are requirements for that
+work, not current behaviour.
+
+### Basemap source (task 3e)
+
+The owner accepted this source and its older-image tradeoff on 2026-10-11.
+
+The default is EOX's **2016 EOxCloudless Sentinel-2** WMTS layer, `s2cloudless_3857`:
+`https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg`.
+EOX [licenses this year under CC BY 4.0](https://cloudless.eox.at/license-non-commercial),
+which permits commercial use with credit. Its required visible map credit is
+“EOxCloudless https://cloudless.eox.at by EOX IT Services GmbH (Contains modified Copernicus
+Sentinel data 2016 & 2017)”. The map credit links to EOX and the
+[CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/). No API key or billing account is
+needed for EOX's [direct WMTS integration](https://cloudless.eox.at/documentation/usage).
+EOX states a 4096-pixel maximum request size; the map requests 256-pixel tiles. No numeric tile
+request quota is published on those pages. The layer is fixed to 2016 imagery, so it cannot show
+recent construction. Its advertised coverage is global; only Funchal was checked directly.
+
+The choice was checked on 2026-10-11 against these alternatives:
+
+| Source | Licence and access | Decision |
+| --- | --- | --- |
+| [Esri World Imagery](https://developers.arcgis.com/rest/basemap-styles/service-data/) | [Token required](https://developers.arcgis.com/documentation/mapping-and-location-services/mapping/basemaps/introduction-static-basemap-tiles-service/); [2 million free tiles, then billed](https://developers.arcgis.com/pricing/). Esri and data-provider attribution required. | Excluded by the no billing-linked key rule. |
+| [EOX 2018–2025](https://cloudless.eox.at/license-non-commercial) | Free direct WMTS for noncommercial use under CC BY-NC-SA 4.0; commercial use requires a separate licence. Same 4096-pixel request limit; no numeric tile quota published. | Excluded because this site's commercial status need not be assumed. |
+| EOX 2016 | CC BY 4.0, direct WMTS without a key or fee, with the exact EOX credit above; same request limit. | Selected despite older, lower-detail imagery. |
+
+The map shell's `data-map-tile-url` and `data-map-attribution` override the default together for
+fixtures or a later provider. An explicit OSM URL gets the OSM credit if no credit is supplied.
+If a tile fails, the browser switches to
+[OpenStreetMap standard tiles](https://operations.osmfoundation.org/policies/tiles/) and their own
+credit. OSM is a best-effort fallback with no SLA; browser requests must preserve the Referer and
+normal cache headers, and must not prefetch large areas. On 2026-10-11, EOX's live WMTS capabilities
+listed `s2cloudless_3857` with the `GoogleMapsCompatible` matrix, and individual Funchal tiles at
+zoom 12 and 14 returned 256×256 JPEG imagery. The automated preview retains local fixture tiles;
+the optional `tasks/redesign/checks/writers-map-imagery-live.mjs` browser check verifies the live
+default and its on-map credit.
 
 The writers' map reads its allowlist from the embedded `writerdata/sources.json` file and reviewed
 matching policy from `writerdata/overrides.json`. Source status is `active`, `blocked` or `removed`;
