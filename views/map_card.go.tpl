@@ -1,5 +1,5 @@
 {{ if .WriterMap -}}
-<div class="map-card" data-writers-map data-map-destination="{{ .WriterMap.Destination }}" data-map-lat="{{ .WriterMap.Lat }}" data-map-lon="{{ .WriterMap.Lon }}" data-map-url="{{ .WriterMap.URL }}">
+<div class="map-card" data-writers-map data-map-destination="{{ .WriterMap.Destination }}" data-map-lat="{{ .WriterMap.Lat }}" data-map-lon="{{ .WriterMap.Lon }}" data-map-url="{{ .WriterMap.URL }}"{{ with .WriterMap.TileURL }} data-map-tile-url="{{ . }}"{{ end }}{{ with .WriterMap.Attribution }} data-map-attribution="{{ . }}"{{ end }}>
     <h3>Writers' Map</h3>
     <div data-map-slot="layers"></div>
     <div data-map-slot="status" role="status" hidden></div>

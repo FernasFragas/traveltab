@@ -154,16 +154,16 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** `go test ./internal/adapters/httpserver/...` (flag on and off; bad slug → 404; bad coordinates → 400; escaping).
 
 ### 3c. Add the design-preview scenario
-- [ ] Done
+- [x] Done
 
 **Owns:** `cmd/design-preview/writersmap.go`, `cmd/design-preview/writersmap_test.go`
 
 - Scenarios: Madeira (writers), a base-only city, sources unavailable. Local fixture tiles.
 
 **Acceptance**
-- [ ] 375 and 1440 px.
-- [ ] Two destination swaps leave one map.
-- [ ] Keyboard can reach the list.
+- [x] 375 and 1440 px.
+- [x] Two destination swaps leave one map.
+- [x] Keyboard can reach the list.
 
 **Verify:** `go test ./cmd/design-preview`.
 

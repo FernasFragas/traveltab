@@ -58,6 +58,7 @@ func main() {
 func fixtureOriginHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/fixture-photos/", fixturePhotoHandler)
+	mux.HandleFunc("/fixture-tiles/", fixtureTileHandler)
 	mux.HandleFunc("/", fixtureMapHandler)
 	return mux
 }

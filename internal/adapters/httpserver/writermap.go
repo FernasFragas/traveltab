@@ -15,12 +15,20 @@ type writerMapCardView struct {
 	Destination string
 	Lat, Lon    float64
 	URL         string
+	TileURL     string
+	Attribution string
 }
 
 // SetWriterMapSource enables the fixture-backed map only when the feature flag is on.
 func (s *Server) SetWriterMapSource(source application.WriterMapSource, enabled bool) {
 	s.writerMapSource = source
 	s.writersMapEnabled = enabled && source != nil
+}
+
+// SetWriterMapTiles supplies a fixture or chosen basemap for flagged map pages.
+func (s *Server) SetWriterMapTiles(tileURL, attribution string) {
+	s.writerMapTileURL = tileURL
+	s.writerMapTileAttr = attribution
 }
 
 func (s *Server) writerMapCard(info application.GeneralWeatherInfo) *writerMapCardView {
@@ -36,6 +44,8 @@ func (s *Server) writerMapCard(info application.GeneralWeatherInfo) *writerMapCa
 		Lat:         info.Lat,
 		Lon:         info.Lon,
 		URL:         "/map/" + url.PathEscape(slug) + ".geojson" + mapCoordinates(info.Lat, info.Lon),
+		TileURL:     s.writerMapTileURL,
+		Attribution: s.writerMapTileAttr,
 	}
 }
 
