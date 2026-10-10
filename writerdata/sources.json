@@ -8,7 +8,7 @@
   {"host":"theplanetd.com","name":"The Planet D","api_base":"https://theplanetd.com/wp-json/wp/v2/posts","language":"en","status":"active","checked_at":"2026-10-05"},
   {"host":"www.earthtrekkers.com","name":"Earth Trekkers","api_base":"https://www.earthtrekkers.com/wp-json/wp/v2/posts","language":"en","status":"active","checked_at":"2026-10-05"},
   {"host":"www.saltinourhair.com","name":"Salt in our Hair","api_base":"https://www.saltinourhair.com/wp-json/wp/v2/posts","language":"en","status":"active","checked_at":"2026-10-05"},
-  {"host":"travellemming.com","name":"Travel Lemming","api_base":"https://travellemming.com/wp-json/wp/v2/posts","language":"en","status":"active","checked_at":"2026-10-05"},
+  {"host":"travellemming.com","name":"Travel Lemming","api_base":"https://travellemming.com/wp-json/wp/v2/posts","language":"en","status":"blocked","checked_at":"2026-10-10"},
   {"host":"www.thecrowdedplanet.com","name":"The Crowded Planet","api_base":"https://www.thecrowdedplanet.com/wp-json/wp/v2/posts","language":"en","status":"active","checked_at":"2026-10-05"},
   {"host":"www.adventurouskate.com","name":"Adventurous Kate","api_base":"https://www.adventurouskate.com/wp-json/wp/v2/posts","language":"en","status":"active","checked_at":"2026-10-05"},
   {"host":"www.vagamundos.pt","name":"Vagamundos","api_base":"https://www.vagamundos.pt/wp-json/wp/v2/posts","language":"pt","status":"blocked","checked_at":"2026-10-05"},

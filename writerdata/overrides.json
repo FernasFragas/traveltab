@@ -1,7 +1,9 @@
 {
   "alias_removals": [
     {"place_name":"Aeroporto de Santana","aliases":["Ribeira Grande"]},
-    {"place_name":"Nossa Senhora da Conceição","aliases":["*"]}
+    {"place_name":"Nossa Senhora da Conceição","aliases":["*"]},
+    {"place_name":"Teleférico do Funchal","aliases":["Monte"]},
+    {"place_name":"Reserva Natural Parcial do Garajau","aliases":["Garajau"]}
   ],
   "merges": [
     {"canonical_name":"Igreja e Torre dos Clérigos","names":["Igreja dos Clérigos","Torre dos Clérigos"]}
