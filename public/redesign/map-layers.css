@@ -1,0 +1,31 @@
+button.writers-map-layer {
+    min-height: 32px;
+    font: inherit;
+    font-size: 11px;
+    color: inherit;
+    cursor: pointer;
+}
+
+button.writers-map-layer[aria-pressed="false"] {
+    color: #6b7280;
+    background: #f3f4f6;
+}
+
+button.writers-map-layer[aria-pressed="false"]::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--layer-color);
+}
+
+button.writers-map-layer:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button.writers-map-layer:focus-visible {
+    outline: 2px solid #2685ee;
+    outline-offset: 2px;
+}
+
+button.writers-map-layer[hidden] {
+    display: none;
+}

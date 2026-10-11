@@ -22,12 +22,18 @@
     <link rel="stylesheet" href="/redesign/guide.css">
     <link rel="stylesheet" href="/redesign/writers-map.css">
     <link rel="stylesheet" href="/redesign/writers-map-layout.css">
+    <link rel="stylesheet" href="/redesign/map-panel.css">
+    <link rel="stylesheet" href="/redesign/map-layers.css">
     <script defer src="/vendor/htmx.org/dist/htmx.min.js"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
     <script defer src="/redesign/discovery.js"></script>
     <script defer src="/redesign/search.js"></script>
     <script defer src="/redesign/writers-map.js"></script>
+    <script defer src="/redesign/map-panel.js"></script>
+    <script defer src="/redesign/map-dayplan.js"></script>
+    <script defer src="/redesign/map-saved.js"></script>
+    <script defer src="/redesign/map-layers.js"></script>
 </head>
 <body>
     <a class="tt-skip-link" href="#overview">Skip to trip overview</a>

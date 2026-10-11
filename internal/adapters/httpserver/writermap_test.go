@@ -158,3 +158,45 @@ func TestWriterMap_TripPageUsesTheFlaggedShell(t *testing.T) {
 	assert.Contains(t, body, `/map/funchal-pt.geojson?lat=32.65&amp;lon=-16.91`)
 	assert.NotContains(t, body, "Map by Waze")
 }
+
+// As a traveler, I want writers' routes on the map, so the browser receives each itinerary with
+// its post link and days of stops, and never the post's internal reference.
+func TestWriterMap_GeoJSONCarriesItineraries(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(writermaptest.NewMadeiraSource(), true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	var collection struct {
+		Itineraries []struct {
+			WriterHost string `json:"writer_host"`
+			PostURL    string `json:"post_url"`
+			PostTitle  string `json:"post_title"`
+			Language   string `json:"language"`
+			Days       []struct {
+				QIDs []string `json:"qids"`
+			} `json:"days"`
+		} `json:"itineraries"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(body), &collection))
+	require.Len(t, collection.Itineraries, 2)
+	first := collection.Itineraries[0]
+	assert.Equal(t, "www.earthtrekkers.com", first.WriterHost)
+	assert.Equal(t, "https://www.earthtrekkers.com/madeira-itinerary/", first.PostURL)
+	assert.Equal(t, "Madeira Itinerary", first.PostTitle)
+	assert.Equal(t, "en", first.Language)
+	require.Len(t, first.Days, 3)
+	assert.Equal(t, []string{"Q25444", "Q856866", "Q34799706"}, first.Days[0].QIDs)
+	assert.NotContains(t, body, "post_ref")
+}
+
+func TestWriterMap_GeoJSONHasEmptyItinerariesWhenThereAreNone(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(&writermaptest.FakeSource{Empty: true}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, `"itineraries":[]`)
+}

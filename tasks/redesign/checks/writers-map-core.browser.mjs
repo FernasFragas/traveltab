@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Runs the 3a shell against the real design-preview page before 3b adds its template.
+// Runs the 3a core against a hand-built shell on the real design-preview page (default scenario,
+// flag off, so the page has the core loaded but no map shell of its own).
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this file.
 import assert from 'node:assert/strict';
 import { connect, startPreview } from './lib/browser.mjs';
@@ -38,13 +39,9 @@ try {
         control: { scale: () => ({ addTo() {} }) },
         tileLayer: () => ({ addTo() {} })
       };
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = '/redesign/writers-map.css';
-      document.head.appendChild(style);
-      const script = document.createElement('script');
-      script.src = '/redesign/writers-map.js';
-      document.head.appendChild(script);
+      // Test the core alone: the fake places have no geometry for the PR 7 pin layers.
+      ['notable', 'writers', 'plan'].forEach(name => window.TravelMap.setLayerEnabled(name, false));
+      window.TravelMap.mount();
     })()`);
     await browser.until("document.querySelector('[data-map-slot=\"list\"] button') !== null");
     const state = await browser.evaluate(`(() => {
