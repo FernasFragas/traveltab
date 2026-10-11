@@ -28,6 +28,7 @@ const (
 	SunnyPoolSize     = 20
 	CandidatePoolSize = 60
 	MaxStays          = 6
+	MaxIncluded       = 12 // saved places one request can seed into the days
 )
 
 type Place struct {
@@ -38,11 +39,19 @@ type Place struct {
 	Types     []string // Wikidata "instance of" (P31) IDs
 	Image     string   // Wikimedia Commons file name, "" when there is none
 	Kind      Kind     // set by Rank; empty in source results
+
+	// Description is a short English line about the place (Wikidata description or the writers'
+	// map's), "" when there is none.
+	Description string
 }
 
 type DayForecast struct {
 	Date   time.Time // midnight in the city's time zone
 	RainMM *float64  // nil when Open-Meteo has no value
+
+	// MaxC, MinC and WeatherCode (a WMO code) are nil when Open-Meteo has no value.
+	MaxC, MinC  *float64
+	WeatherCode *int
 }
 
 type Forecast struct {
@@ -77,17 +86,20 @@ type Request struct {
 	City, Country string
 	Lat, Lon      float64
 	Start         time.Time
-	Days          int // 1..MaxDays
+	Days          int     // 1..MaxDays
+	Travelers     int     // 1..MaxTravelers; anything else is DefaultTravelers
+	Include       []Place // places the traveler saved; they go into the days before anything else
 }
 
 type Plan struct {
-	Request    Request
-	Days       []Day
-	Note       string // small-town or forecast message, "" when none
-	Center     Place
-	Stays      []Stay
-	StaysNote  string // set when places to stay couldn't be loaded
-	BookingURL string
+	Request       Request
+	Days          []Day
+	Note          string  // small-town or forecast message, "" when none
+	AlsoSuggested []Place // included places the days had no room for
+	Center        Place
+	Stays         []Stay
+	StaysNote     string // set when places to stay couldn't be loaded
+	BookingURL    string
 }
 
 type PlaceSource interface {

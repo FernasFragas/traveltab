@@ -129,3 +129,42 @@ func TestInitDB_CreatesTheSourceCacheTable(t *testing.T) {
 	require.NoError(t, createSourceCacheTable(old)) // running twice is how a restart sees it
 	assert.Equal(t, "source_cache", sourceCacheTableName(t, old))
 }
+
+type describedPlaceFake struct{ description string }
+
+func (f describedPlaceFake) PlacesNear(context.Context, float64, float64) ([]planner.Place, error) {
+	return []planner.Place{{ID: "Q1", Name: "Castle", Description: f.description}}, nil
+}
+
+func TestSourceCache_PlaceDescriptionSurvivesTheCache(t *testing.T) {
+	c := testStore.NewCachedPlaceSource(describedPlaceFake{"castle in Tavira, Portugal"}).(*cachedPlaces)
+	c.source = t.Name()
+
+	// The second call is answered from the stored row, which a failing source cannot replace.
+	_, err := c.PlacesNear(context.Background(), 37.1, -7.6)
+	require.NoError(t, err)
+	c.fetch = func(context.Context, float64, float64) ([]planner.Place, error) { return nil, errors.New("offline") }
+
+	places, err := c.PlacesNear(context.Background(), 37.1, -7.6)
+	require.NoError(t, err)
+	require.Len(t, places, 1)
+	assert.Equal(t, "castle in Tavira, Portugal", places[0].Description)
+}
+
+func TestSourceCache_RowsCachedBeforeDescriptionsStillLoad(t *testing.T) {
+	c := testStore.NewCachedPlaceSource(&cachePlaceFake{}).(*cachedPlaces)
+	c.source = t.Name()
+
+	// A row written before Description existed has no such key.
+	raw, err := compressJSON([]map[string]any{{"ID": "Q1", "Name": "Old row"}})
+	require.NoError(t, err)
+	_, err = testStore.db.Exec(`REPLACE INTO source_cache (key, fetched_at, data) VALUES (?, ?, ?);`,
+		c.key(37.1, -7.6), time.Now().Unix(), raw)
+	require.NoError(t, err)
+
+	places, err := c.PlacesNear(context.Background(), 37.1, -7.6)
+	require.NoError(t, err)
+	require.Len(t, places, 1)
+	assert.Equal(t, "Old row", places[0].Name)
+	assert.Empty(t, places[0].Description)
+}

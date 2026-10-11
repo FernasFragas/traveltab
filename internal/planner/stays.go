@@ -3,11 +3,19 @@ package planner
 import (
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
-const stayRadiusKM = StayRadiusM / 1000.0
+const (
+	stayRadiusKM = StayRadiusM / 1000.0
+
+	// MaxTravelers is the most the plan form offers; DefaultTravelers is used when a request
+	// carries none, or one outside 1..MaxTravelers.
+	MaxTravelers     = 8
+	DefaultTravelers = 2
+)
 
 // PickStays keeps the named places to stay within StayRadiusM of the plan center. The ones a
 // traveller can look up come first: a website, then stars, then distance, then name.
@@ -47,8 +55,13 @@ func PickStays(center Place, stays []Stay) []Stay {
 	return out
 }
 
-// BookingURL builds a Booking.com search for the city with the trip's dates filled in.
-func BookingURL(city, country string, start time.Time, days int) string {
+// BookingURL builds a Booking.com search for the city with the trip's dates and number of
+// adults filled in. travelers outside 1..MaxTravelers count as DefaultTravelers.
+func BookingURL(city, country string, start time.Time, days, travelers int) string {
+	if travelers < 1 || travelers > MaxTravelers {
+		travelers = DefaultTravelers
+	}
+
 	where := make([]string, 0, 2)
 	for _, part := range []string{city, country} {
 		if part != "" {
@@ -57,5 +70,6 @@ func BookingURL(city, country string, start time.Time, days int) string {
 	}
 	return "https://www.booking.com/searchresults.html?ss=" + url.QueryEscape(strings.Join(where, ", ")) +
 		"&checkin=" + start.Format(time.DateOnly) +
-		"&checkout=" + start.AddDate(0, 0, days).Format(time.DateOnly)
+		"&checkout=" + start.AddDate(0, 0, days).Format(time.DateOnly) +
+		"&group_adults=" + strconv.Itoa(travelers)
 }

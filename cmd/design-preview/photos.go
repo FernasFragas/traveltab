@@ -48,11 +48,11 @@ func (f *fixturePhotos) Photo(_ context.Context, id app.DestinationIdentity) (*a
 
 	switch strings.ToLower(id.City) + "/" + id.Country {
 	case "paris/FR":
-		return f.photo(id, "paris", "Fixture Photographer (Paris)"), nil
+		return f.described(f.photo(id, "paris", "Fixture Photographer (Paris)"), "capital and largest city of France"), nil
 	case "paris/US":
 		return f.photo(id, "paris-texas", "Fixture Photographer (Paris, Texas)"), nil
 	case "porto/PT":
-		return f.photo(id, "porto", "Fixture Photographer (Porto)"), nil
+		return f.described(f.photo(id, "porto", "Fixture Photographer (Porto)"), "city in northern Portugal"), nil
 	case "brokenimage/PT":
 		return f.photo(id, "missing", "Fixture Photographer (broken image)"), nil
 	case "photoerror/PT":
@@ -71,6 +71,13 @@ func (f *fixturePhotos) photo(id app.DestinationIdentity, name, credit string) *
 		License:   "CC BY-SA 4.0", LicenseURL: "https://creativecommons.org/licenses/by-sa/4.0/",
 		Width: fixturePhotoWidth, Height: fixturePhotoHeight, SourceID: "Q-" + name,
 	}
+}
+
+// described adds the Wikidata-style description the real source reads from the city entity.
+func (f *fixturePhotos) described(photo *app.DestinationPhoto, description string) *app.DestinationPhoto {
+	photo.Description = description
+
+	return photo
 }
 
 const (

@@ -6,10 +6,11 @@
         </div>
         {{ if . }}
             {{ with .Plan }}
-            {{ if or .ICSURL .KMLURL }}
+            {{ if or .ICSURL .KMLURL .Days }}
             <div class="itinerary-actions">
-                {{ if .ICSURL }}<a class="itinerary-action" href="{{ .ICSURL }}"><i class="bi bi-calendar-plus" aria-hidden="true"></i>Calendar export</a>{{ end }}
+                {{ if .ICSURL }}<a class="itinerary-action" href="{{ .ICSURL }}"><i class="bi bi-calendar-plus" aria-hidden="true"></i>Export to calendar</a>{{ end }}
                 {{ if .KMLURL }}<a class="itinerary-action" href="{{ .KMLURL }}"><i class="bi bi-map" aria-hidden="true"></i>Map export</a>{{ end }}
+                {{ if .Days }}<button type="button" class="itinerary-action itinerary-action-primary" data-view-on-map><i class="bi bi-geo-alt" aria-hidden="true"></i>View on map</button>{{ end }}
             </div>
             {{ end }}
             {{ end }}
@@ -31,6 +32,13 @@
                             <span class="itinerary-day-number">Day {{ $day.Number }}</span>
                             <span class="itinerary-day-date"> · {{ $day.Date }}</span>
                         </span>
+                        {{ if or $day.Temp $day.Condition }}
+                        <span class="itinerary-weather">
+                            {{ if $day.TempIcon }}<i class="bi {{ $day.TempIcon }}" aria-hidden="true"></i>{{ end }}
+                            {{ if $day.Temp }}<span class="itinerary-day-temp" data-day-temp>{{ $day.Temp }}</span>{{ end }}
+                            {{ with $day.Condition }}<span class="itinerary-day-condition">{{ . }}</span>{{ end }}
+                        </span>
+                        {{ end }}
                         <span class="itinerary-status">
                             {{ if $day.Rainy }}
                             <span class="itinerary-chip itinerary-chip-rain"><i class="bi bi-cloud-rain" aria-hidden="true"></i>Rain{{ if $day.RainMM }} · {{ $day.RainMM }}{{ end }}</span>
@@ -51,22 +59,26 @@
                     <div class="itinerary-day-body">
                         <div class="itinerary-stop-row">
                             <ol class="itinerary-stops">
-                                {{ range $day.Stops }}
-                                <li class="itinerary-stop" data-plan-stop data-name="{{ .Name }}" data-lat="{{ .Lat }}" data-lon="{{ .Lon }}">
+                                {{ range $i, $stop := $day.Stops }}
+                                <li class="itinerary-stop" data-plan-stop data-name="{{ $stop.Name }}" data-lat="{{ $stop.Lat }}" data-lon="{{ $stop.Lon }}">
                                     <figure class="itinerary-stop-media">
                                         <span class="itinerary-stop-fallback" aria-hidden="true"><i class="bi bi-image"></i></span>
-                                        {{ if .Image }}
-                                        <img class="itinerary-stop-photo" src="{{ .ImageURL 400 }}" alt="{{ .Name }}" width="400" loading="lazy" decoding="async"
+                                        {{ if $stop.Image }}
+                                        <img class="itinerary-stop-photo" src="{{ $stop.ImageURL 400 }}" alt="{{ $stop.Name }}" width="400" loading="lazy" decoding="async"
                                              onerror="this.closest('.itinerary-stop-media').classList.add('itinerary-stop-media-failed'); this.hidden = true;">
                                         <figcaption class="itinerary-stop-credit">
-                                            <a href="{{ .ImagePageURL }}" target="_blank" rel="noopener noreferrer">Photo: Wikimedia Commons</a>
+                                            <a href="{{ $stop.ImagePageURL }}" target="_blank" rel="noopener noreferrer">Photo: Wikimedia Commons</a>
                                         </figcaption>
                                         {{ end }}
                                         <span class="itinerary-stop-number" aria-hidden="true"></span>
                                     </figure>
                                     <div class="itinerary-stop-details">
-                                        <span class="itinerary-stop-name">{{ .Name }}</span>
-                                        {{ with .Kind }}<span class="itinerary-stop-kind">{{ if eq . "indoor" }}Indoors{{ else if eq . "outdoor" }}Outdoors{{ else if eq . "mixed" }}Indoor &amp; outdoor{{ else }}{{ . }}{{ end }}</span>{{ end }}
+                                        <span class="itinerary-stop-name">{{ $stop.Name }}</span>
+                                        {{ with $stop.Description }}<span class="itinerary-stop-description">{{ . }}</span>{{ end }}
+                                        <span class="itinerary-stop-meta">
+                                            {{ with $stop.Kind }}<span class="itinerary-stop-kind">{{ if eq . "indoor" }}Indoors{{ else if eq . "outdoor" }}Outdoors{{ else if eq . "mixed" }}Indoor &amp; outdoor{{ else }}{{ . }}{{ end }}</span>{{ end }}
+                                            {{ with index $day.Legs $i }}<span class="itinerary-stop-distance" data-stop-distance>{{ . }} from previous</span>{{ end }}
+                                        </span>
                                     </div>
                                 </li>
                                 {{ end }}
@@ -84,6 +96,13 @@
             </div>
             {{ else }}
             <p class="itinerary-note">No itinerary stops were returned for this plan.</p>
+            {{ end }}
+
+            {{ if .AlsoSuggested }}
+            <div class="itinerary-note itinerary-also-suggested">
+                <strong>Also suggested</strong> (your days are full):
+                {{ range $i, $p := .AlsoSuggested }}{{ if $i }}, {{ end }}<span data-also-suggested="{{ $p.ID }}">{{ $p.Name }}</span>{{ end }}
+            </div>
             {{ end }}
             {{ end }}
         {{ else if .Error }}

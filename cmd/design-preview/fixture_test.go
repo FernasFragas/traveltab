@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	app "weatherservice/internal/application"
 	"weatherservice/internal/planner"
 )
 
@@ -274,5 +275,94 @@ func TestScenarioRoutes(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// As a traveler previewing a plan, I see a day temperature on days with a forecast and none on days without.
+func TestFixtureTrips_PlanDaysCarryTemperatureExceptTheLast(t *testing.T) {
+	req := planner.Request{City: "Lisbon", Country: "pt", Days: 5, Start: time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC)}
+	plan, err := (fixtureTrips{scenario: "default"}).Plan(context.Background(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, day := range plan.Days[:3] {
+		f := day.Forecast
+		if f == nil || f.MaxC == nil || f.MinC == nil || f.WeatherCode == nil {
+			t.Fatalf("day %d forecast incomplete: %+v", i+1, f)
+		}
+	}
+	if plan.Days[4].Forecast != nil {
+		t.Fatal("last day must have no forecast, to show no 0 degrees")
+	}
+}
+
+func TestFixtureForecast_ServesFourDaysExceptPorto(t *testing.T) {
+	got, err := fixtureForecast{}.DailyForecast(context.Background(), 38.72, -9.14)
+	if err != nil || len(got.Days) != 4 || got.Days[0].MaxC == nil || got.Days[0].WeatherCode == nil {
+		t.Fatalf("forecast=%+v err=%v", got, err)
+	}
+	if _, err := (fixtureForecast{}).DailyForecast(context.Background(), 41.1494, -8.6108); err == nil {
+		t.Fatal("Porto must have no forecast")
+	}
+}
+
+// As a traveler who saved places, I see them in the previewed plan, and the ones the days can't hold as "also suggested".
+func TestFixtureTrips_PlanSeedsIncludedPlacesAndListsOverflow(t *testing.T) {
+	var include []planner.Place
+	for _, id := range []string{"Q1", "Q2", "Q3", "Q4", "Q5", "Q6"} {
+		include = append(include, planner.Place{ID: id, Name: "Saved " + id, Lat: 32.65, Lon: -16.9})
+	}
+	req := planner.Request{City: "Madeira", Country: "pt", Days: 1, Start: time.Date(2026, 10, 12, 0, 0, 0, 0, time.UTC), Include: include}
+	plan, err := (fixtureTrips{scenario: "writers-map"}).Plan(context.Background(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Days[0].Stops) != planner.MaxStopsPerDay || plan.Days[0].Stops[0].ID != "Q1" {
+		t.Fatalf("stops=%+v", plan.Days[0].Stops)
+	}
+	if len(plan.AlsoSuggested) != 2 || plan.AlsoSuggested[0].ID != "Q5" {
+		t.Fatalf("also suggested=%+v", plan.AlsoSuggested)
+	}
+	plain, _ := (fixtureTrips{scenario: "writers-map"}).Plan(context.Background(), planner.Request{City: "Madeira", Days: 1, Start: req.Start})
+	if len(plain.AlsoSuggested) != 0 {
+		t.Fatal("no include, no also suggested")
+	}
+}
+
+// As a traveler, I see a short description under most stops, and nothing for a stop that has none.
+func TestFixturePlaces_MostStopsHaveADescriptionAndOneDoesNot(t *testing.T) {
+	described, long := 0, false
+	for _, place := range fixturePlaces() {
+		if place.Description != "" {
+			described++
+			long = long || len(place.Description) > 120
+		}
+	}
+	if described == 0 || described == len(fixturePlaces()) {
+		t.Fatalf("%d of %d places described; want some but not all", described, len(fixturePlaces()))
+	}
+	if !long {
+		t.Fatal("one description must be long enough to exercise the CSS clamp")
+	}
+}
+
+// As a traveler, I see the city's Wikidata description under the name when it has no tagline.
+func TestFixturePhotos_DescribeParisAndPortoButNotParisTexas(t *testing.T) {
+	photos := &fixturePhotos{origin: "http://fixture/"}
+	for _, tc := range []struct {
+		id      app.DestinationIdentity
+		wantSet bool
+	}{
+		{app.DestinationIdentity{City: "Paris", Country: "FR"}, true},
+		{app.DestinationIdentity{City: "Porto", Country: "PT"}, true},
+		{app.DestinationIdentity{City: "Paris", Country: "US"}, false},
+	} {
+		photo, err := photos.Photo(context.Background(), tc.id)
+		if err != nil || photo == nil {
+			t.Fatalf("%+v: photo=%v err=%v", tc.id, photo, err)
+		}
+		if (photo.Description != "") != tc.wantSet {
+			t.Fatalf("%+v: description=%q", tc.id, photo.Description)
+		}
 	}
 }

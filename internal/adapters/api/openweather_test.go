@@ -147,3 +147,27 @@ func Test_GetWeather_Errors(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetWeather_SunsetIsShownInTheCityLocalTime(t *testing.T) {
+	api, _ := newStubWeatherAPI(
+		lisbonLocation,
+		stubResponse{http.StatusOK, `{"coord":{"lon":-9.14,"lat":38.72},"weather":[{"description":"clear sky"}],"main":{"temp":24.5},"sys":{"country":"PT","sunset":1791743400},"timezone":3600}`},
+	)
+
+	report, err := api.FetchReportData(context.Background(), "Lisbon, PT")
+	require.NoError(t, err)
+
+	assert.Equal(t, "19:30", report.Data.Sunset)
+}
+
+func Test_GetWeather_MissingSunsetStaysEmpty(t *testing.T) {
+	api, _ := newStubWeatherAPI(
+		lisbonLocation,
+		stubResponse{http.StatusOK, `{"coord":{"lon":-9.14,"lat":38.72},"weather":[{"description":"clear sky"}],"main":{"temp":24.5},"sys":{"country":"PT"}}`},
+	)
+
+	report, err := api.FetchReportData(context.Background(), "Lisbon, PT")
+	require.NoError(t, err)
+
+	assert.Empty(t, report.Data.Sunset)
+}

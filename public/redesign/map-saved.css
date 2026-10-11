@@ -1,0 +1,26 @@
+/* "N saved places will be included" line in the map card's saved slot. */
+.writers-map-saved {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--tt-space-2);
+    margin: var(--tt-space-2) 0 0;
+    padding: var(--tt-space-2) var(--tt-space-3);
+    border: 1px solid var(--tt-border);
+    border-radius: var(--tt-radius);
+    background: var(--tt-surface);
+    color: var(--tt-muted);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.writers-map-saved a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--tt-accent);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.writers-map-saved a:hover { color: var(--tt-accent-hover); }

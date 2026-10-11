@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). **As of October 11, 2026:** PRs 3, 4 and 5 are done; PR 6 code is merged, with the 6a precision review and the 6b local run still open; **PR 7 can start**. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). **As of October 11, 2026:** PRs 3, 4 and 5 are done; PR 6 code is merged, with the 6a precision review and the 6b local run still open; **PR 7 is built (7a–7k) and integrated; `make lint` cannot run here (golangci-lint go1.26 vs module go1.27.2), and the open items are listed under PR 7**. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -79,7 +79,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 - GeoJSON properties gain `writers` (host array, for the "All writers" filter) and `has_summary` (for the Summaries layer).
 - Place panel gains `area` (Wikidata P131 label, shown as *kind · area*) and per-writer `blog_name`, from a new `name` field in `writerdata/sources.json`.
 - Itinerary days gain `distance_km` and `walk_minutes` (for the writer's walk card, which shows one day). Distance is straight-line between consecutive stops, as in the planner; real values come from 6a, the fixture fills them now.
-- Plan stops gain a `writers_pick` flag (for 7g's "Writers' pick" chip): true when the stop's QID has a writer count of 1 or more. Defined in the contract; 7g builds it.
+- Plan stops gain a `writers_pick` flag (for 7g's "Writers' pick" chip): true when the stop's QID has a writer count of 1 or more. Defined in the contract; 7g builds it. *(Removed by 1f.)*
 - Fixture filled for all new fields.
 
 **Verify:** `go test ./internal/writermap/... ./writerdata/`.
@@ -384,13 +384,13 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - The plan response emits stop coordinates per day; the script fires `travelmap:plan-updated` and draws green numbered pins per day with a day toggle.
 
 **Acceptance**
-- [ ] Generating, regenerating and clearing a plan leave no duplicate layers.
-- [ ] Works on base-only destinations.
+- [x] Generating, regenerating and clearing a plan leave no duplicate layers. *(`map-dayplan.browser.mjs`, `pr7-acceptance.browser.mjs`)*
+- [x] Works on base-only destinations. *(`pr7-acceptance.browser.mjs`, Porto at 375 and 1440 px)*
 
 **Verify:** template test for the emitted data; preview check.
 
 ### 7c. Add writers' itinerary layers
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7c.tdd.md)
 
 **Owns:** `public/redesign/map-itineraries.js`, `public/redesign/map-itineraries.css`, `views/index.go.tpl` (the `map-itineraries` script and stylesheet tags only)
 
@@ -410,14 +410,15 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - A line next to the plan form: "N saved places will be included", with a clear link. *Built in the map card's `saved` slot, since the form is in another card (owner decision, October 11, 2026); 7g styles it.*
 
 **Acceptance**
-- [ ] Saves survive a reload.
-- [ ] Blocked storage hides the buttons and the line.
-- [ ] Saving makes no server call; only the plan request carries the QIDs.
+- [x] Saves survive a reload. *(`map-saved.test.mjs`, `pr7-integration.browser.mjs`)*
+- [x] Blocked storage hides the buttons and the line. *(`pr7-acceptance.browser.mjs`, `localStorage` made to throw)*
+- [x] Saving makes no server call; only the plan request carries the QIDs. *(`pr7-acceptance.browser.mjs`: 0 requests on save, `include` only on `/plan`)*
 
 **Verify:** preview check, including a private window.
 
 ### 7e. Seed saved places into the plan (`Include`)
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7e.tdd.md)
+- [x] Follow-up: .ics/.kml links and handlers carry `include` (exports only; push URL and `/trip/:slug` page unchanged) — [TDD evidence](../docs/tdd/exports-include.tdd.md)
 
 **Owns:** `internal/planner/types.go`, `internal/planner/build.go` (seeding only), `internal/planner/build_test.go`, `internal/adapters/httpserver/trip.go` (query parsing in `planTrip`), `trip_test.go`, `views/itinerary_body.go.tpl` (the "also suggested" block only; after 7b, before 7g)
 
@@ -426,8 +427,8 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - With `WRITERS_MAP` off, `include` is ignored and plans are unchanged.
 
 **Acceptance**
-- [ ] All included places appear in the plan; requests without `Include` produce today's plans byte-for-byte.
-- [ ] More included places than days can hold → extra ones listed as "also suggested", not dropped silently.
+- [x] All included places appear in the plan; requests without `Include` produce today's plans byte-for-byte. *(`TestBuild_IncludedPlacesAppearInTheDays`, `TestBuild_WithoutIncludeGivesTheUnseededPlan`)*
+- [x] More included places than days can hold → extra ones listed as "also suggested", not dropped silently. *(`TestBuild_MoreIncludedPlacesThanDaysCanHoldAreAlsoSuggested`; preview: `pr7-acceptance.browser.mjs`)*
 
 **Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`; preview check.
 
@@ -446,7 +447,8 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Verify:** preview check.
 
 ### 7g. Rework the itinerary rows · *after 7b, 7e, 7i*
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7g.tdd.md)
+- Gap closed: short stop description (Wikidata English description, or the writers' map's) — [evidence](../docs/tdd/descriptions.tdd.md).
 
 **Owns:** `views/itinerary_body.go.tpl` (after 7b), `internal/adapters/httpserver/itinerary_test.go`, `public/redesign/map-saved.css`, `views/index.go.tpl` (the `map-saved` stylesheet tag only)
 
@@ -457,13 +459,15 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - **View on map** clicks the **Your day plan** chip when it isn't pressed, so 7f's remembered state stays in step. Don't call `TravelMap.setLayerEnabled` directly: 7f re-applies its own state on the next sync.
 
 **Acceptance**
-- [ ] Days without forecast data show no temperature, not "0°".
-- [ ] The first stop of a day shows no distance.
+- [x] Days without forecast data show no temperature, not "0°". *(`TestItinerary_DaysWithoutForecastDataShowNoTemperature`)*
+- [x] The first stop of a day shows no distance. *(`TestItinerary_FirstStopShowsNoDistance...`)*
 
 **Verify:** `go test ./internal/adapters/httpserver/ -run Itinerary`; preview check.
 
 ### 7i. Build the hero and the richer weather card
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7i.tdd.md)
+- Gap closed: hero line falls back to the city's Wikidata description when there is no tagline — [evidence](../docs/tdd/descriptions.tdd.md).
+- Phone: the hero line shows below the photo, above the weather card — [evidence](../docs/tdd/hero-phone-line.tdd.md).
 
 **Owns:** `views/weather_display.go.tpl`, `views/weather_card.go.tpl`, `public/redesign/destination.css`, `views/index.go.tpl` (header order only), `internal/adapters/api/openweather.go`, `openweather_test.go`, `internal/adapters/api/openmeteo_forecast.go`, `openmeteo_forecast_test.go`, `internal/adapters/httpserver/presentation.go`, `presentation_test.go`
 
@@ -474,13 +478,13 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Phone: the weather card stacks under the photo.
 
 **Acceptance**
-- [ ] Any city shows region and country; a city without a region shows country only.
-- [ ] Forecast unavailable → the card shows current weather only, no empty row.
+- [x] Any city shows region and country; a city without a region shows country only. *(`TestDestinationPresentation_ShowsRegionAndCountryFromTheGeocoder`, `..._NoRegionShowsCountryOnly`)*
+- [x] Forecast unavailable → the card shows current weather only, no empty row. *(`TestWeatherDisplay_NoForecastAndNoSunsetRenderNoEmptyRow`)*
 
 **Verify:** `go test ./internal/adapters/api/... ./internal/adapters/httpserver/...`; preview at 375 and 1440 px.
 
 ### 7k. Add travelers to the plan form · *after 7b, 7e*
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7k.tdd.md)
 
 **Owns:** `views/trip_card.go.tpl` (travelers field only, after 7b), `internal/planner/stays.go`, `internal/planner/stays_test.go`, `internal/adapters/httpserver/trip.go` (travelers parsing only, after 7e)
 
@@ -488,12 +492,14 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Passed to `BookingURL` as `group_adults`; kept in the shareable `/plan` URL.
 
 **Acceptance**
-- [ ] The Booking link carries the chosen number of travelers.
-- [ ] A missing or invalid value falls back to 2.
+- [x] The Booking link carries the chosen number of travelers. *(`TestBookingURL_CarriesTheTravelers`; preview shows `group_adults=2`)*
+- [x] A missing or invalid value falls back to 2. *(`TestPlanRoute_MissingOrInvalidTravelersFallBackToTwo`)*
 
 **Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`.
 
 **Integrator for PR 7:** whoever lands last adds the script and style tags to `views/index.go.tpl` and runs the full preview journey on fixture data.
+
+**Integrator result (October 11, 2026):** evidence in [pr7-integration.tdd.md](../docs/tdd/pr7-integration.tdd.md). Full journey runs clean on fixture data at 375 and 1440 px. Not in this PR (open): the hero falls back to the manifest tagline only (no Wikidata description), stops show no short description (`planner.Place` has none), and `include` / `travelers` are not carried on the `/trip/:slug` re-plan or the `.ics` / `.kml` exports.
 
 **PR 7 done when:** with `WRITERS_MAP=1`, the full UI works on fixture data and matches the Funchal mockup's layout.
 

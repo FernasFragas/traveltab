@@ -38,7 +38,7 @@
 
 .trip-form {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--tt-space-3);
     align-items: end;
     margin: 0;
@@ -119,6 +119,7 @@
 }
 
 .trip-days { grid-column: 3; }
+.trip-travelers { grid-column: 4; }
 .trip-submit,
 .trip-help { grid-column: 1 / -1; }
 
@@ -515,6 +516,13 @@
     overflow-wrap: anywhere;
 }
 
+.itinerary-stop-description {
+    color: var(--tt-muted);
+    font-size: 13px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
 .itinerary-stop-kind {
     display: inline-flex;
     align-items: center;
@@ -531,7 +539,8 @@
     .trip-card { padding: var(--tt-space-4); }
     .trip-form { grid-template-columns: minmax(0, 1fr); gap: var(--tt-space-2); }
     .trip-date-group { grid-column: 1; grid-template-columns: minmax(0, 1fr); gap: var(--tt-space-2); }
-    .trip-days { grid-column: 1; }
+    .trip-days,
+    .trip-travelers { grid-column: 1; }
     .trip-input,
     .trip-select { font-size: 16px; }
     .trip-submit,
@@ -560,4 +569,39 @@
     .trip-submit,
     .itinerary-indicator { transition: none; }
     .trip-spinner .bi { animation-duration: 0.01ms; animation-iteration-count: 1; }
+}
+
+/* Itinerary rows: View on map button, day weather, stop distance. */
+.itinerary-action-primary {
+    border-color: var(--tt-accent);
+    background: var(--tt-accent);
+    color: #fffdfa;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.itinerary-action-primary:hover { background: var(--tt-accent-hover); color: #fffdfa; }
+
+.itinerary-weather {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tt-space-2);
+    color: var(--tt-ink);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.itinerary-day-temp { font-weight: 700; }
+.itinerary-day-condition { color: var(--tt-muted); }
+
+.itinerary-stop-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--tt-space-2);
+}
+
+.itinerary-stop-distance {
+    color: var(--tt-muted);
+    font-size: 12px;
 }

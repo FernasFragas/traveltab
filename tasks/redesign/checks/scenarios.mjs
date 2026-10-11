@@ -46,7 +46,8 @@ const READ = `(() => {
     url: location.pathname + location.search,
     title: txt(document.querySelector('.destination-title')), country: form?.elements.country?.value || null,
     tagline: txt(document.querySelector('.destination-tagline')), countryLabel: txt(document.querySelector('.destination-country')),
-    weather: [...document.querySelectorAll('.weather-metric')].map(m => txt(m.querySelector('.weather-value')) + ' ' + txt(m.querySelector('.weather-label'))),
+    weather: [...document.querySelectorAll('.weather-main, .weather-detail')].map(m => txt(m.querySelector('.weather-value, dd')) + ' ' + txt(m.querySelector('.weather-label, dt'))),
+    feelsLike: txt(document.querySelector('.weather-feels')), forecast: [...document.querySelectorAll('.weather-forecast-day')].map(txt),
     hero: figure ? { state: figure.dataset.photoState, imgPresent: !!img, loaded: !!img && img.complete && img.naturalWidth > 0, src: img?.getAttribute('src') || null, alt: img?.getAttribute('alt') ?? null,
       credit: txt(document.querySelector('.destination-photo-credit')), creditShown: shown(document.querySelector('.destination-photo-credit')), caption: txt(document.querySelector('.destination-photo-caption')),
       fallbackShown: shown(document.querySelector('.destination-photo-fallback')), fallbackText: txt(document.querySelector('.destination-photo-fallback')), imgShown: shown(img), frame: figure.getBoundingClientRect().height } : null,
@@ -113,7 +114,7 @@ const invariants = (s, width, ctx) => {
   ok(s.idsUnique, `${ctx}: element ids are unique`);
   ok(s.overflow <= width, `${ctx}: horizontal overflow ${s.overflow} > ${width}`);
   ok(s.title, `${ctx}: a destination title`);
-  eq(s.weather.length, 3, `${ctx}: three weather metrics`);
+  ok(s.weather.length >= 4, `${ctx}: the weather card shows the reading and its details`);
   ok(s.mapFrame?.startsWith('Live Waze map of '), `${ctx}: the map iframe is named`);
   ok(s.guide && s.guide.count === 1, `${ctx}: exactly one guide card`);
 };
@@ -159,7 +160,7 @@ const expectHero = (s, scenario, ctx) => {
     ok(s.hero.frame >= 160, `${ctx}: the hero frame keeps its size (${s.hero.frame}px)`);
   }
 };
-const weatherFor = s => [`22°C ${s.title === 'Porto' ? 'Partly cloudy' : 'Clear'}`, '60% Humidity', '1.2 m Wave height'];
+const weatherFor = s => [`22°C ${s.title === 'Porto' ? 'Partly cloudy' : 'Clear'}`, '60% Humidity', '36 km/h Wind', '19:12 Sunset', '1.2 m Waves'];
 
 // --- What each data variant shows (preview.md "Deterministic data variants") ------------------------------------------
 const VARIANTS = ['default', 'photos-missing', 'forecast-absent', 'forecast-uncertain', 'stays-0', 'stays-1', 'stays-6', 'stays-unavailable', 'videos-0', 'videos-1', 'videos-10', 'fallback'];
@@ -176,6 +177,8 @@ const expectInitial = (s, scenario, ctx, width) => {
   invariants(s, width, ctx);
   expectHero(s, scenario, ctx); expectGuide(s, scenario, ctx); expectVideos(s, scenario, ctx);
   eq(s.weather, weatherFor(s), `${ctx}: weather values`);
+  eq(s.feelsLike, 'Feels like 22°C', `${ctx}: feels like`);
+  eq(s.forecast.length, s.title === 'Porto' ? 0 : 4, `${ctx}: four forecast days (none for Porto, whose forecast fixture errors)`);
   eq(s.days.length, 0, `${ctx}: no itinerary before planning`);
   eq(s.itineraryEmpty, 'Generate a trip plan to see your day-by-day itinerary.', ctx);
   eq(s.stays.length, 0, `${ctx}: no stays before planning`); eq(s.stayNote, 'Generate a trip plan to find places to stay.', ctx);

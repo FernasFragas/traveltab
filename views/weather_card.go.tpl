@@ -1,25 +1,29 @@
 {{ if .GeneralInfo }}
-<div class="weather-metrics" role="group" aria-label="Current weather">
-    <div class="weather-metric weather-condition">
-        <i class="bi {{ if .Presentation.ConditionIcon }}{{ .Presentation.ConditionIcon }}{{ else }}bi-thermometer-half{{ end }} weather-icon" aria-hidden="true"></i>
-        <dl class="weather-reading">
+<div class="weather-card weather-metrics" role="group" aria-label="Current weather">
+    <div class="weather-current">
+        <i class="bi {{ if .Presentation.ConditionIcon }}{{ .Presentation.ConditionIcon }}{{ else }}bi-thermometer-half{{ end }} weather-icon weather-icon-main" aria-hidden="true"></i>
+        <dl class="weather-reading weather-main">
             <dt class="weather-label">{{ if .GeneralInfo.Weather.Condition }}{{ .GeneralInfo.Weather.Condition }}{{ else }}Temperature{{ end }}</dt>
-            <dd class="weather-value">{{ .GeneralInfo.Weather.Temperature }}<span class="weather-unit">°C</span></dd>
+            <dd class="weather-value weather-temperature">{{ .GeneralInfo.Weather.Temperature }}<span class="weather-unit">°C</span></dd>
+            <dd class="weather-feels">Feels like {{ .GeneralInfo.Weather.FeelsLike }}°C</dd>
         </dl>
     </div>
-    <div class="weather-metric">
-        <i class="bi bi-droplet-fill weather-icon weather-icon-water" aria-hidden="true"></i>
-        <dl class="weather-reading">
-            <dt class="weather-label">Humidity</dt>
-            <dd class="weather-value">{{ .GeneralInfo.Weather.Humidity }}<span class="weather-unit">%</span></dd>
-        </dl>
-    </div>
-    <div class="weather-metric">
-        <i class="bi bi-water weather-icon weather-icon-water" aria-hidden="true"></i>
-        <dl class="weather-reading">
-            <dt class="weather-label">Wave height</dt>
-            <dd class="weather-value">{{ .GeneralInfo.Waves.Height }}<span class="weather-unit"> m</span></dd>
-        </dl>
-    </div>
+    <dl class="weather-details">
+        <div class="weather-detail"><i class="bi bi-droplet-fill weather-icon-water" aria-hidden="true"></i><dt class="tt-visually-hidden">Humidity</dt><dd>{{ .GeneralInfo.Weather.Humidity }}%</dd></div>
+        <div class="weather-detail"><i class="bi bi-wind weather-icon-water" aria-hidden="true"></i><dt class="tt-visually-hidden">Wind</dt><dd>{{ .Presentation.WindKmh }} km/h</dd></div>
+        {{ with .GeneralInfo.Weather.Sunset }}<div class="weather-detail"><i class="bi bi-sunset" aria-hidden="true"></i><dt class="weather-detail-label">Sunset</dt><dd>{{ . }}</dd></div>{{ end }}
+        <div class="weather-detail"><i class="bi bi-water weather-icon-water" aria-hidden="true"></i><dt class="weather-detail-label">Waves</dt><dd>{{ .GeneralInfo.Waves.Height }} m</dd></div>
+    </dl>
+    {{ with .Presentation.Forecast }}
+    <ul class="weather-forecast" aria-label="Forecast">
+        {{ range . }}
+        <li class="weather-forecast-day" title="{{ .Condition }}">
+            <span class="weather-forecast-name">{{ .Day }}</span>
+            <i class="bi {{ .Icon }}" aria-hidden="true"></i><span class="tt-visually-hidden">{{ .Condition }}</span>
+            <span class="weather-forecast-range"><strong>{{ .High }}°</strong> {{ .Low }}°</span>
+        </li>
+        {{ end }}
+    </ul>
+    {{ end }}
 </div>
 {{ end }}

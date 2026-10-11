@@ -29,6 +29,7 @@ type DestinationPhoto struct {
 	License, LicenseURL         string
 	Width, Height               int
 	SourceID                    string // the city entity or article the photograph was selected for
+	Description                 string // the city's English Wikidata description, "" when it has none
 }
 
 // DestinationPhotoSource finds a photograph of a destination. It returns (nil, nil) only when a

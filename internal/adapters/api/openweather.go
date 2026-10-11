@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 	"weatherservice/internal/application"
 )
 
@@ -74,6 +75,7 @@ func weatherReportData(weather *weatherData) *application.DataToReport[applicati
 				Wind:        weather.Wind.Speed,
 				Humidity:    weather.Temperature.Humidity,
 				Condition:   condition,
+				Sunset:      sunsetClock(weather.Sys.Sunset, weather.Timezone),
 			},
 		},
 	}
@@ -253,6 +255,7 @@ type weatherData struct {
 	Wind        wind        `json:"wind"`
 	Sys         sys         `json:"sys"`
 	Name        string      `json:"name"`
+	Timezone    int         `json:"timezone"` // seconds east of UTC
 }
 
 type Coordinates struct {
@@ -293,4 +296,13 @@ type GeocodingResult struct {
 	Lon        float64           `json:"lon"`
 	Country    string            `json:"country"`
 	State      string            `json:"state,omitempty"`
+}
+
+// sunsetClock shows the sunset as HH:MM in the city's own time, "" when OpenWeather sent none.
+func sunsetClock(unix float64, offsetSeconds int) string {
+	if unix <= 0 {
+		return ""
+	}
+
+	return time.Unix(int64(unix), 0).UTC().Add(time.Duration(offsetSeconds) * time.Second).Format("15:04")
 }

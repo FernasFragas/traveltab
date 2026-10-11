@@ -59,10 +59,12 @@ type EntityClaim struct {
 
 // Entity is a Wikidata item, holding whichever props were asked for.
 type Entity struct {
-	ID        string                     `json:"id"`
-	Labels    map[string]EntityLabel     `json:"labels"`
-	Sitelinks map[string]json.RawMessage `json:"sitelinks"`
-	Claims    map[string][]EntityClaim   `json:"claims"`
+	ID     string                 `json:"id"`
+	Labels map[string]EntityLabel `json:"labels"`
+	// Descriptions are the short descriptions, keyed by language.
+	Descriptions map[string]EntityLabel     `json:"descriptions"`
+	Sitelinks    map[string]json.RawMessage `json:"sitelinks"`
+	Claims       map[string][]EntityClaim   `json:"claims"`
 }
 
 // ItemIDs returns the entity IDs a property points at, such as the "instance of" (P31) types.
@@ -333,7 +335,7 @@ func (a *WikimediaAPI) addSitelinks(ctx context.Context, places []planner.Place)
 	return nil
 }
 
-// addDetails fills in the types, image and English name of the most famous places. The rest keep
+// addDetails fills in the types, image, English name and description of the most famous places. The rest keep
 // their Wikipedia title and no types, because looking every one of them up costs requests.
 func (a *WikimediaAPI) addDetails(ctx context.Context, places []planner.Place) error {
 	detailed := places
@@ -341,7 +343,7 @@ func (a *WikimediaAPI) addDetails(ctx context.Context, places []planner.Place) e
 		detailed = detailed[:detailedPlaces]
 	}
 
-	entities, err := a.GetEntities(ctx, placeIDs(detailed), "claims|labels")
+	entities, err := a.GetEntities(ctx, placeIDs(detailed), "claims|labels|descriptions")
 	if err != nil {
 		return err
 	}
@@ -354,6 +356,7 @@ func (a *WikimediaAPI) addDetails(ctx context.Context, places []planner.Place) e
 
 		detailed[i].Types = entity.ItemIDs("P31")
 		detailed[i].Image = entity.StringValue("P18")
+		detailed[i].Description = strings.TrimSpace(entity.Descriptions["en"].Value)
 
 		if label := entity.Labels["en"].Value; label != "" {
 			detailed[i].Name = label

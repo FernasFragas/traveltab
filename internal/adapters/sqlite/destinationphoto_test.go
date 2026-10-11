@@ -381,3 +381,28 @@ func (c *countingSource) Photo(ctx context.Context, id application.DestinationId
 
 	return c.inner.Photo(ctx, id)
 }
+
+func TestDestinationPhotoCache_DescriptionSurvivesTheCache(t *testing.T) {
+	c, fake, _, _ := photoCacheForTest(t)
+	c.source = describedPhotoFake{photoFake: fake}
+
+	for range 2 {
+		photo, err := c.Photo(context.Background(), parisFR)
+		require.NoError(t, err)
+		require.NotNil(t, photo)
+		assert.Equal(t, "capital of France", photo.Description)
+	}
+
+	assert.Equal(t, 1, fake.calls, "the second answer comes from the stored entry")
+}
+
+type describedPhotoFake struct{ *photoFake }
+
+func (f describedPhotoFake) Photo(ctx context.Context, id application.DestinationIdentity) (*application.DestinationPhoto, error) {
+	photo, err := f.photoFake.Photo(ctx, id)
+	if photo != nil {
+		photo.Description = "capital of France"
+	}
+
+	return photo, err
+}

@@ -510,3 +510,48 @@ func TestDestinationPhoto_TemplateOnlyRevealsFailureStateFromTheImageEvents(t *t
 	assert.Contains(t, figure, `dataset.photoState = 'failed'`)
 	assert.Equal(t, 1, strings.Count(figure, `class="destination-photo-fallback"`))
 }
+
+func TestDestinationPhoto_DescriptionFillsTheHeroLineWhenThereIsNoTagline(t *testing.T) {
+	for i, route := range photoRoutes[:2] {
+		t.Run(route.name, func(t *testing.T) {
+			city := fmt.Sprintf("Describedville%d", i)
+			forgetCity(t, city)
+			source := &photoStub{answer: func(id application.DestinationIdentity) (*application.DestinationPhoto, error) {
+				photo := stubPhoto(id)
+				photo.Description = `city on the <b>Seine</b>`
+
+				return photo, nil
+			}}
+			server, weather, videos := newPhotoServer(t, source)
+			info := photoInfo(city, "fr", parisLat, parisLon)
+			weather.EXPECT().GenerateReport(gomock.Any(), route.weatherQuery(city)).Return(info, nil)
+			freshVideos(videos, info)
+
+			status, body := doRequest(t, server, route.request(city))
+
+			require.Equal(t, http.StatusOK, status)
+			assert.Contains(t, body, `<p class="destination-tagline">city on the &lt;b&gt;Seine&lt;/b&gt;</p>`)
+		})
+	}
+}
+
+func TestDestinationPhoto_NoTaglineAndNoDescriptionRenderNoHeroLine(t *testing.T) {
+	city := "Plainville"
+	forgetCity(t, city)
+	server, weather, videos := newPhotoServer(t, &photoStub{})
+	info := photoInfo(city, "fr", parisLat, parisLon)
+	weather.EXPECT().GenerateReport(gomock.Any(), city).Return(info, nil)
+	freshVideos(videos, info)
+
+	status, body := doRequest(t, server, httptest.NewRequest(http.MethodGet, "/?city_name="+city, nil))
+
+	require.Equal(t, http.StatusOK, status)
+	assert.NotContains(t, body, `class="destination-tagline"`)
+}
+
+func TestDestinationPhoto_CuratedTaglineBeatsTheDescription(t *testing.T) {
+	view := newPresentation(application.GeneralWeatherInfo{City: "Lisbon", Country: "PT"}, nil)
+	view.Description = "capital of Portugal"
+
+	assert.Equal(t, "Hillside streets, tiled facades, and life by the river.", view.HeroLine())
+}

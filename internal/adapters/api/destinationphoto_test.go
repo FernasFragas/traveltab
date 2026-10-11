@@ -28,14 +28,15 @@ type stubHit struct{ id, label, match string }
 
 // stubEntity is a Wikidata entity, reduced to what the adapter reads.
 type stubEntity struct {
-	lat, lon  float64
-	noCoords  bool
-	countries []string
-	types     []string
-	populated bool
-	sitelinks int
-	images    []string
-	article   string
+	lat, lon    float64
+	noCoords    bool
+	countries   []string
+	types       []string
+	populated   bool
+	sitelinks   int
+	images      []string
+	article     string
+	description string
 }
 
 // stubFile is Commons image information for one file.
@@ -213,7 +214,12 @@ func (w *photoWorld) entitiesJSON(ids []string) string {
 			sitelinks["enwiki"] = map[string]string{"site": "enwiki", "title": e.article}
 		}
 
-		entities[id] = map[string]any{"id": id, "claims": claims, "sitelinks": sitelinks}
+		entity := map[string]any{"id": id, "claims": claims, "sitelinks": sitelinks}
+		if e.description != "" {
+			entity["descriptions"] = map[string]any{"en": map[string]string{"language": "en", "value": e.description}}
+		}
+
+		entities[id] = entity
 	}
 
 	return mustJSON(map[string]any{"entities": entities})
@@ -330,6 +336,44 @@ func TestDestinationPhoto_ResolvesAttributedPhotoForTheMatchingCity(t *testing.T
 	assert.Equal(t, 800, photo.Height)
 	assert.Equal(t, "Q90", photo.SourceID)
 	assert.True(t, photo.Complete())
+}
+
+func TestDestinationPhoto_CarriesTheWikidataDescriptionOfTheCity(t *testing.T) {
+	w := parisWorld()
+	e := w.entities["Q90"]
+	e.description = "  capital and largest city of France "
+	w.entities["Q90"] = e
+
+	photo, err := w.api(t).Photo(context.Background(), parisFR)
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "capital and largest city of France", photo.Description)
+}
+
+func TestDestinationPhoto_DescriptionComesFromTheEntityRequestWithoutExtraCalls(t *testing.T) {
+	w := parisWorld()
+	_, err := w.api(t).Photo(context.Background(), parisFR)
+	require.NoError(t, err)
+
+	entityCalls := 0
+
+	for _, req := range w.requests {
+		if req.URL.Query().Get("action") == "wbgetentities" {
+			entityCalls++
+
+			assert.Contains(t, req.URL.Query().Get("props"), "descriptions")
+			assert.Equal(t, "en", req.URL.Query().Get("languages"))
+		}
+	}
+
+	assert.Equal(t, 1, entityCalls)
+}
+
+func TestDestinationPhoto_CityWithoutADescriptionHasNone(t *testing.T) {
+	photo, err := parisWorld().api(t).Photo(context.Background(), parisFR)
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Empty(t, photo.Description)
 }
 
 func TestDestinationPhoto_NamesakeCitiesGetTheirOwnPhotograph(t *testing.T) {

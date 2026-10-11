@@ -91,6 +91,8 @@ type cityMatch struct {
 	Sitelinks  int
 	Images     []string // P18 file names, best statements first
 	Article    string   // English Wikipedia title, "" when it has none
+
+	Description string // English Wikidata description, "" when it has none
 }
 
 // Photo returns an attributed photograph of the destination, (nil, nil) when it has a matching
@@ -251,7 +253,7 @@ func (a *DestinationPhotoAPI) matchCity(ctx context.Context, id application.Dest
 		ids[i] = candidate.ID
 	}
 
-	entities, err := a.wiki.GetEntities(ctx, ids, "claims|sitelinks")
+	entities, err := a.wiki.GetEntities(ctx, ids, "claims|sitelinks|descriptions")
 	if err != nil {
 		return nil, err
 	}
@@ -335,6 +337,7 @@ func entityLocation(entity Entity, id application.DestinationIdentity) (cityMatc
 
 	_ = json.Unmarshal(entity.Sitelinks["enwiki"], &link)
 	match.Article = link.Title
+	match.Description = strings.TrimSpace(entity.Descriptions["en"].Value)
 
 	return match, true
 }
@@ -648,15 +651,16 @@ func commonsPhoto(page commonsPage, id application.DestinationIdentity, city cit
 	}
 
 	return &application.DestinationPhoto{
-		URL:        imageURL,
-		Alt:        "View of " + id.City,
-		Credit:     credit,
-		CreditURL:  creditURL,
-		License:    license,
-		LicenseURL: licenseURL,
-		Width:      width,
-		Height:     height,
-		SourceID:   city.ID,
+		URL:         imageURL,
+		Alt:         "View of " + id.City,
+		Credit:      credit,
+		CreditURL:   creditURL,
+		License:     license,
+		LicenseURL:  licenseURL,
+		Width:       width,
+		Height:      height,
+		SourceID:    city.ID,
+		Description: city.Description,
 	}, float64(info.Width) / float64(info.Height)
 }
 

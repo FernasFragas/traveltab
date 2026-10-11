@@ -116,7 +116,7 @@ func TestForecast_AsksForDailyRainInTheLocalTimeZone(t *testing.T) {
 	require.Len(t, *requests, 1)
 	sent := (*requests)[0]
 	query := sent.URL.Query()
-	assert.Equal(t, "precipitation_sum", query.Get("daily"))
+	assert.Contains(t, query.Get("daily"), "precipitation_sum")
 	assert.Equal(t, "auto", query.Get("timezone"))
 	assert.Equal(t, "16", query.Get("forecast_days"))
 	assert.Equal(t, "35.0116", query.Get("latitude"))
@@ -135,4 +135,43 @@ func TestForecastLive_ReturnsKyoto(t *testing.T) {
 	require.NotNil(t, forecast)
 	assert.Equal(t, "Asia/Tokyo", forecast.Timezone)
 	assert.Len(t, forecast.Days, 16)
+}
+
+func TestForecast_KeepsHighLowAndWeatherCode(t *testing.T) {
+	api, _ := forecastStub(t, "", http.StatusOK)
+
+	forecast, err := api.DailyForecast(context.Background(), 35.0116, 135.7681)
+
+	require.NoError(t, err)
+	require.Len(t, forecast.Days, 16)
+	require.NotNil(t, forecast.Days[0].MaxC)
+	require.NotNil(t, forecast.Days[0].MinC)
+	require.NotNil(t, forecast.Days[1].WeatherCode)
+	assert.Equal(t, 28.4, *forecast.Days[0].MaxC)
+	assert.Equal(t, 19.2, *forecast.Days[0].MinC)
+	assert.Equal(t, 63, *forecast.Days[1].WeatherCode)
+}
+
+func TestForecast_NullHighLowAndCodeStayNil(t *testing.T) {
+	api, _ := forecastStub(t, "", http.StatusOK)
+
+	forecast, err := api.DailyForecast(context.Background(), 35.0116, 135.7681)
+
+	require.NoError(t, err)
+	assert.Nil(t, forecast.Days[2].MaxC)
+	assert.Nil(t, forecast.Days[2].MinC)
+	assert.Nil(t, forecast.Days[2].WeatherCode)
+}
+
+func TestForecast_AsksForHighLowAndWeatherCode(t *testing.T) {
+	api, requests := forecastStub(t, "", http.StatusOK)
+
+	_, err := api.DailyForecast(context.Background(), 35.0116, 135.7681)
+
+	require.NoError(t, err)
+	require.Len(t, *requests, 1)
+	daily := (*requests)[0].URL.Query().Get("daily")
+	for _, field := range []string{"precipitation_sum", "temperature_2m_max", "temperature_2m_min", "weather_code"} {
+		assert.Contains(t, daily, field)
+	}
 }

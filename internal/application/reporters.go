@@ -53,6 +53,7 @@ type Weather struct {
 	Wind        float64 `json:"wind"`
 	Humidity    float64 `json:"humidity"`
 	Condition   string  `json:"condition"`
+	Sunset      string  `json:"sunset"` // local time of day, "" when unknown
 }
 
 type Waves struct {

@@ -57,9 +57,11 @@ func main() {
 
 	// The trip planner reads free, keyless sources. Each one goes through the SQLite cache, so a
 	// city is fetched once and still plans when a source is down. The command wires adapters into application interfaces; application and planner packages stay independent of them.
+	cachedForecast := storage.NewCachedForecastSource(api.NewOpenMeteoForecastAPI(nil))
+	server.SetForecastSource(cachedForecast)
 	server.SetTripPlanner(application.NewTripPlanner(
 		storage.NewCachedPlaceSource(api.NewWikimediaAPI(nil)),
-		storage.NewCachedForecastSource(api.NewOpenMeteoForecastAPI(nil)),
+		cachedForecast,
 		storage.NewCachedStaySource(api.NewOverpassAPI(nil, overpassURLs(weatherServiceSecrets))),
 	))
 

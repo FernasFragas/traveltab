@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	"weatherservice/internal/application"
+	"weatherservice/internal/planner"
 
 	"github.com/gofiber/contrib/fgprof"
 	"github.com/gofiber/fiber/v2"
@@ -25,6 +26,7 @@ type Server struct {
 	videoStreamReporters application.Reporter[application.VideosStream]
 
 	tripPlanner       application.TripPlanner
+	forecastSource    planner.ForecastSource
 	photoSource       application.DestinationPhotoSource
 	placeSuggester    application.PlaceSuggester
 	suggestions       *suggestionCache
