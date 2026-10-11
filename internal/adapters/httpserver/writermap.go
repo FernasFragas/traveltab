@@ -19,7 +19,7 @@ type writerMapCardView struct {
 	Attribution string
 }
 
-// SetWriterMapSource enables the fixture-backed map only when the feature flag is on.
+// SetWriterMapSource enables the map only when the feature flag is on.
 func (s *Server) SetWriterMapSource(source application.WriterMapSource, enabled bool) {
 	s.writerMapSource = source
 	s.writersMapEnabled = enabled && source != nil
