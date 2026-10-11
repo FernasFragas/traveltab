@@ -84,12 +84,17 @@ func (l *photoLookup) wait() *application.DestinationPhoto {
 func (s *Server) destinationPresentation(info application.GeneralWeatherInfo, videos application.VideosStream, lookup *photoLookup) presentationView {
 	view := newPresentation(info, videos)
 	view.Guide = s.guideFor(info)
+	s.addLocationAndForecast(&view, info)
 
 	if view.Hero != nil {
 		return view
 	}
 
-	view.Hero = heroFromPhoto(lookup.wait())
+	photo := lookup.wait()
+	view.Hero = heroFromPhoto(photo)
+	if photo != nil {
+		view.Description = photo.Description
+	}
 	view.PhotoUnavailable = view.Hero == nil
 
 	return view

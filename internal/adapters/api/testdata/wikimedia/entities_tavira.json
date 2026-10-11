@@ -783,6 +783,12 @@
      "language": "en",
      "value": "Igreja da Misericórdia de Tavira"
     }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "church in Tavira, Portugal"
+    }
    }
   },
   "Q379447": {
@@ -1092,6 +1098,12 @@
     "en": {
      "language": "en",
      "value": "Castle of Tavira"
+    }
+   },
+   "descriptions": {
+    "en": {
+     "language": "en",
+     "value": "castle in Tavira, Portugal"
     }
    }
   },

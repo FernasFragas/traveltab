@@ -45,6 +45,9 @@ type openMeteoForecastResponse struct {
 	Daily    struct {
 		Time             []string   `json:"time"`
 		PrecipitationSum []*float64 `json:"precipitation_sum"`
+		Temperature2mMax []*float64 `json:"temperature_2m_max"`
+		Temperature2mMin []*float64 `json:"temperature_2m_min"`
+		WeatherCode      []*int     `json:"weather_code"`
 	} `json:"daily"`
 }
 
@@ -59,7 +62,7 @@ func (api *OpenMeteoForecastAPI) DailyForecast(ctx context.Context, lat, lon flo
 	q := req.URL.Query()
 	q.Set("latitude", strconv.FormatFloat(lat, 'f', -1, 64))
 	q.Set("longitude", strconv.FormatFloat(lon, 'f', -1, 64))
-	q.Set("daily", "precipitation_sum")
+	q.Set("daily", "precipitation_sum,temperature_2m_max,temperature_2m_min,weather_code")
 	q.Set("timezone", "auto")
 	q.Set("forecast_days", strconv.Itoa(planner.ForecastMaxDays))
 	req.URL.RawQuery = q.Encode()
@@ -104,8 +107,21 @@ func (api *OpenMeteoForecastAPI) DailyForecast(ctx context.Context, lat, lon flo
 			rain = &mm
 		}
 
-		forecast.Days = append(forecast.Days, planner.DayForecast{Date: date, RainMM: rain})
+		forecast.Days = append(forecast.Days, planner.DayForecast{
+			Date: date, RainMM: rain,
+			MaxC: valueAt(decoded.Daily.Temperature2mMax, i), MinC: valueAt(decoded.Daily.Temperature2mMin, i),
+			WeatherCode: valueAt(decoded.Daily.WeatherCode, i),
+		})
 	}
 
 	return forecast, nil
+}
+
+// valueAt returns the i-th value, or nil when the series is short or Open-Meteo sent null.
+func valueAt[T any](series []*T, i int) *T {
+	if i >= len(series) {
+		return nil
+	}
+
+	return series[i]
 }

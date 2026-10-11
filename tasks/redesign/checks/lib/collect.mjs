@@ -31,7 +31,10 @@ export const collectText = `(() => {
     if (!el || ['SCRIPT', 'STYLE', 'NOSCRIPT', 'OPTION', 'TEMPLATE'].includes(el.tagName) || el.closest('.tt-visually-hidden, iframe, [hidden]')) continue;
     if (!shown(el)) continue;
     const range = document.createRange(); range.selectNodeContents(node);
-    const rects = [...range.getClientRects()].filter(r => r.width > 1 && r.height > 1).map(rectOf);
+    // Lines cut off by a clipping ancestor (line-clamp) are not on screen: their rects lie over whatever is below the clip.
+    let clip = null;
+    for (let a = el; a && a !== document.body && !clip; a = a.parentElement) if (['hidden', 'clip'].includes(getComputedStyle(a).overflowY)) clip = a.getBoundingClientRect();
+    const rects = [...range.getClientRects()].filter(r => r.width > 1 && r.height > 1 && (!clip || (r.top < clip.bottom - 1 && r.bottom > clip.top + 1))).map(rectOf);
     if (!rects.length) continue;
     const cs = getComputedStyle(el); const opacity = opacityOf(el);
     if (opacity === 0) continue;

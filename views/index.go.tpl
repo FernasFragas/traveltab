@@ -24,6 +24,8 @@
     <link rel="stylesheet" href="/redesign/writers-map-layout.css">
     <link rel="stylesheet" href="/redesign/map-panel.css">
     <link rel="stylesheet" href="/redesign/map-layers.css">
+    <link rel="stylesheet" href="/redesign/map-itineraries.css">
+    <link rel="stylesheet" href="/redesign/map-saved.css">
     <script defer src="/vendor/htmx.org/dist/htmx.min.js"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
@@ -33,6 +35,7 @@
     <script defer src="/redesign/map-panel.js"></script>
     <script defer src="/redesign/map-dayplan.js"></script>
     <script defer src="/redesign/map-saved.js"></script>
+    <script defer src="/redesign/map-itineraries.js"></script>
     <script defer src="/redesign/map-layers.js"></script>
 </head>
 <body>

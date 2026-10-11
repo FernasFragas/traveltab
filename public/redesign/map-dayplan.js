@@ -23,6 +23,14 @@
         activeDay = 0;
         draw();
     });
+    // "View on map": press the Your day plan chip (7f keeps its own state) and scroll to the map.
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest || !event.target.closest('[data-view-on-map]')) return;
+        var chip = document.querySelector('.writers-map-layer-plan');
+        if (chip && chip.getAttribute('aria-pressed') !== 'true') chip.click();
+        var mapElement = document.querySelector('[data-writers-map]');
+        if (mapElement) mapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     document.body.addEventListener('htmx:afterSwap', report);
     document.body.addEventListener('htmx:historyRestore', report);
     report();

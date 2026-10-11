@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"weatherservice/internal/application"
 	"weatherservice/internal/planner"
@@ -62,15 +64,39 @@ type presentationView struct {
 	Hero                                *imageView
 	PhotoUnavailable                    bool // no photograph could be shown: say so instead of an empty frame
 	Tagline, PhotoCaption, CountryLabel string
-	MapURL, ConditionIcon               string
+	Description                         string // the city's Wikidata description; shown only when there is no Tagline
+	Location                            string // "Region, Country", or the country alone when there is no region
+	MapURL, ConditionIcon, WindKmh      string
+	Forecast                            []forecastRow // empty when the forecast is unavailable: the card then shows current weather only
 	Videos                              []videoView
 	Guide                               guideView // reviewed city guide, or the explicit "no guide yet" state
+}
+
+// HeroLine is the line under the city name: the curated tagline, or else the Wikidata
+// description, or "" when there is neither, so the template renders no element.
+func (v presentationView) HeroLine() string {
+	if tagline := strings.TrimSpace(v.Tagline); tagline != "" {
+		return tagline
+	}
+
+	return strings.TrimSpace(v.Description)
+}
+
+// forecastRow is one day of the card's forecast. Temperatures are whole degrees Celsius.
+type forecastRow struct {
+	Day, Icon, Condition, High, Low string
 }
 
 type stayCardView struct {
 	Name, Kind, Website string
 	Stars               int
 	Image               *imageView
+}
+
+// SetForecastSource switches the card's daily forecast on. Without a source, or when it fails,
+// the card shows current weather only.
+func (s *Server) SetForecastSource(source planner.ForecastSource) {
+	s.forecastSource = source
 }
 
 func sameIdentity(a, b string) bool {
@@ -91,6 +117,7 @@ func newPresentation(info application.GeneralWeatherInfo, videos application.Vid
 	view := presentationView{
 		MapURL:        cityMapURL(info.Lat, info.Lon),
 		ConditionIcon: conditionIcon(info.Condition),
+		WindKmh:       windKmh(info.Wind),
 		Videos:        presentationVideos(videos),
 	}
 	for _, destination := range curatedPresentation.Destinations {
@@ -190,4 +217,158 @@ func conditionIcon(condition string) string {
 		}
 	}
 	return "bi-thermometer-half"
+}
+
+const (
+	// presentationLookupTimeout bounds the region and forecast lookups, so a slow provider
+	// cannot hold the page back; both are cached and optional.
+	presentationLookupTimeout = 3 * time.Second
+	// regionMatchDegrees is how far a geocoder result may sit from the resolved coordinates
+	// (about 55 km) and still be the same city.
+	regionMatchDegrees = 0.5
+	forecastRowCount   = 4
+)
+
+// addLocationAndForecast fills the parts of the view that come from live lookups: the
+// "Region, Country" line and the forecast rows. Both are optional and fail quietly.
+func (s *Server) addLocationAndForecast(view *presentationView, info application.GeneralWeatherInfo) {
+	ctx, cancel := context.WithTimeout(context.Background(), presentationLookupTimeout)
+	defer cancel()
+
+	region, country := s.regionAndCountry(ctx, info)
+	if country == "" {
+		country = view.CountryLabel
+	}
+	if country == "" {
+		country = strings.ToUpper(strings.TrimSpace(info.Country))
+	}
+	view.Location = locationLabel(region, country)
+
+	if s.forecastSource != nil {
+		if forecast, err := s.forecastSource.DailyForecast(ctx, info.Lat, info.Lon); err == nil {
+			view.Forecast = forecastRows(forecast)
+		}
+	}
+}
+
+// regionAndCountry finds the geocoder's admin1 and country name for the resolved city: the
+// suggestion in the same country that sits closest to its coordinates. Empty when unknown.
+func (s *Server) regionAndCountry(ctx context.Context, info application.GeneralWeatherInfo) (region, country string) {
+	city := strings.TrimSpace(info.City)
+	if s.placeSuggester == nil || s.suggestions == nil || city == "" {
+		return "", ""
+	}
+
+	key := strings.ToLower(city)
+	places, ok := s.suggestions.get(key)
+	if !ok {
+		var err error
+		if places, err = s.placeSuggester.Suggest(ctx, city); err != nil {
+			return "", ""
+		}
+		s.suggestions.put(key, places)
+	}
+
+	best, bestDistance := -1, regionMatchDegrees
+	for i, place := range places {
+		if countryIdentity(place.CountryCode) != countryIdentity(info.Country) && countryIdentity(place.Country) != countryIdentity(info.Country) {
+			continue
+		}
+		if distance := math.Max(math.Abs(place.Lat-info.Lat), math.Abs(place.Lon-info.Lon)); distance <= bestDistance {
+			best, bestDistance = i, distance
+		}
+	}
+	if best < 0 {
+		return "", ""
+	}
+
+	return places[best].Region, places[best].Country
+}
+
+// windKmh converts OpenWeather's metres per second to whole kilometres per hour.
+func windKmh(metresPerSecond float64) string {
+	return fmt.Sprintf("%.0f", metresPerSecond*3.6)
+}
+
+func locationLabel(region, country string) string {
+	region, country = strings.TrimSpace(region), strings.TrimSpace(country)
+	if region == "" || sameIdentity(region, country) {
+		return country
+	}
+	if country == "" {
+		return region
+	}
+
+	return region + ", " + country
+}
+
+// forecastRows turns the first days of the forecast that have a high, a low and a weather code
+// into card rows. A day missing any of them is skipped rather than shown as "0°".
+func forecastRows(forecast *planner.Forecast) []forecastRow {
+	if forecast == nil {
+		return nil
+	}
+
+	var rows []forecastRow
+	for _, day := range forecast.Days {
+		if day.MaxC == nil || day.MinC == nil || day.WeatherCode == nil {
+			continue
+		}
+		rows = append(rows, forecastRow{
+			Day: day.Date.Format("Mon"), Icon: weatherCodeIcon(*day.WeatherCode), Condition: weatherCodeLabel(*day.WeatherCode),
+			High: fmt.Sprintf("%.0f", *day.MaxC), Low: fmt.Sprintf("%.0f", *day.MinC),
+		})
+		if len(rows) == forecastRowCount {
+			break
+		}
+	}
+
+	return rows
+}
+
+// weatherCodeIcon and weatherCodeLabel describe an Open-Meteo (WMO) weather code. The
+// itinerary rows use them too, so a day reads the same on the card and in the plan.
+func weatherCodeIcon(code int) string {
+	return weatherCodeInfo(code).icon
+}
+
+func weatherCodeLabel(code int) string {
+	return weatherCodeInfo(code).label
+}
+
+type weatherCodeDescription struct{ icon, label string }
+
+func weatherCodeInfo(code int) weatherCodeDescription {
+	switch code {
+	case 0:
+		return weatherCodeDescription{"bi-sun", "Clear sky"}
+	case 1:
+		return weatherCodeDescription{"bi-cloud-sun", "Mostly clear"}
+	case 2:
+		return weatherCodeDescription{"bi-cloud-sun", "Partly cloudy"}
+	case 3:
+		return weatherCodeDescription{"bi-cloud", "Overcast"}
+	case 45, 48:
+		return weatherCodeDescription{"bi-cloud-fog2", "Fog"}
+	case 51, 53, 55:
+		return weatherCodeDescription{"bi-cloud-drizzle", "Drizzle"}
+	case 56, 57, 66, 67:
+		return weatherCodeDescription{"bi-cloud-sleet", "Freezing rain"}
+	case 61, 63:
+		return weatherCodeDescription{"bi-cloud-rain", "Rain"}
+	case 65:
+		return weatherCodeDescription{"bi-cloud-rain-heavy", "Heavy rain"}
+	case 71, 73, 75, 77:
+		return weatherCodeDescription{"bi-cloud-snow", "Snow"}
+	case 80, 81:
+		return weatherCodeDescription{"bi-cloud-rain", "Rain showers"}
+	case 82:
+		return weatherCodeDescription{"bi-cloud-rain-heavy", "Heavy showers"}
+	case 85, 86:
+		return weatherCodeDescription{"bi-cloud-snow", "Snow showers"}
+	case 95, 96, 99:
+		return weatherCodeDescription{"bi-cloud-lightning-rain", "Thunderstorm"}
+	}
+
+	return weatherCodeDescription{"bi-thermometer-half", "Unknown"}
 }

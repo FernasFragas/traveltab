@@ -421,8 +421,20 @@ func TestBuild_SetsTheBookingLink(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, plan)
 	assert.Equal(t,
-		"https://www.booking.com/searchresults.html?ss=Lisbon%2C+Portugal&checkin=2026-03-10&checkout=2026-03-12",
+		"https://www.booking.com/searchresults.html?ss=Lisbon%2C+Portugal&checkin=2026-03-10&checkout=2026-03-12&group_adults=2",
 		plan.BookingURL)
+}
+
+func TestBuild_BookingLinkCarriesTheRequestedTravelers(t *testing.T) {
+	useTestPlaceTypes(t)
+	req := buildRequest(2)
+	req.Travelers = 4
+
+	plan, err := Build(context.Background(), req, &buildPlaces{places: buildCity()},
+		&buildForecast{forecast: cityForecast(t, lisbonTZ, req.Start, 0, 0)}, &buildStays{}, buildNow)
+
+	require.NoError(t, err)
+	assert.Contains(t, plan.BookingURL, "&group_adults=4")
 }
 
 func TestBuild_TodayIsTakenInTheCityTimeZone(t *testing.T) {
@@ -531,4 +543,155 @@ func TestBuild_ReorderingDaysAddsANote(t *testing.T) {
 	laterReordered := strings.Contains(later.Note, reorderedNote)
 	assert.NotEqual(t, earlyReordered, laterReordered,
 		"exactly one of the two mirrored forecasts pulls a grouping out of its natural day order")
+}
+
+// includedPlace is a saved place as the handler hands it over: no Kind, no ranking.
+func includedPlace(id string, lat, lon float64) Place {
+	return Place{ID: id, Name: id + " Saved", Lat: lat, Lon: lon, Sitelinks: 1}
+}
+
+func planDayOf(plan *Plan) map[string]int {
+	ids := map[string]int{}
+	for i, day := range plan.Days {
+		for _, stop := range day.Stops {
+			ids[stop.ID] = i
+		}
+	}
+	return ids
+}
+
+func buildWithInclude(t *testing.T, days int, include []Place, places []Place, rain ...float64) *Plan {
+	t.Helper()
+	req := buildRequest(days)
+	req.Include = include
+	plan, err := Build(context.Background(), req, &buildPlaces{places: places},
+		&buildForecast{forecast: cityForecast(t, lisbonTZ, req.Start, rain...)}, &buildStays{}, buildNow)
+	require.NoError(t, err)
+	return plan
+}
+
+func TestBuild_WithoutIncludeGivesTheUnseededPlan(t *testing.T) {
+	useTestPlaceTypes(t)
+	forecast := cityForecast(t, lisbonTZ, buildStart, 0, 0)
+	today := buildNow.In(forecastLocation(forecast))
+	ranked := Rank(buildCity(), PlaceTypes, Boosts)
+	want := Schedule(GroupDays(ranked, 2), ranked, forecast, buildStart, today)
+
+	for name, include := range map[string][]Place{"nil": nil, "empty": {}} {
+		plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+		assert.Equal(t, want, plan.Days, name)
+		assert.Empty(t, plan.AlsoSuggested, name)
+	}
+}
+
+func TestBuild_IncludedPlacesAppearInTheDays(t *testing.T) {
+	useTestPlaceTypes(t)
+	include := []Place{includedPlace("Q901", 38.82, -9.14), includedPlace("Q902", 38.70, -9.14)}
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+
+	ids := planDayOf(plan)
+	assert.Contains(t, ids, "Q901")
+	assert.Contains(t, ids, "Q902")
+	assert.Empty(t, plan.AlsoSuggested)
+	for i, day := range plan.Days {
+		assert.GreaterOrEqual(t, len(day.Stops), MinStopsPerDay, "day %d is filled with nearby places", i)
+	}
+}
+
+func TestBuild_IncludedPlacesThatAreCloseShareADay(t *testing.T) {
+	useTestPlaceTypes(t)
+	include := []Place{includedPlace("Q901", 38.600, -9.14), includedPlace("Q902", 38.601, -9.14), includedPlace("Q903", 38.602, -9.14)}
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+
+	ids := planDayOf(plan)
+	assert.Equal(t, ids["Q901"], ids["Q902"])
+	assert.Equal(t, ids["Q901"], ids["Q903"])
+}
+
+func TestBuild_IncludedPlaceAlsoInTheCandidatesIsPlannedOnce(t *testing.T) {
+	useTestPlaceTypes(t)
+	include := []Place{includedPlace("Q100", 38.81, -9.14), includedPlace("Q100", 38.81, -9.14)}
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+
+	count := 0
+	for _, day := range plan.Days {
+		for _, stop := range day.Stops {
+			if stop.ID == "Q100" {
+				count++
+			}
+		}
+	}
+	assert.Equal(t, 1, count)
+}
+
+func TestBuild_MoreIncludedPlacesThanDaysCanHoldAreAlsoSuggested(t *testing.T) {
+	useTestPlaceTypes(t)
+	var include []Place
+	for i := 0; i < 10; i++ {
+		include = append(include, includedPlace(fmt.Sprintf("Q9%02d", i), 38.60+float64(i)*0.001, -9.14))
+	}
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+
+	ids := planDayOf(plan)
+	assert.Len(t, plan.AlsoSuggested, 10-2*MaxStopsPerDay)
+	for _, p := range include {
+		_, planned := ids[p.ID]
+		suggested := false
+		for _, s := range plan.AlsoSuggested {
+			suggested = suggested || s.ID == p.ID
+		}
+		assert.True(t, planned != suggested, "%s is in the days or in also suggested, not both or neither", p.ID)
+	}
+	for i, day := range plan.Days {
+		assert.LessOrEqual(t, len(day.Stops), MaxStopsPerDay, "day %d", i)
+	}
+}
+
+func TestBuild_PlansIncludedPlacesWhenNothingElseIsNearby(t *testing.T) {
+	useTestPlaceTypes(t)
+
+	plan := buildWithInclude(t, 1, []Place{includedPlace("Q901", 38.6, -9.1)}, nil, 0)
+
+	assert.Contains(t, planDayOf(plan), "Q901")
+}
+
+func TestBuild_RainDoesNotDropAnIncludedPlace(t *testing.T) {
+	useTestPlaceTypes(t)
+	include := []Place{includedPlace("Q901", 38.60, -9.14), includedPlace("Q902", 38.61, -9.14), includedPlace("Q903", 38.62, -9.14)}
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 12, 12)
+
+	ids := planDayOf(plan)
+	for _, p := range include {
+		suggested := false
+		for _, s := range plan.AlsoSuggested {
+			suggested = suggested || s.ID == p.ID
+		}
+		_, planned := ids[p.ID]
+		assert.True(t, planned || suggested, p.ID)
+	}
+}
+
+func TestBuild_ADayOfIncludedPlacesHoldsAtMostFourStops(t *testing.T) {
+	useTestPlaceTypes(t)
+	var include []Place
+	for i := 0; i < 5; i++ {
+		include = append(include, includedPlace(fmt.Sprintf("Q9%02d", i), 38.60+float64(i)*0.001, -9.14))
+	}
+	include = append(include, includedPlace("Q950", 38.90, -9.14))
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+
+	ids := planDayOf(plan)
+	for _, p := range include {
+		assert.Contains(t, ids, p.ID)
+	}
+	for i, day := range plan.Days {
+		assert.LessOrEqual(t, len(day.Stops), MaxStopsPerDay, "day %d", i)
+	}
+	assert.Empty(t, plan.AlsoSuggested)
 }

@@ -65,7 +65,7 @@ try {
     assert.equal(state.status, 'Some map sources are unavailable.');
     assert.equal(state.focused, true);
     assert.deepEqual(state.consoleErrors, []);
-    assert.deepEqual(browser.errors, []);
+    assert.deepEqual(browser.errors.map(e => typeof e === 'string' ? e : JSON.stringify(e)), []);
     console.log(`PASS ${width}px: map shell layout, keyboard list, status, console`);
   }
 } finally {

@@ -35,7 +35,7 @@ try {
         card: { x: card.x, width: card.width }, canvas: { x: canvas.x, y: canvas.y, right: canvas.right, bottom: canvas.bottom, width: canvas.width, height: canvas.height },
         panel: { x: panel.x, y: panel.y, width: panel.width, height: panel.height },
         info: { label: info?.getAttribute('aria-label'), description: document.getElementById(info?.getAttribute('aria-describedby'))?.textContent.trim() },
-        layers: [...shell.querySelectorAll('[data-map-slot="layers"] > *')].map(el => el.textContent.trim()),
+        layers: [...shell.querySelectorAll('[data-map-slot="layers"] > button')].map(el => el.textContent.trim()),
         emptyPanel: shell.querySelector('[data-map-slot="panel"]')?.textContent.trim() };
     })()`);
     assert.equal(madeira.destination, 'madeira-pt');

@@ -9,10 +9,12 @@
         <p class="destination-photo-fallback"><i class="bi bi-image" aria-hidden="true"></i> Photo unavailable</p>
     </figure>
     <div class="destination-information">
-        <h1 class="destination-title">{{ .GeneralInfo.City }}</h1>
-        {{ with .Presentation.Tagline }}<p class="destination-tagline">{{ . }}</p>{{ end }}
-        {{ template "weather_card" . }}
-        {{ with .Presentation.CountryLabel }}<p class="destination-country">{{ . }}</p>{{ end }}
+        <div class="destination-heading">
+            <h1 class="destination-title">{{ .GeneralInfo.City }}</h1>
+            {{ with .Presentation.Location }}<p class="destination-country">{{ . }}</p>{{ end }}
+        </div>
+        {{ with .Presentation.HeroLine }}<p class="destination-tagline">{{ . }}</p>{{ end }}
     </div>
+    {{ template "weather_card" . }}
 </section>
 {{ end }}

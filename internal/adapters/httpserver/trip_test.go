@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,6 +12,8 @@ import (
 	"testing"
 	"time"
 	"weatherservice/internal/application"
+	"weatherservice/internal/writermap"
+	"weatherservice/internal/writermap/writermaptest"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
@@ -590,4 +593,200 @@ func TestMainPage_PlannerStartsTomorrowByDefault(t *testing.T) {
 	// planNow is 2026-03-10, so the form starts on the 11th and never offers a past day.
 	assert.Contains(t, body, `name="start" value="2026-03-11"`)
 	assert.Contains(t, body, `min="2026-03-10"`)
+}
+
+// includeServer plans with a recording planner and a fake writers' map holding Q1 and Q2.
+func includeServer(t *testing.T, enabled bool, recorded *planner.Request) *Server {
+	t.Helper()
+
+	server := planServer(t, fakeTripPlanner{build: func(req planner.Request) *planner.Plan {
+		*recorded = req
+		plan := threeDayPlan(req)
+		plan.AlsoSuggested = []planner.Place{place("Q9", "Extra Garden", "", 38.7, -9.1)}
+		return plan
+	}})
+	server.SetWriterMapSource(&writermaptest.FakeSource{Result: writermap.DestinationResult{Places: []writermap.Place{
+		{QID: "Q1", Names: []string{"Saved One", "Alias"}, Lat: 38.71, Lon: -9.14, Sitelinks: 50, Types: []string{"T1"}, Photo: "One.jpg", Description: "Saved description"},
+		{QID: "Q2", Lat: 38.72, Lon: -9.15},
+	}}}, enabled)
+
+	return server
+}
+
+func includeRequest(qids ...string) *http.Request {
+	req := planRequest(nil)
+	query := req.URL.Query()
+	query["include"] = qids
+	req.URL.RawQuery = query.Encode()
+	req.RequestURI = req.URL.RequestURI()
+
+	return req
+}
+
+func TestPlanRoute_SeedsTheIncludedPlacesIntoTheRequest(t *testing.T) {
+	var got planner.Request
+	server := includeServer(t, true, &got)
+
+	status, _ := doRequest(t, server, includeRequest("Q1", "Q2"))
+
+	require.Equal(t, fiber.StatusOK, status)
+	require.Len(t, got.Include, 2)
+	assert.Equal(t, planner.Place{ID: "Q1", Name: "Saved One", Lat: 38.71, Lon: -9.14, Sitelinks: 50, Types: []string{"T1"}, Image: "One.jpg", Description: "Saved description"}, got.Include[0])
+	assert.Equal(t, "Q2", got.Include[1].ID)
+	assert.Equal(t, "Q2", got.Include[1].Name, "a place with no name shows its QID")
+}
+
+func TestPlanRoute_IgnoresUnknownAndRepeatedIncludes(t *testing.T) {
+	var got planner.Request
+	server := includeServer(t, true, &got)
+
+	status, _ := doRequest(t, server, includeRequest("Q404", "Q1", "Q1", ""))
+
+	require.Equal(t, fiber.StatusOK, status)
+	require.Len(t, got.Include, 1)
+	assert.Equal(t, "Q1", got.Include[0].ID)
+}
+
+func TestPlanRoute_ReadsAtMostTwelveIncludes(t *testing.T) {
+	var got planner.Request
+	server := includeServer(t, true, &got)
+	qids := make([]string, 0, 30)
+	for i := 0; i < 30; i++ {
+		qids = append(qids, fmt.Sprintf("Q5%02d", i))
+	}
+	qids = append(qids, "Q1", "Q2")
+	// Unknown ones count against the limit: the server never looks up more than twelve.
+	status, _ := doRequest(t, server, includeRequest(qids...))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Empty(t, got.Include)
+}
+
+func TestPlanRoute_IgnoresIncludeWhenTheWritersMapIsOff(t *testing.T) {
+	var got planner.Request
+	server := includeServer(t, false, &got)
+
+	status, _ := doRequest(t, server, includeRequest("Q1"))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Empty(t, got.Include)
+}
+
+func TestPlanRoute_IgnoresIncludeWithoutAWritersMapSource(t *testing.T) {
+	var got planner.Request
+	server := planServer(t, fakeTripPlanner{build: func(req planner.Request) *planner.Plan {
+		got = req
+		return threeDayPlan(req)
+	}})
+
+	status, _ := doRequest(t, server, includeRequest("Q1"))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Empty(t, got.Include)
+}
+
+func TestPlanRoute_ListsPlacesTheDaysHadNoRoomForAsAlsoSuggested(t *testing.T) {
+	var got planner.Request
+	server := includeServer(t, true, &got)
+
+	_, body := doRequest(t, server, includeRequest("Q1"))
+
+	assert.Contains(t, body, "Also suggested")
+	assert.Contains(t, body, "Extra Garden")
+}
+
+func TestPlanRoute_HasNoAlsoSuggestedBlockWhenNothingIsLeftOver(t *testing.T) {
+	server := planServer(t, fakeTripPlanner{})
+
+	_, body := doRequest(t, server, planRequest(nil))
+
+	assert.NotContains(t, body, "Also suggested")
+}
+
+// travelersServer plans with a recording planner.
+func travelersServer(t *testing.T, recorded *planner.Request) *Server {
+	t.Helper()
+
+	return planServer(t, fakeTripPlanner{build: func(req planner.Request) *planner.Plan {
+		*recorded = req
+		return threeDayPlan(req)
+	}})
+}
+
+func TestPlanRoute_PassesTheTravelersToThePlanner(t *testing.T) {
+	var got planner.Request
+	server := travelersServer(t, &got)
+
+	status, body := doRequest(t, server, planRequest(map[string]string{"travelers": "5"}))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Equal(t, 5, got.Travelers)
+	assert.Contains(t, body, `<option value="5" selected>5</option>`, "the form keeps the chosen number")
+}
+
+func TestPlanRoute_MissingOrInvalidTravelersFallBackToTwo(t *testing.T) {
+	for name, value := range map[string]string{"missing": "", "zero": "0", "too many": "9", "text": "many", "negative": "-3"} {
+		t.Run(name, func(t *testing.T) {
+			var got planner.Request
+			server := travelersServer(t, &got)
+
+			status, body := doRequest(t, server, planRequest(map[string]string{"travelers": value}))
+
+			require.Equal(t, fiber.StatusOK, status)
+			assert.Equal(t, 2, got.Travelers)
+			assert.Contains(t, body, `<option value="2" selected>2</option>`)
+		})
+	}
+}
+
+func TestPlanRoute_KeepsTheTravelersInTheShareableLink(t *testing.T) {
+	var got planner.Request
+	server := travelersServer(t, &got)
+
+	resp, err := server.app.Test(planRequest(map[string]string{"country": "pt", "travelers": "4"}), 5000)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, "/trip/lisbon-pt?days=3&from=2026-03-11&travelers=4", resp.Header.Get("HX-Push-Url"))
+}
+
+func TestTripPage_ReadsTheTravelersFromTheLink(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var got planner.Request
+	server, mockWeather, _ := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{build: func(req planner.Request) *planner.Plan {
+		got = req
+		return threeDayPlan(req)
+	}})
+	seedPlannerCity(t, "Planton")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "planton, pt").Return(createTestGeneralWeatherInfoFor("Planton"), nil)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/planton-pt?days=3&from=2026-03-11&travelers=6", nil))
+
+	require.Equal(t, fiber.StatusOK, status)
+	assert.Equal(t, 6, got.Travelers)
+	assert.Contains(t, body, `<option value="6" selected>6</option>`)
+}
+
+func TestMainPage_TravelersSelectOffersOneToEightWithTwoSelected(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	server, mockWeather, _ := createTestServer(ctrl)
+	server.now = func() time.Time { return planNow }
+	server.SetTripPlanner(fakeTripPlanner{})
+	seedPlannerCity(t, "Planton")
+	mockWeather.EXPECT().GenerateReport(gomock.Any(), "Planton").Return(createTestGeneralWeatherInfoFor("Planton"), nil)
+
+	_, body := doRequest(t, server, httptest.NewRequest("GET", "/?city_name=Planton", nil))
+
+	assert.Contains(t, body, `name="travelers"`)
+	for n := 1; n <= 8; n++ {
+		assert.Contains(t, body, fmt.Sprintf(`<option value="%d"`, n))
+	}
+	assert.NotContains(t, body, `<option value="9"`)
+	assert.Contains(t, body, `<option value="2" selected>2</option>`)
 }

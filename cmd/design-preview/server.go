@@ -29,6 +29,7 @@ func newPreviewServerWithPhotos(mapOrigin string, slow bool, scenario string) (*
 	}
 	server := httpserver.NewAppServer(fixtureWeather{mapURL: mapOrigin, delay: delay}, fixtureVideos{scenario: scenario}, silentAnalytics{})
 	server.SetPlaceSuggester(fixtureSuggestions{})
+	server.SetForecastSource(fixtureForecast{})
 	server.SetTripPlanner(fixtureTrips{delay: delay, scenario: scenario})
 	photos := &fixturePhotos{origin: mapOrigin, scenario: scenario}
 	server.SetDestinationPhotoSource(photos)
@@ -47,6 +48,8 @@ func (fixtureSuggestions) Suggest(_ context.Context, query string) ([]applicatio
 	switch strings.ToLower(query) {
 	case "lis", "lisb", "lisbo", "lisbon":
 		return []application.PlaceSuggestion{{Name: "Lisbon", Region: "Lisbon", Country: "Portugal", CountryCode: "PT", Lat: 38.7223, Lon: -9.1393}}, nil
+	case "por", "port", "porto":
+		return []application.PlaceSuggestion{{Name: "Porto", Country: "Portugal", CountryCode: "PT", Lat: 41.1494, Lon: -8.6108}}, nil
 	case "par", "pari", "paris":
 		return []application.PlaceSuggestion{
 			{Name: "Paris", Region: "Île-de-France", Country: "France", CountryCode: "FR", Lat: 48.85341, Lon: 2.3488},

@@ -59,12 +59,30 @@ func TestPickStays_ReturnsAtMostSix(t *testing.T) {
 }
 
 func TestBookingURL_CheckoutIsStartPlusDays(t *testing.T) {
-	got := BookingURL("Lisbon", "Portugal", time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC), 3)
-	assert.Equal(t, "https://www.booking.com/searchresults.html?ss=Lisbon%2C+Portugal&checkin=2026-03-01&checkout=2026-03-04", got)
+	got := BookingURL("Lisbon", "Portugal", time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC), 3, 2)
+	assert.Equal(t, "https://www.booking.com/searchresults.html?ss=Lisbon%2C+Portugal&checkin=2026-03-01&checkout=2026-03-04&group_adults=2", got)
 }
 
 func TestBookingURL_EscapesCityAndCountry(t *testing.T) {
-	got := BookingURL("São Paulo", "Brazil", time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC), 1)
+	got := BookingURL("São Paulo", "Brazil", time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC), 1, 2)
 	require.Contains(t, got, "ss=S%C3%A3o+Paulo%2C+Brazil")
-	assert.Equal(t, "https://www.booking.com/searchresults.html?ss=S%C3%A3o+Paulo%2C+Brazil&checkin=2026-03-01&checkout=2026-03-02", got)
+	assert.Equal(t, "https://www.booking.com/searchresults.html?ss=S%C3%A3o+Paulo%2C+Brazil&checkin=2026-03-01&checkout=2026-03-02&group_adults=2", got)
+}
+
+func TestBookingURL_CarriesTheTravelers(t *testing.T) {
+	got := BookingURL("Lisbon", "Portugal", time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC), 3, 5)
+	assert.Contains(t, got, "&group_adults=5")
+}
+
+func TestBookingURL_InvalidTravelersFallBackToTwo(t *testing.T) {
+	for _, travelers := range []int{0, -1, 9, 100} {
+		got := BookingURL("Lisbon", "Portugal", time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC), 3, travelers)
+		assert.Contains(t, got, "&group_adults=2", "travelers %d", travelers)
+	}
+}
+
+func TestBookingURL_AcceptsTheEdgesOfTheRange(t *testing.T) {
+	start := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	assert.Contains(t, BookingURL("Lisbon", "Portugal", start, 3, 1), "&group_adults=1")
+	assert.Contains(t, BookingURL("Lisbon", "Portugal", start, 3, 8), "&group_adults=8")
 }

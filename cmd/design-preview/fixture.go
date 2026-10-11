@@ -74,7 +74,7 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 		Country:  country,
 		Lat:      lat,
 		Lon:      lon,
-		Weather:  app.Weather{Temperature: 22, FeelsLike: 22, Humidity: 60, Wind: 10, Condition: condition},
+		Weather:  app.Weather{Temperature: 22, FeelsLike: 22, Humidity: 60, Wind: 10, Condition: condition, Sunset: "19:12"},
 		Waves:    app.Waves{Height: 1.2},
 		EmbedURL: f.mapURL,
 	}, nil
@@ -148,7 +148,7 @@ func (f fixtureTrips) Plan(ctx context.Context, req planner.Request) (*planner.P
 	}
 	p := &planner.Plan{
 		Request:    req,
-		BookingURL: planner.BookingURL(req.City, req.Country, req.Start, req.Days),
+		BookingURL: planner.BookingURL(req.City, req.Country, req.Start, req.Days, req.Travelers),
 		Stays:      stays,
 	}
 
@@ -161,19 +161,19 @@ func (f fixtureTrips) Plan(ctx context.Context, req planner.Request) (*planner.P
 		day := planner.Day{Date: req.Start.AddDate(0, 0, i), WalkKM: 3.1 + float64(i)}
 		switch i {
 		case 0:
-			rain := 0.4
+			rain, max, min, code := 0.4, 23.0, 17.0, 1
 			day.Certain = true
-			day.Forecast = &planner.DayForecast{Date: day.Date, RainMM: &rain}
+			day.Forecast = &planner.DayForecast{Date: day.Date, RainMM: &rain, MaxC: &max, MinC: &min, WeatherCode: &code}
 			day.Stops = places[:4]
 		case 1:
-			rain := 12.4
+			rain, max, min, code := 12.4, 19.0, 15.0, 63
 			day.Certain = true
-			day.Forecast = &planner.DayForecast{Date: day.Date, RainMM: &rain}
+			day.Forecast = &planner.DayForecast{Date: day.Date, RainMM: &rain, MaxC: &max, MinC: &min, WeatherCode: &code}
 			day.Rainy = true
 			day.Stops = []planner.Place{places[0], places[2], places[4]}
 		case 2:
-			rain := 2.1
-			day.Forecast = &planner.DayForecast{Date: day.Date, RainMM: &rain}
+			rain, max, min, code := 2.1, 21.0, 16.0, 3
+			day.Forecast = &planner.DayForecast{Date: day.Date, RainMM: &rain, MaxC: &max, MinC: &min, WeatherCode: &code}
 			day.Stops = []planner.Place{places[5], places[6], places[4]}
 		default:
 			// Deliberately leaves Forecast nil, so a five-day plan exercises absent forecasts.
@@ -188,19 +188,32 @@ func (f fixtureTrips) Plan(ctx context.Context, req planner.Request) (*planner.P
 		}
 		p.Days = append(p.Days, day)
 	}
+	seedIncluded(p, req.Include)
 	return p, nil
+}
+
+// seedIncluded puts the saved places first in the days, as the real planner does: at most
+// MaxStopsPerDay a day, the rest as "also suggested".
+func seedIncluded(p *planner.Plan, include []planner.Place) {
+	for i := range p.Days {
+		n := min(len(include), planner.MaxStopsPerDay)
+		stops := append(append([]planner.Place{}, include[:n]...), p.Days[i].Stops...)
+		p.Days[i].Stops = stops[:min(len(stops), planner.MaxStopsPerDay)]
+		include = include[n:]
+	}
+	p.AlsoSuggested = include
 }
 
 // fixturePlaces covers a photo-bearing stop, a mixed stop, an indoor stop, and deliberately
 // long labels. Wikimedia Image values are stable Commons file names, not local production assets.
 func fixturePlaces() []planner.Place {
 	return []planner.Place{
-		{ID: "fixture-1", Name: "Belém Tower", Kind: planner.Outdoor, Image: "Torre de Belém 1.jpg", Lat: 38.6916, Lon: -9.216},
-		{ID: "fixture-2", Name: "Jerónimos Monastery", Kind: planner.Mixed, Lat: 38.6979, Lon: -9.2065},
-		{ID: "fixture-3", Name: "A Very Long Destination Attraction Name That Must Wrap Without Losing Accessibility", Kind: planner.Indoor, Lat: 38.7139, Lon: -9.1394},
+		{ID: "fixture-1", Name: "Belém Tower", Kind: planner.Outdoor, Image: "Torre de Belém 1.jpg", Description: "tower in Lisbon, Portugal", Lat: 38.6916, Lon: -9.216},
+		{ID: "fixture-2", Name: "Jerónimos Monastery", Kind: planner.Mixed, Description: "monastery in Lisbon, Portugal", Lat: 38.6979, Lon: -9.2065},
+		{ID: "fixture-3", Name: "A Very Long Destination Attraction Name That Must Wrap Without Losing Accessibility", Kind: planner.Indoor, Description: "museum and cultural venue in Lisbon, Portugal whose unusually long description must be clamped to two lines instead of pushing the stop card taller than its neighbours on small screens", Lat: 38.7139, Lon: -9.1394},
 		{ID: "fixture-4", Name: "Time Out Market Lisboa", Kind: planner.Mixed, Lat: 38.7071, Lon: -9.1459},
-		{ID: "fixture-5", Name: "National Tile Museum", Kind: planner.Indoor, Lat: 38.7373, Lon: -9.1129},
-		{ID: "fixture-6", Name: "Alfama viewpoint", Kind: planner.Outdoor, Lat: 38.7118, Lon: -9.1293},
+		{ID: "fixture-5", Name: "National Tile Museum", Kind: planner.Indoor, Description: "museum of azulejo tiles in Lisbon, Portugal", Lat: 38.7373, Lon: -9.1129},
+		{ID: "fixture-6", Name: "Alfama viewpoint", Kind: planner.Outdoor, Description: "lookout over the old town of Lisbon", Lat: 38.7118, Lon: -9.1293},
 		{ID: "fixture-7", Name: "Praça do Comércio", Kind: planner.Outdoor, Lat: 38.7075, Lon: -9.1364},
 	}
 }
@@ -238,4 +251,22 @@ func validScenario(name string) bool {
 	default:
 		return false
 	}
+}
+
+// fixtureForecast serves four fixed days. Porto has no forecast, so the card's current-weather-only
+// state stays reachable in the preview.
+type fixtureForecast struct{}
+
+func (fixtureForecast) DailyForecast(_ context.Context, lat, lon float64) (*planner.Forecast, error) {
+	if lat == 41.1494 && lon == -8.6108 {
+		return nil, errors.New("fixture: no forecast")
+	}
+	forecast := &planner.Forecast{Timezone: "UTC"}
+	for i, code := range []int{1, 0, 3, 61} {
+		max, min, c := 22.0+float64(i), 17.0-float64(i%2), code
+		forecast.Days = append(forecast.Days, planner.DayForecast{
+			Date: time.Date(2026, 10, 12+i, 0, 0, 0, 0, time.UTC), MaxC: &max, MinC: &min, WeatherCode: &c,
+		})
+	}
+	return forecast, nil
 }

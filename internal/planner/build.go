@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"strings"
 	"time"
 )
@@ -47,7 +48,7 @@ func Build(ctx context.Context, req Request, places PlaceSource, forecast Foreca
 	}
 
 	ranked := Rank(candidates, PlaceTypes, Boosts)
-	groups := GroupDays(ranked, req.Days)
+	groups, extras := seedGroups(req.Include, ranked, req.Days)
 	if len(groups) == 0 {
 		return nil, fmt.Errorf("error planning %s: no place nearby is worth a visit", req.City)
 	}
@@ -77,8 +78,9 @@ func Build(ctx context.Context, req Request, places PlaceSource, forecast Foreca
 		Request:    req,
 		Days:       days,
 		Note:       strings.Join(notes, " "),
-		BookingURL: BookingURL(req.City, req.Country, req.Start, req.Days),
+		BookingURL: BookingURL(req.City, req.Country, req.Start, req.Days, req.Travelers),
 	}
+	plan.AlsoSuggested = append(extras, droppedSeeds(req.Include, days, extras)...)
 
 	plan.Center = Medoid(planStops(plan.Days))
 	nearby, err := stays.StaysNear(ctx, plan.Center.Lat, plan.Center.Lon)
@@ -89,6 +91,143 @@ func Build(ctx context.Context, req Request, places PlaceSource, forecast Foreca
 		plan.Stays = PickStays(plan.Center, nearby)
 	}
 	return plan, nil
+}
+
+// seedGroups builds the walking days with the included places first: they are clustered into
+// days (close ones together, at most MaxStopsPerDay each), each of those days is filled up to
+// MinStopsPerDay with the nearest ranked places, and any days left over come from the ranked
+// places as usual. Included places the days have no room for come back as extras. With nothing
+// included this is exactly GroupDays.
+func seedGroups(include, ranked []Place, days int) (groups []Group, extras []Place) {
+	seeds := uniquePlaces(include)
+	if len(seeds) == 0 {
+		return GroupDays(ranked, days), nil
+	}
+	if len(seeds) > days*MaxStopsPerDay {
+		seeds, extras = seeds[:days*MaxStopsPerDay], seeds[days*MaxStopsPerDay:]
+	}
+
+	k := dayCount(len(seeds), days)
+	if need := (len(seeds) + MaxStopsPerDay - 1) / MaxStopsPerDay; k < need {
+		k = need
+	}
+	clusters, centers := clusterPlaces(seeds, k)
+	clusters = capClusters(clusters, centers)
+
+	used := make(map[string]bool)
+	for _, p := range seeds {
+		used[p.ID] = true
+	}
+	var rest []Place
+	for _, p := range ranked {
+		if !used[p.ID] {
+			rest = append(rest, p)
+		}
+	}
+	pool := rest
+	if len(pool) > SunnyPoolSize {
+		pool = pool[:SunnyPoolSize]
+	}
+	for _, stops := range clusters {
+		if len(stops) == 0 {
+			continue
+		}
+		for len(stops) < MinStopsPerDay {
+			next, ok := nearestUnused(stops, pool, used)
+			if !ok {
+				break
+			}
+			used[next.ID] = true
+			stops = append(stops, next)
+		}
+		groups = append(groups, WalkingLoop(stops))
+	}
+
+	if len(groups) < days {
+		var left []Place
+		for _, p := range rest {
+			if !used[p.ID] {
+				left = append(left, p)
+			}
+		}
+		groups = append(groups, GroupDays(left, days-len(groups))...)
+	}
+	return groups, extras
+}
+
+// uniquePlaces keeps the first of each ID, up to MaxIncluded places.
+func uniquePlaces(places []Place) []Place {
+	seen := make(map[string]bool, len(places))
+	var unique []Place
+	for _, p := range places {
+		if seen[p.ID] || len(unique) == MaxIncluded {
+			continue
+		}
+		seen[p.ID] = true
+		unique = append(unique, p)
+	}
+	return unique
+}
+
+// capClusters moves the stop farthest from a day's centre out of any day with more than
+// MaxStopsPerDay stops, into the nearest day that still has room.
+func capClusters(clusters [][]Place, centers []Place) [][]Place {
+	for i := range clusters {
+		for len(clusters[i]) > MaxStopsPerDay {
+			far := 0
+			for s, p := range clusters[i] {
+				if DistanceKM(p, centers[i]) > DistanceKM(clusters[i][far], centers[i]) {
+					far = s
+				}
+			}
+			moved := clusters[i][far]
+			clusters[i] = append(clusters[i][:far], clusters[i][far+1:]...)
+			target, distance := -1, math.Inf(1)
+			for j := range clusters {
+				if d := DistanceKM(moved, centers[j]); j != i && len(clusters[j]) < MaxStopsPerDay && d < distance {
+					target, distance = j, d
+				}
+			}
+			clusters[target] = append(clusters[target], moved)
+		}
+	}
+	return clusters
+}
+
+// nearestUnused is the unused place in the pool closest to the day's stops, within PullReachKM.
+func nearestUnused(stops, pool []Place, used map[string]bool) (Place, bool) {
+	best, bestKM, found := Place{}, PullReachKM, false
+	for _, c := range pool {
+		if used[c.ID] {
+			continue
+		}
+		if km := nearestKM(c, stops); km <= bestKM && (!found || km < bestKM || moreFamous(c, best)) {
+			best, bestKM, found = c, km, true
+		}
+	}
+	return best, found
+}
+
+// droppedSeeds are included places that made it into the groups but not into the final days
+// (a rainy day trades outdoor stops for indoor ones), so they are suggested instead of lost.
+func droppedSeeds(include []Place, days []Day, extras []Place) []Place {
+	planned := make(map[string]bool)
+	for _, day := range days {
+		for _, stop := range day.Stops {
+			planned[stop.ID] = true
+		}
+	}
+	for _, p := range extras {
+		planned[p.ID] = true
+	}
+	var dropped []Place
+	for _, p := range uniquePlaces(include) {
+		if !planned[p.ID] {
+			planned[p.ID] = true
+			dropped = append(dropped, p)
+		}
+	}
+	return dropped
 }
 
 // shortTrip is the note a city gets when it only has highlights for part of the trip.

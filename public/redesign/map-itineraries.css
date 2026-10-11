@@ -1,0 +1,49 @@
+/* Writers' itineraries layer: purple numbered pins, a route line and a picker in the layers slot. */
+.itinerary-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #7b3fb8;
+    color: #fff;
+    border: 2px solid #fff;
+    font: 600 13px/1 sans-serif;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+path.itinerary-line {
+    stroke: #7b3fb8;
+    stroke-width: 3;
+    stroke-dasharray: 6 6;
+    stroke-opacity: 0.85;
+}
+
+.itinerary-popup a {
+    display: block;
+    margin-top: 4px;
+    color: #5b2a8c;
+}
+
+.itinerary-picker {
+    max-width: 100%;
+    min-height: 32px;
+    padding: 0 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 16px;
+    background: #fff;
+    color: #5b2a8c;
+    font: inherit;
+    font-size: 11px;
+}
+
+.itinerary-picker:focus-visible {
+    outline: 2px solid #2685ee;
+    outline-offset: 2px;
+}
+
+/* No routes for this destination: hide the chip (the shell is marked once routes load). */
+[data-writers-map]:not([data-itineraries]) .writers-map-layer-itineraries {
+    display: none !important;
+}

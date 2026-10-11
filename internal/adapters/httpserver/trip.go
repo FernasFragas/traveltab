@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 	"weatherservice/internal/application"
+	"weatherservice/internal/writermap"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -40,27 +42,30 @@ func (s *Server) SetTripPlanner(tripPlanner application.TripPlanner) {
 
 // tripCard is everything views/trip_card.go.tpl needs: the form, and the plan when there is one.
 type tripCard struct {
-	City       string
-	Country    string
-	Lat, Lon   float64
-	Start      string
-	EndLabel   string
-	MinStart   string
-	Days       int
-	DayOptions []int
-	Error      string
-	Plan       *tripPlanView
+	City            string
+	Country         string
+	Lat, Lon        float64
+	Start           string
+	EndLabel        string
+	MinStart        string
+	Days            int
+	DayOptions      []int
+	Travelers       int
+	TravelerOptions []int
+	Error           string
+	Plan            *tripPlanView
 }
 
 type tripPlanView struct {
-	Note       string
-	Days       []tripDayView
-	Stays      []planner.Stay
-	StayCards  []stayCardView
-	StaysNote  string
-	BookingURL string
-	ICSURL     string // "" when the plan can't be identified by a slug (e.g. no country)
-	KMLURL     string
+	Note          string
+	Days          []tripDayView
+	Stays         []planner.Stay
+	StayCards     []stayCardView
+	StaysNote     string
+	AlsoSuggested []planner.Place // included places the days had no room for
+	BookingURL    string
+	ICSURL        string // "" when the plan can't be identified by a slug (e.g. no country)
+	KMLURL        string
 }
 
 type tripDayView struct {
@@ -72,7 +77,11 @@ type tripDayView struct {
 	HasForecast bool
 	WalkKM      string
 	Stops       []planner.Place
-	MapsURL     string // a walking-directions link through the day's stops, "" with none
+	Legs        []string // per stop: km from the previous stop in the day, "" for the first
+	Temp        string   // the day's max temperature, "" without forecast data
+	TempIcon    string   // bi- class for the weather code, "" without one
+	Condition   string   // the weather code in words, "" without one
+	MapsURL     string   // a walking-directions link through the day's stops, "" with none
 }
 
 // planTrip answers GET /plan with the trip card fragment. It also carries an HX-Push-Url
@@ -93,6 +102,8 @@ func (s *Server) planTrip(ctx *fiber.Ctx) error {
 		return ctx.Render("plan_response", card)
 	}
 
+	req.Include = s.includedPlaces(ctx, req)
+
 	plan, err := s.tripPlanner.Plan(ctx.Context(), req)
 	if err != nil || plan == nil {
 		log.Printf("Error planning a trip for %s with error %v", req.City, err)
@@ -108,6 +119,44 @@ func (s *Server) planTrip(ctx *fiber.Ctx) error {
 	return ctx.Render("plan_response", card)
 }
 
+// includedPlaces resolves the repeated ?include=Q1&include=Q2 saved places through the writers'
+// map, so the plan can seed them into its days. It reads at most planner.MaxIncluded distinct
+// QIDs and skips the ones the map doesn't know. It returns nothing when the writers' map is off.
+func (s *Server) includedPlaces(ctx *fiber.Ctx, req planner.Request) []planner.Place {
+	if !s.writersMapEnabled {
+		return nil
+	}
+
+	area := writermap.Area{Name: req.City, Country: req.Country, Lat: req.Lat, Lon: req.Lon}
+	seen := make(map[string]bool)
+	var places []planner.Place
+	for _, raw := range ctx.Context().QueryArgs().PeekMulti("include") {
+		qid := strings.TrimSpace(string(raw))
+		if qid == "" || seen[qid] {
+			continue
+		}
+		if len(seen) == planner.MaxIncluded {
+			break
+		}
+		seen[qid] = true
+
+		saved, _, err := s.writerMapSource.Place(ctx.Context(), area, qid)
+		if err != nil || saved == nil || !validCoordinates(saved.Lat, saved.Lon) {
+			continue
+		}
+		name := saved.QID
+		if len(saved.Names) > 0 {
+			name = saved.Names[0]
+		}
+		places = append(places, planner.Place{
+			ID: saved.QID, Name: name, Lat: saved.Lat, Lon: saved.Lon,
+			Sitelinks: saved.Sitelinks, Types: saved.Types, Image: saved.Photo, Description: saved.Description,
+		})
+	}
+
+	return places
+}
+
 // setPushURL points the browser's address bar at the canonical /trip/:slug link for req, with
 // the days/from query only when withDates is true. It sets nothing when req doesn't even
 // identify a city, since there is no shareable page to point at.
@@ -119,6 +168,9 @@ func (s *Server) setPushURL(ctx *fiber.Ctx, req planner.Request, withDates bool)
 	url := "/trip/" + Slug(req.City, req.Country)
 	if withDates && !req.Start.IsZero() && req.Days > 0 {
 		url += fmt.Sprintf("?days=%d&from=%s", req.Days, req.Start.Format(tripDateLayout))
+		if req.Travelers != planner.DefaultTravelers {
+			url += fmt.Sprintf("&travelers=%d", req.Travelers)
+		}
 	}
 	ctx.Set("HX-Push-Url", url)
 }
@@ -181,7 +233,7 @@ func (s *Server) tripCardForSlug(ctx *fiber.Ctx, info application.GeneralWeather
 		return nil
 	}
 
-	req := planner.Request{City: info.City, Country: info.Country, Lat: info.Lat, Lon: info.Lon}
+	req := planner.Request{City: info.City, Country: info.Country, Lat: info.Lat, Lon: info.Lon, Travelers: parseTravelers(ctx)}
 
 	days, start, ok := parseDaysAndStart(ctx, "days", "from", s.today())
 	if !ok {
@@ -206,7 +258,7 @@ func (s *Server) tripCardForSlug(ctx *fiber.Ctx, info application.GeneralWeather
 	return card
 }
 
-// resolveTripPlan turns a /trip/:slug export request's slug, days and from into a Plan. It
+// resolveTripPlan turns a /trip/:slug export request's slug, days, from and include into a Plan. It
 // reports ok=false for anything that can't produce a full plan to export - an unparsable slug,
 // a missing or invalid days/from pair, or the planner itself failing - so an export route can
 // 404 instead of serving an empty or broken file.
@@ -239,6 +291,7 @@ func (s *Server) resolveTripPlan(ctx *fiber.Ctx) (*planner.Plan, bool) {
 		Days:    days,
 		Start:   start,
 	}
+	req.Include = s.includedPlaces(ctx, req)
 
 	plan, err := s.tripPlanner.Plan(ctx.Context(), req)
 	if err != nil || plan == nil {
@@ -295,7 +348,7 @@ func dayUnit(days int) string {
 
 // parsePlanRequest reads the query into a request, or returns the message to show instead.
 func (s *Server) parsePlanRequest(ctx *fiber.Ctx) (planner.Request, string) {
-	req := planner.Request{City: strings.TrimSpace(ctx.Query("city")), Country: strings.TrimSpace(ctx.Query("country"))}
+	req := planner.Request{City: strings.TrimSpace(ctx.Query("city")), Country: strings.TrimSpace(ctx.Query("country")), Travelers: parseTravelers(ctx)}
 
 	lat, latErr := strconv.ParseFloat(ctx.Query("lat"), 64)
 	lon, lonErr := strconv.ParseFloat(ctx.Query("lon"), 64)
@@ -322,6 +375,16 @@ func (s *Server) parsePlanRequest(ctx *fiber.Ctx) (planner.Request, string) {
 	req.Start = start
 
 	return req, ""
+}
+
+// parseTravelers reads ?travelers=N, or planner.DefaultTravelers when it is missing or not in
+// 1..planner.MaxTravelers.
+func parseTravelers(ctx *fiber.Ctx) int {
+	travelers, err := strconv.Atoi(ctx.Query("travelers"))
+	if err != nil || travelers < 1 || travelers > planner.MaxTravelers {
+		return planner.DefaultTravelers
+	}
+	return travelers
 }
 
 // today is midnight on the server's clock, so date tests stay deterministic.
@@ -372,28 +435,41 @@ func (s *Server) newTripCard(req planner.Request) tripCard {
 		options = append(options, day)
 	}
 
+	travelers := req.Travelers
+	if travelers < 1 || travelers > planner.MaxTravelers {
+		travelers = planner.DefaultTravelers
+	}
+
+	travelerOptions := make([]int, 0, planner.MaxTravelers)
+	for n := 1; n <= planner.MaxTravelers; n++ {
+		travelerOptions = append(travelerOptions, n)
+	}
+
 	return tripCard{
-		City:       req.City,
-		Country:    req.Country,
-		Lat:        req.Lat,
-		Lon:        req.Lon,
-		Start:      start.Format(tripDateLayout),
-		EndLabel:   start.AddDate(0, 0, days-1).Format(tripDateHeading),
-		MinStart:   today.Format(tripDateLayout),
-		Days:       days,
-		DayOptions: options,
+		City:            req.City,
+		Country:         req.Country,
+		Lat:             req.Lat,
+		Lon:             req.Lon,
+		Start:           start.Format(tripDateLayout),
+		EndLabel:        start.AddDate(0, 0, days-1).Format(tripDateHeading),
+		MinStart:        today.Format(tripDateLayout),
+		Days:            days,
+		DayOptions:      options,
+		Travelers:       travelers,
+		TravelerOptions: travelerOptions,
 	}
 }
 
 // newTripPlanView formats a plan for the template, which then only prints strings.
 func newTripPlanView(plan *planner.Plan) *tripPlanView {
 	view := &tripPlanView{
-		Note:       plan.Note,
-		Stays:      plan.Stays,
-		StayCards:  presentationStays(plan.Request, plan.Stays),
-		StaysNote:  plan.StaysNote,
-		BookingURL: plan.BookingURL,
-		Days:       make([]tripDayView, 0, len(plan.Days)),
+		Note:          plan.Note,
+		Stays:         plan.Stays,
+		StayCards:     presentationStays(plan.Request, plan.Stays),
+		StaysNote:     plan.StaysNote,
+		AlsoSuggested: plan.AlsoSuggested,
+		BookingURL:    plan.BookingURL,
+		Days:          make([]tripDayView, 0, len(plan.Days)),
 	}
 
 	view.ICSURL, view.KMLURL = exportURLs(plan.Request)
@@ -408,17 +484,44 @@ func newTripPlanView(plan *planner.Plan) *tripPlanView {
 			HasForecast: day.Forecast != nil && day.Forecast.RainMM != nil,
 			WalkKM:      fmt.Sprintf("%.1f", day.WalkKM),
 			Stops:       day.Stops,
+			Legs:        stopLegs(day.Stops),
 			MapsURL:     googleMapsWalkingURL(day.Stops),
 		})
+		view.Days[i].setForecast(day.Forecast)
 	}
 
 	return view
 }
 
+// setForecast fills the day's max temperature and condition; each stays empty when Open-Meteo had no value.
+func (d *tripDayView) setForecast(forecast *planner.DayForecast) {
+	if forecast == nil {
+		return
+	}
+	if forecast.MaxC != nil {
+		d.Temp = fmt.Sprintf("%.0f°", *forecast.MaxC)
+	}
+	if forecast.WeatherCode != nil {
+		d.TempIcon = weatherCodeIcon(*forecast.WeatherCode)
+		d.Condition = weatherCodeLabel(*forecast.WeatherCode)
+	}
+}
+
+// stopLegs gives each stop's distance from the one before it, and "" for the first stop.
+func stopLegs(stops []planner.Place) []string {
+	legs := make([]string, len(stops))
+	for i := 1; i < len(stops); i++ {
+		legs[i] = fmt.Sprintf("%.1f km", planner.DistanceKM(stops[i-1], stops[i]))
+	}
+	return legs
+}
+
 // exportURLs are the .ics and .kml links for req: the same slug and days/from query
 // resolveTripPlan reads, with the extension on the path itself, matching the routes
 // registered in server.go ("/trip/:slug.ics", "/trip/:slug.kml"). Both are "" when req
-// doesn't carry enough to build a slug (no country) or a date (no start, no days).
+// doesn't carry enough to build a slug (no country) or a date (no start, no days). Each saved
+// place that resolved into req.Include is repeated as include=QID, so an export re-plans
+// with the same places as the plan on screen.
 func exportURLs(req planner.Request) (ics, kml string) {
 	if req.City == "" || req.Country == "" || req.Start.IsZero() || req.Days <= 0 {
 		return "", ""
@@ -426,6 +529,9 @@ func exportURLs(req planner.Request) (ics, kml string) {
 
 	slug := Slug(req.City, req.Country)
 	query := fmt.Sprintf("?days=%d&from=%s", req.Days, req.Start.Format(tripDateLayout))
+	for _, saved := range req.Include {
+		query += "&include=" + url.QueryEscape(saved.ID)
+	}
 
 	return "/trip/" + slug + ".ics" + query, "/trip/" + slug + ".kml" + query
 }

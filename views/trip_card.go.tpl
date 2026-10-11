@@ -37,6 +37,16 @@
             </select>
         </label>
 
+        <label class="trip-field trip-travelers" for="trip-travelers">
+            <span class="trip-field-label">Travelers</span>
+            <select id="trip-travelers" class="trip-select" name="travelers">
+                {{- $travelers := .Travelers }}
+                {{- range .TravelerOptions }}
+                <option value="{{ . }}"{{ if eq . $travelers }} selected{{ end }}>{{ . }}</option>
+                {{- end }}
+            </select>
+        </label>
+
         <button type="submit" class="trip-submit">
             Generate plan
             <i class="bi bi-arrow-right" aria-hidden="true"></i>

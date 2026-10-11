@@ -412,6 +412,38 @@ func TestWikimedia_PlacesNear_ReturnsPlacesWithWikidataDetails(t *testing.T) {
 	assert.Equal(t, "TaviraCastle-CCBY.jpg", castle.Image)
 }
 
+func TestWikimedia_PlacesNear_CarriesTheEnglishWikidataDescription(t *testing.T) {
+	api, requests := newStubWikimediaAPI(taviraFixtures(t))
+
+	places, err := api.PlacesNear(context.Background(), taviraLat, taviraLon)
+	require.NoError(t, err)
+
+	castle := findPlace(places, "Q5049832")
+	require.NotNil(t, castle)
+	assert.Equal(t, "castle in Tavira, Portugal", castle.Description)
+
+	described := 0
+	for _, req := range *requests {
+		if strings.Contains(req.URL.Query().Get("props"), "claims") {
+			assert.Contains(t, req.URL.Query().Get("props"), "descriptions", "the detail request adds descriptions, not a new call")
+			assert.Equal(t, "en", req.URL.Query().Get("languages"))
+			described++
+		}
+	}
+	assert.NotZero(t, described)
+}
+
+func TestWikimedia_PlacesNear_PlaceWithoutADescriptionHasNone(t *testing.T) {
+	api, _ := newStubWikimediaAPI(taviraFixtures(t))
+
+	places, err := api.PlacesNear(context.Background(), taviraLat, taviraLon)
+	require.NoError(t, err)
+
+	fortress := findPlace(places, "Q1438891")
+	require.NotNil(t, fortress)
+	assert.Empty(t, fortress.Description)
+}
+
 func TestWikimedia_PlacesNear_LeavesKindEmpty(t *testing.T) {
 	api, _ := newStubWikimediaAPI(taviraFixtures(t))
 

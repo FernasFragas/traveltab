@@ -112,7 +112,8 @@ export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227 } = {}) =
       } else {
         action = call('Fetch.continueRequest', { requestId });
       }
-      action.catch(error => errors.push(String(error)));
+      // A request cancelled by a navigation is already gone, so answering it fails; that is not a page error.
+      action.catch(error => { if (error?.message !== 'Invalid InterceptionId.') errors.push(error?.message ? String(error.message) : JSON.stringify(error)); });
     } else if (message.method === 'Network.loadingFailed' || message.method === 'Network.responseReceived') {
       events.push(message);
     }
