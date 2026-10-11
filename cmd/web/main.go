@@ -45,6 +45,7 @@ func main() {
 	}()
 	server := httpserver.NewAppServer(reporters, videoStreamReporters, storage)
 	wireWritersMap(server)
+	wireBaseLayer(server, storage)
 	server.SetPlaceSuggester(api.NewOpenMeteoGeocodingAPI(nil))
 
 	// The trip planner reads free, keyless sources. Each one goes through the SQLite cache, so a
@@ -78,6 +79,12 @@ func main() {
 func wireWritersMap(server *httpserver.Server) {
 	if config.LoadFeatureFlags().WritersMap {
 		server.SetWriterMapSource(writermaptest.NewMadeiraSource(), true)
+	}
+}
+
+func wireBaseLayer(server *httpserver.Server, storage *sqlite.Store) {
+	if config.LoadFeatureFlags().WritersMap {
+		server.SetBasePlaceSource(storage.NewCachedBasePlaceSource(api.NewWikidataNearbyAPI(nil)), true)
 	}
 }
 

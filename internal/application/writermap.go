@@ -13,10 +13,10 @@ type WriterMapSource interface {
 	Place(ctx context.Context, dest writermap.Area, qid string) (*writermap.Place, *writermap.Summary, error)
 }
 
-// BasePlaceSource returns a destination's Wikidata base places. When the places cannot be
-// fetched and nothing is cached, it returns an empty result with an error the caller can log.
+// BasePlaceSource returns capped map pins and the full nearby gazetteer from one Wikidata query.
+// When they cannot be fetched and nothing is cached, it returns an empty result with an error.
 type BasePlaceSource interface {
-	Places(ctx context.Context, dest writermap.Area) ([]writermap.Place, error)
+	Places(ctx context.Context, dest writermap.Area) (writermap.BasePlaces, error)
 }
 
 // BasePlaceRefresher re-runs a destination's base query and replaces its cached places.

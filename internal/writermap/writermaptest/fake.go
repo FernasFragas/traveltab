@@ -98,21 +98,21 @@ func (f *FakeSource) Place(ctx context.Context, _ writermap.Area, qid string) (*
 // FakeBaseSource returns configured base places or an error, and counts calls so tests can
 // check deduplication and warming. It is safe for concurrent use.
 type FakeBaseSource struct {
-	Result       []writermap.Place
+	Result       writermap.BasePlaces
 	Err          error
 	mu           sync.Mutex
 	placesCalls  int
 	refreshCalls int
 }
 
-func (f *FakeBaseSource) Places(_ context.Context, _ writermap.Area) ([]writermap.Place, error) {
+func (f *FakeBaseSource) Places(_ context.Context, _ writermap.Area) (writermap.BasePlaces, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.placesCalls++
 	if f.Err != nil {
-		return []writermap.Place{}, f.Err
+		return writermap.BasePlaces{}, f.Err
 	}
-	return clonePlaces(f.Result), nil
+	return writermap.BasePlaces{Pins: clonePlaces(f.Result.Pins), Gazetteer: clonePlaces(f.Result.Gazetteer)}, nil
 }
 
 func (f *FakeBaseSource) Refresh(_ context.Context, _ writermap.Area) error {
@@ -176,6 +176,7 @@ func clonePlaces(in []writermap.Place) []writermap.Place {
 	out := append([]writermap.Place(nil), in...)
 	for i := range out {
 		out[i].Names = append([]string(nil), in[i].Names...)
+		out[i].Types = append([]string(nil), in[i].Types...)
 	}
 	return out
 }

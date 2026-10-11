@@ -28,10 +28,11 @@ coordinates use decimal degrees (latitude, then longitude). QIDs are Wikidata it
 - `WriterMapSource.Place(ctx, area, qid)` returns panel place data and an optional summary. A
   missing summary is represented by `nil`; this is a normal state. An unknown QID returns an error
   wrapping `writermap.ErrPlaceNotFound`, never a `nil` place without an error.
-- `BasePlaceSource.Places(ctx, area)` returns the destination's Wikidata base places (the
-  base layer and the gazetteer for matching). When they cannot be fetched and nothing is cached, it
-  returns an empty list with an error the caller can log; the map still shows tiles and the day
-  plan. The Wikidata adapter and its cache decorator both implement it.
+- `BasePlaceSource.Places(ctx, area)` returns `BasePlaces` from one Wikidata query: `Pins` is
+  filtered to visitable types and capped for the base layer; `Gazetteer` keeps the full nearby
+  list and each place's P31 `Types` for writer matching. When they cannot be fetched and nothing
+  is cached, it returns an empty result with an error the caller can log; the map still shows
+  tiles and the day plan. The Wikidata adapter and its cache decorator both implement it.
 - `BasePlaceRefresher.Refresh(ctx, area)` re-runs the base query and replaces the cached places in
   place. Only the cache decorator implements it; the monthly job calls it.
 - `Summarizer.Summarize(ctx, place, passages)` returns English prose. Passage text is transient:

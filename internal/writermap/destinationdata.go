@@ -29,10 +29,17 @@ type DestinationResult struct {
 	Complete       bool                 `json:"complete"`
 }
 
+// BasePlaces keeps the capped map pins separate from the full nearby gazetteer used for matching.
+type BasePlaces struct {
+	Pins      []Place `json:"pins"`
+	Gazetteer []Place `json:"gazetteer"`
+}
+
 // Place is a Wikidata place with the names and metadata used by matching and panels.
 type Place struct {
 	QID          string   `json:"qid"`
 	Names        []string `json:"names"`
+	Types        []string `json:"types,omitempty"` // Wikidata P31 IDs, kept for matching rules.
 	Lat          float64  `json:"lat"`
 	Lon          float64  `json:"lon"`
 	Kind         string   `json:"kind,omitempty"`
