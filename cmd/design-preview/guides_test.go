@@ -64,7 +64,7 @@ func TestFixtureGuidesAnswerByCityAndCountry(t *testing.T) {
 }
 
 func TestPreviewServerWiresTheGuideFixture(t *testing.T) {
-	server, cleanup := newPreviewServer(testOrigin, false, "default")
+	server, cleanup := newPreviewServer(testOrigin, false, "default", false)
 	defer cleanup()
 
 	if server == nil {

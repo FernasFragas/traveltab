@@ -147,14 +147,14 @@ func TestPreviewProcess(t *testing.T) {
 	if scenario == "" {
 		scenario = "default"
 	}
-	server, cleanup := newPreviewServer("http://127.0.0.1:8088/", false, scenario)
+	server, cleanup := newPreviewServer("http://127.0.0.1:8088/", false, scenario, os.Getenv("TRAVELTAB_PREVIEW_TEST_LIVE_TILES") == "1")
 	defer cleanup()
 	if err := server.Listen(addr); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func startPreviewProcess(t *testing.T, scenario string) (string, *http.Client) {
+func startPreviewProcess(t *testing.T, scenario string, liveTiles ...bool) (string, *http.Client) {
 	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -175,6 +175,9 @@ func startPreviewProcess(t *testing.T, scenario string) (string, *http.Client) {
 	cmd := exec.Command(binary, "-test.run=^TestPreviewProcess$")
 	cmd.Dir = root
 	cmd.Env = append(os.Environ(), "TRAVELTAB_PREVIEW_TEST_ADDR="+addr, "TRAVELTAB_PREVIEW_TEST_SCENARIO="+scenario)
+	if len(liveTiles) > 0 && liveTiles[0] {
+		cmd.Env = append(cmd.Env, "TRAVELTAB_PREVIEW_TEST_LIVE_TILES=1")
+	}
 	if err = cmd.Start(); err != nil {
 		t.Fatal(err)
 	}

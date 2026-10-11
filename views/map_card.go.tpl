@@ -1,10 +1,19 @@
 {{ if .WriterMap -}}
-<div class="map-card" data-writers-map data-map-destination="{{ .WriterMap.Destination }}" data-map-lat="{{ .WriterMap.Lat }}" data-map-lon="{{ .WriterMap.Lon }}" data-map-url="{{ .WriterMap.URL }}"{{ with .WriterMap.TileURL }} data-map-tile-url="{{ . }}"{{ end }}{{ with .WriterMap.Attribution }} data-map-attribution="{{ . }}"{{ end }}>
-    <h3>Writers' Map</h3>
-    <div data-map-slot="layers"></div>
+<div class="map-card writers-map-card" data-writers-map data-map-destination="{{ .WriterMap.Destination }}" data-map-lat="{{ .WriterMap.Lat }}" data-map-lon="{{ .WriterMap.Lon }}" data-map-url="{{ .WriterMap.URL }}"{{ with .WriterMap.TileURL }} data-map-tile-url="{{ . }}"{{ end }}{{ with .WriterMap.Attribution }} data-map-attribution="{{ . }}"{{ end }}>
+    <div class="writers-map-header">
+        <h3>Writers' Map <button class="writers-map-info" type="button" aria-label="About the four map layers" title="Notable places, writers' pins, your day plan, and writers' itineraries"><i class="bi bi-info-circle" aria-hidden="true"></i></button></h3>
+        <div data-map-slot="layers" class="writers-map-layers" aria-label="Map layers">
+            <span class="writers-map-layer writers-map-layer-notable">Notable places</span>
+            <span class="writers-map-layer writers-map-layer-writers">Writers' pins</span>
+            <span class="writers-map-layer writers-map-layer-plan">Your day plan</span>
+            <span class="writers-map-layer writers-map-layer-itineraries">Writers' itineraries</span>
+        </div>
+    </div>
     <div data-map-slot="status" role="status" hidden></div>
-    <div data-map-canvas></div>
-    <div data-map-slot="panel"><p>Pick a place on the map</p></div>
+    <div class="writers-map-body">
+        <div data-map-canvas></div>
+        <div data-map-slot="panel"><p>Pick a place on the map</p></div>
+    </div>
     <div data-map-slot="saved"></div>
     <div data-map-slot="list"></div>
     <div hx-get="{{ .WriterMap.URL }}" hx-trigger="load" hx-swap="none" hidden></div>

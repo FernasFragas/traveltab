@@ -24,6 +24,8 @@ go run ./cmd/design-preview -addr 127.0.0.1:8087 -map-addr 127.0.0.1:8088
   Restart the preview to change it. Unknown names fail startup.
 - `-live-photos` replaces the fixture photo source with the real Wikimedia lookup. It is opt-in,
   not deterministic and needs internet access; see [Live photo check](#live-photo-check).
+- `-live-tiles` uses the production EOX satellite basemap in the `writers-map` scenario. It needs
+  internet access. Leave it off for deterministic fixture-tile checks.
 
 No SQLite file, `.env`, credentials, or live provider API is read (unless you pass `-live-photos`). The no-op storage returns
 `sql.ErrNoRows`, so each destination request explicitly takes the fresh-data path. The map is a
@@ -39,7 +41,9 @@ For the writers' map preview, run with `-scenario writers-map`. Search **Madeira
 embedded fixture with writer mentions, **Porto** for a base-only place, and **Coimbra** for an
 unavailable source. The map and place endpoints use the real handlers. Its tile URL points to
 `/fixture-tiles/{z}/{x}/{y}.png` on the local fixture origin; every valid XYZ path returns a
-synthetic tile, so the preview does not request live map tiles. The default scenario still shows
+synthetic tile unless `-live-tiles` is passed. To see the 3d layout with the satellite imagery used
+in `3d-layout-map.png`, run `go run ./cmd/design-preview -scenario writers-map -live-tiles` and open
+`http://127.0.0.1:8087/trip/madeira-pt` at a browser width of at least 1024 px. The default scenario still shows
 the Waze fixture. With an isolated Chromium/Brave CDP browser running, verify both widths and
 two HTMX destination swaps with:
 

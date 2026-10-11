@@ -105,6 +105,29 @@ func TestWriterMapPreview_RoutesAndLocalTiles(t *testing.T) {
 	}
 }
 
+func TestWriterMapPreview_LiveTilesOptIn(t *testing.T) {
+	base, client := startPreviewProcess(t, "writers-map", true)
+	res, err := client.Get(base + "/trip/madeira-pt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusOK || !strings.Contains(string(body), "data-writers-map") {
+		t.Fatalf("live tile page: status=%d body=%s", res.StatusCode, body)
+	}
+	if strings.Contains(string(body), "data-map-tile-url=") || strings.Contains(string(body), "data-map-attribution=") {
+		t.Fatalf("live tile page still overrides the production basemap: %s", body)
+	}
+	suggestions, err := (fixtureSuggestions{}).Suggest(context.Background(), "lis")
+	if err != nil || len(suggestions) != 1 || suggestions[0].Name != "Lisbon" {
+		t.Fatalf("live tile preview suggestions = %+v, err = %v", suggestions, err)
+	}
+}
+
 func TestWriterMapPreview_BaseOnlyJSON(t *testing.T) {
 	source := newWriterMapPreviewSource()
 	result, err := source.Destination(context.Background(), writermap.Area{Name: "Porto"})

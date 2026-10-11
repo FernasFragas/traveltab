@@ -4,7 +4,7 @@
 //
 // Usage:
 //
-//	go run ./cmd/design-preview [-addr 127.0.0.1:8087] [-map-addr 127.0.0.1:8088] [-slow] [-live-photos]
+//	go run ./cmd/design-preview [-addr 127.0.0.1:8087] [-map-addr 127.0.0.1:8088] [-slow] [-live-photos] [-live-tiles]
 package main
 
 import (
@@ -22,6 +22,7 @@ func main() {
 	slow := flag.Bool("slow", false, "delay search and planning responses by two seconds")
 	scenario := flag.String("scenario", "default", "fixture scenario (see tasks/redesign/preview.md)")
 	livePhotos := flag.Bool("live-photos", false, "look destination photos up on the real Wikimedia APIs instead of the fixture (not deterministic)")
+	liveTiles := flag.Bool("live-tiles", false, "use the production satellite tiles in the writers-map scenario instead of fixture tiles")
 	flag.Parse()
 	if !validScenario(*scenario) {
 		log.Fatalf("unknown fixture scenario %q; see tasks/redesign/preview.md", *scenario)
@@ -40,7 +41,7 @@ func main() {
 		}
 	}()
 
-	server, cleanup := newPreviewServer(mapOrigin, *slow, *scenario)
+	server, cleanup := newPreviewServer(mapOrigin, *slow, *scenario, *liveTiles)
 	if *livePhotos {
 		// Opt-in evidence run: the fixture destinations use real coordinates, the photos are real.
 		log.Print("destination photos come from the live Wikimedia APIs; this run is not deterministic")

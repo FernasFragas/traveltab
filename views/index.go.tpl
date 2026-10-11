@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="/redesign/search.css">
     <link rel="stylesheet" href="/redesign/guide.css">
     <link rel="stylesheet" href="/redesign/writers-map.css">
+    <link rel="stylesheet" href="/redesign/writers-map-layout.css">
     <script defer src="/vendor/htmx.org/dist/htmx.min.js"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
