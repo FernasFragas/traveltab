@@ -169,3 +169,32 @@ func TestWikidataNearbyCache_ConcurrentCallersShareOneQuery(t *testing.T) {
 	}
 	assert.Equal(t, 1, fake.count())
 }
+
+func TestStore_CachedDestinations_RefreshesTheSameRows(t *testing.T) {
+	store, source, fake := basePlaceCacheForTest(t)
+	porto := writermap.Area{Name: "Porto", Country: "Portugal", Lat: 41.1496, Lon: -8.611, RadiusKM: 40}
+	basePlaces(t, source, madeiraArea)
+	basePlaces(t, source, porto)
+	_, err := store.db.Exec(`INSERT INTO source_cache (key, fetched_at, data) VALUES ('planner:museums', 0, x'00')`)
+	require.NoError(t, err)
+
+	areas, err := store.CachedDestinations(context.Background())
+	require.NoError(t, err)
+	require.Len(t, areas, 2, "only base-place rows are destinations")
+	for _, area := range areas {
+		require.NoError(t, source.(application.BasePlaceRefresher).Refresh(context.Background(), area))
+	}
+
+	var rows int
+	require.NoError(t, store.db.QueryRow(`SELECT COUNT(*) FROM source_cache`).Scan(&rows))
+	assert.Equal(t, 3, rows, "refreshing a listed area overwrites its row instead of adding one")
+	assert.Equal(t, 4, fake.count())
+	assert.ElementsMatch(t, []float64{madeiraArea.RadiusKM, porto.RadiusKM}, []float64{areas[0].RadiusKM, areas[1].RadiusKM})
+}
+
+func TestStore_CachedDestinations_EmptyCache(t *testing.T) {
+	store, _, _ := basePlaceCacheForTest(t)
+	areas, err := store.CachedDestinations(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, areas)
+}

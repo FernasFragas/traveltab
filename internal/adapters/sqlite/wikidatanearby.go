@@ -16,6 +16,9 @@ var (
 	_ application.BasePlaceRefresher = (*cachedBasePlaces)(nil)
 )
 
+// basePlaceKeyFormat encodes the whole area, so CachedDestinations can read areas back from keys.
+const basePlaceKeyFormat = "wikidata:v1:%q:%q:%g:%g:%g"
+
 // cachedBasePlaces stores both the visible pins and the unfiltered matching gazetteer in one row.
 // Entries stay until Refresh replaces them. flights coordinates queries for each destination.
 type cachedBasePlaces struct {
@@ -96,8 +99,31 @@ func (c *cachedBasePlaces) fetch(ctx context.Context, dest writermap.Area, key s
 	return result, err
 }
 
+// CachedDestinations lists every destination with cached base places, read back from the cache
+// keys. Names and countries come back lowercased, as stored; Refresh maps them to the same row.
+func (s *Store) CachedDestinations(ctx context.Context) ([]writermap.Area, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT key FROM source_cache WHERE key LIKE 'wikidata:v1:%';`)
+	if err != nil {
+		return nil, fmt.Errorf("list cached destinations: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var areas []writermap.Area
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, fmt.Errorf("list cached destinations: %w", err)
+		}
+		var area writermap.Area
+		if _, err := fmt.Sscanf(key, basePlaceKeyFormat, &area.Name, &area.Country, &area.Lat, &area.Lon, &area.RadiusKM); err != nil {
+			return nil, fmt.Errorf("parse cached destination %q: %w", key, err)
+		}
+		areas = append(areas, area)
+	}
+	return areas, rows.Err()
+}
+
 func basePlaceKey(dest writermap.Area) string {
-	return fmt.Sprintf("wikidata:v1:%q:%q:%g:%g:%g",
+	return fmt.Sprintf(basePlaceKeyFormat,
 		strings.ToLower(strings.TrimSpace(dest.Name)), strings.ToLower(strings.TrimSpace(dest.Country)),
 		dest.Lat, dest.Lon, dest.RadiusKM)
 }
