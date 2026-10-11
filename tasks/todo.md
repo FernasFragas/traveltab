@@ -346,8 +346,8 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Replaces the fake when `WRITERS_MAP` is on.
 
 **Acceptance**
-- [ ] No blog request during `Destination()` or `Place()` (test asserts zero HTTP calls).
-- [ ] The fake is still available to the preview.
+- [x] No blog request during `Destination()` or `Place()` (test asserts zero HTTP calls).
+- [x] The fake is still available to the preview.
 
 **Verify:** `go test -race ./...`; local run with both flags on shows Madeira on real data.
 

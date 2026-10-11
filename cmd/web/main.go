@@ -13,7 +13,6 @@ import (
 	"weatherservice/internal/config"
 	"weatherservice/internal/guides"
 	"weatherservice/internal/writermap"
-	"weatherservice/internal/writermap/writermaptest"
 	"weatherservice/writerdata"
 )
 
@@ -48,10 +47,12 @@ func main() {
 		}
 	}()
 	server := httpserver.NewAppServer(reporters, videoStreamReporters, storage)
-	wireWritersMap(server)
 	basePlaces := storage.NewCachedBasePlaceSource(api.NewWikidataNearbyAPI(nil))
+	sources, overrides := loadWriterData()
+	writerSource := writermap.NewMapSource(basePlaces, storage, storage, writerIndexStore{storage}, sources, overrides)
+	wireWritersMap(server, writerSource)
 	wireBaseLayer(server, basePlaces)
-	wireWriterSync(storage, basePlaces.(application.BasePlaceRefresher))
+	wireWriterSync(storage, basePlaces.(application.BasePlaceRefresher), sources, writerSource)
 	server.SetPlaceSuggester(api.NewOpenMeteoGeocodingAPI(nil))
 
 	// The trip planner reads free, keyless sources. Each one goes through the SQLite cache, so a
@@ -82,9 +83,11 @@ func main() {
 	}
 }
 
-func wireWritersMap(server *httpserver.Server) {
+// wireWritersMap serves the real source, built from the base places, the writers index and the
+// matcher. The Madeira fixture stays in writermaptest for the design preview.
+func wireWritersMap(server *httpserver.Server, source application.WriterMapSource) {
 	if config.LoadFeatureFlags().WritersMap {
-		server.SetWriterMapSource(writermaptest.NewMadeiraSource(), true)
+		server.SetWriterMapSource(source, true)
 	}
 }
 
@@ -95,11 +98,22 @@ func wireBaseLayer(server *httpserver.Server, basePlaces application.BasePlaceSo
 }
 
 // wireWriterSync starts the writers index sync in the background. The monthly run also refreshes
-// every cached destination's base places; the summary step (PR 9) plugs into job.SummaryStep.
-func wireWriterSync(storage *sqlite.Store, refresher application.BasePlaceRefresher) {
+// every cached destination's base places, then recomputes the stored writers' map results; the
+// summary step (PR 9) runs after the recompute.
+func wireWriterSync(storage *sqlite.Store, refresher application.BasePlaceRefresher, sources []writermap.Source, writerSource *writermap.MapSource) {
 	if !config.LoadFeatureFlags().WritersSync {
 		return
 	}
+	client := api.NewWordPressClient(nil, api.NewHostLimiter())
+	job := writermap.NewSyncJob(sources, writerIndexStore{storage}, wordPressPosts{client})
+	job.BlockedErrors = []error{api.ErrBlocked, api.ErrDisallowed}
+	job.Destinations, job.Refresher = storage, refresher
+	job.SummaryStep = writerSource.Recompute
+	go job.Schedule(context.Background())
+}
+
+// loadWriterData reads the embedded allowlist and reviewed overrides.
+func loadWriterData() ([]writermap.Source, writermap.Overrides) {
 	data, err := writerdata.Files.ReadFile("sources.json")
 	if err != nil {
 		log.Fatal(err)
@@ -108,11 +122,15 @@ func wireWriterSync(storage *sqlite.Store, refresher application.BasePlaceRefres
 	if err != nil {
 		log.Fatal(err)
 	}
-	client := api.NewWordPressClient(nil, api.NewHostLimiter())
-	job := writermap.NewSyncJob(sources, writerIndexStore{storage}, wordPressPosts{client})
-	job.BlockedErrors = []error{api.ErrBlocked, api.ErrDisallowed}
-	job.Destinations, job.Refresher = storage, refresher
-	go job.Schedule(context.Background())
+	data, err = writerdata.Files.ReadFile("overrides.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	overrides, err := writermap.ParseOverrides(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return sources, overrides
 }
 
 // writerIndexStore adapts the SQLite writers index to writermap.SyncIndex.
