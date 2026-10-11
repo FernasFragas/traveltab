@@ -1,7 +1,8 @@
 {{ if .WriterMap -}}
 <div class="map-card writers-map-card" data-writers-map data-map-destination="{{ .WriterMap.Destination }}" data-map-lat="{{ .WriterMap.Lat }}" data-map-lon="{{ .WriterMap.Lon }}" data-map-url="{{ .WriterMap.URL }}"{{ with .WriterMap.TileURL }} data-map-tile-url="{{ . }}"{{ end }}{{ with .WriterMap.Attribution }} data-map-attribution="{{ . }}"{{ end }}>
     <div class="writers-map-header">
-        <h3>Writers' Map <button class="writers-map-info" type="button" aria-label="About the four map layers" title="Notable places, writers' pins, your day plan, and writers' itineraries"><i class="bi bi-info-circle" aria-hidden="true"></i></button></h3>
+        <h3>Writers' Map <button class="writers-map-info" type="button" aria-label="About map layers" aria-describedby="writers-map-tooltip" aria-expanded="false"><i class="bi bi-info-circle" aria-hidden="true"></i></button></h3>
+        <span class="writers-map-tooltip" id="writers-map-tooltip" role="tooltip">The map has four layers: notable places, writers' pins, your day plan, and writers' itineraries.</span>
         <div data-map-slot="layers" class="writers-map-layers" aria-label="Map layers">
             <span class="writers-map-layer writers-map-layer-notable">Notable places</span>
             <span class="writers-map-layer writers-map-layer-writers">Writers' pins</span>

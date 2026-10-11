@@ -34,7 +34,7 @@ try {
         height: Math.round(window.__mapCanvas.getBoundingClientRect().height), overflow: document.documentElement.scrollWidth,
         card: { x: card.x, width: card.width }, canvas: { x: canvas.x, y: canvas.y, right: canvas.right, bottom: canvas.bottom, width: canvas.width, height: canvas.height },
         panel: { x: panel.x, y: panel.y, width: panel.width, height: panel.height },
-        info: { label: info?.getAttribute('aria-label'), title: info?.getAttribute('title') },
+        info: { label: info?.getAttribute('aria-label'), description: document.getElementById(info?.getAttribute('aria-describedby'))?.textContent.trim() },
         layers: [...shell.querySelectorAll('[data-map-slot="layers"] > *')].map(el => el.textContent.trim()),
         emptyPanel: shell.querySelector('[data-map-slot="panel"]')?.textContent.trim() };
     })()`);
@@ -43,8 +43,8 @@ try {
     assert.match(madeira.tileURL, /^http:\/\/127\.0\.0\.1:\d+\/fixture-tiles\/%7bz%7d\/%7bx%7d\/%7by%7d\.png$/i);
     assert.ok(madeira.width > 0 && madeira.width <= width && madeira.height >= 320, JSON.stringify(madeira));
     assert.ok(madeira.overflow <= width, JSON.stringify(madeira));
-    assert.match(madeira.info.title || '', /notable places.*writers.*day plan.*itineraries/i);
-    assert.ok(madeira.info.label, JSON.stringify(madeira));
+    assert.equal(madeira.info.label, 'About map layers');
+    assert.match(madeira.info.description || '', /notable places.*writers.*day plan.*itineraries/i);
     assert.deepEqual(madeira.layers, ['Notable places', "Writers' pins", 'Your day plan', "Writers' itineraries"]);
     assert.equal(madeira.emptyPanel, 'Pick a place on the map');
     if (width === 1440) {

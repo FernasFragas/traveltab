@@ -37,6 +37,30 @@
     });
     document.body.addEventListener('htmx:afterSwap', function () { mount(); });
     document.body.addEventListener('htmx:historyRestore', function () { mount(); });
+    document.body.addEventListener('click', function (event) {
+        var info = event.target.closest('.writers-map-info');
+        var open = document.querySelector('.writers-map-info[aria-expanded="true"]');
+        if (open && open !== info) closeInfo(open);
+        if (!info) return;
+        var expanded = info.getAttribute('aria-expanded') !== 'true';
+        info.setAttribute('aria-expanded', String(expanded));
+        if (expanded) info.removeAttribute('data-dismissed');
+        else info.setAttribute('data-dismissed', '');
+    });
+    document.body.addEventListener('focusin', function (event) {
+        if (event.target.matches('.writers-map-info')) event.target.removeAttribute('data-dismissed');
+    });
+    document.body.addEventListener('focusout', function (event) {
+        if (!event.target.matches('.writers-map-info')) return;
+        event.target.setAttribute('aria-expanded', 'false');
+        event.target.removeAttribute('data-dismissed');
+    });
+    document.body.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        var info = document.activeElement;
+        if (!info || !info.matches('.writers-map-info')) info = document.querySelector('.writers-map-info[aria-expanded="true"]');
+        if (info) closeInfo(info);
+    });
     mount();
 
     function mount(nextShell) {
@@ -217,5 +241,10 @@
 
     function removeLayers() {
         layers.forEach(function (entry) { if (entry.enabled) entry.layer.remove(map, context); });
+    }
+
+    function closeInfo(info) {
+        info.setAttribute('aria-expanded', 'false');
+        info.setAttribute('data-dismissed', '');
     }
 })();

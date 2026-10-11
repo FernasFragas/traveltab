@@ -47,6 +47,22 @@ try {
     assert.equal(layout.info, 'About map layers');
     assert.match(layout.tooltip, /notable places.*writers.*day plan.*itineraries/i);
     assert.ok(layout.tooltipRect.x >= 0 && layout.tooltipRect.x + layout.tooltipRect.width <= width, JSON.stringify(layout));
+    const tooltipState = () => browser.evaluate(`(() => {
+      const button = document.querySelector('.writers-map-info');
+      const tooltip = document.getElementById(button.getAttribute('aria-describedby'));
+      return { expanded: button.getAttribute('aria-expanded'), visible: getComputedStyle(tooltip).visibility };
+    })()`);
+    assert.deepEqual(await tooltipState(), { expanded: 'false', visible: 'hidden' });
+    await browser.evaluate("document.querySelector('.writers-map-info').focus()");
+    assert.equal((await tooltipState()).visible, 'visible');
+    await browser.evaluate("document.querySelector('.writers-map-info').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))");
+    assert.equal((await tooltipState()).visible, 'hidden');
+    await browser.evaluate("document.querySelector('.writers-map-info').blur()");
+    assert.equal((await tooltipState()).visible, 'hidden');
+    await browser.evaluate("document.querySelector('.writers-map-info').click()");
+    assert.deepEqual(await tooltipState(), { expanded: 'true', visible: 'visible' });
+    await browser.key('Escape', 'Escape', 27);
+    assert.deepEqual(await tooltipState(), { expanded: 'false', visible: 'hidden' });
     assert.equal(layout.statusText, 'Some map sources are unavailable.');
     assert.ok(!layout.statusHidden && layout.zoom && layout.scale, JSON.stringify(layout));
     assert.ok(layout.layers.width > 0 && layout.layers.y < layout.canvas.y, JSON.stringify(layout));
@@ -56,6 +72,16 @@ try {
       assert.ok(layout.canvas.x < layout.panel.x && Math.abs(layout.canvas.y - layout.panel.y) < 3, JSON.stringify(layout));
       assert.ok(layout.canvas.width / (layout.canvas.width + layout.panel.width) > 0.62, JSON.stringify(layout));
       assert.ok(Math.abs(layout.canvas.height - layout.panel.height) < 3, JSON.stringify(layout));
+      const tallPanel = await browser.evaluate(`(() => {
+        const shell = document.querySelector('[data-writers-map]');
+        const panel = shell.querySelector('[data-map-slot="panel"]');
+        panel.innerHTML = '<div style="height:600px">Tall place details</div>';
+        const result = { canvas: shell.querySelector('[data-map-canvas]').getBoundingClientRect().height,
+          panel: panel.getBoundingClientRect().height };
+        panel.innerHTML = '<p>Pick a place on the map</p>';
+        return result;
+      })()`);
+      assert.ok(Math.abs(tallPanel.canvas - tallPanel.panel) < 3, JSON.stringify(tallPanel));
     } else {
       assert.ok(layout.panel.y >= layout.canvas.y + layout.canvas.height, JSON.stringify(layout));
     }

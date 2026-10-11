@@ -31,10 +31,17 @@ try {
     const state = await browser.evaluate(`(() => {
       const map = document.querySelector('.leaflet-container');
       const credit = map.querySelector('.leaflet-control-attribution');
+      const scale = map.querySelector('.leaflet-control-scale');
+      const creditRect = credit.getBoundingClientRect();
+      const scaleRect = scale.getBoundingClientRect();
       return {
         src: map.querySelector('.leaflet-tile-loaded[src*="tiles.maps.eox.at"]').src,
         credit: credit.textContent,
         creditVisible: getComputedStyle(credit).display !== 'none' && credit.getBoundingClientRect().width > 0,
+        controlsOverlap: scaleRect.left < creditRect.right && scaleRect.right > creditRect.left &&
+          scaleRect.top < creditRect.bottom && scaleRect.bottom > creditRect.top,
+        scaleRect: { x: scaleRect.x, y: scaleRect.y, width: scaleRect.width, height: scaleRect.height },
+        creditRect: { x: creditRect.x, y: creditRect.y, width: creditRect.width, height: creditRect.height },
         overflow: document.documentElement.scrollWidth,
         viewport: innerWidth,
         errors: window.__previewErrors
@@ -42,6 +49,7 @@ try {
     })()`);
     assert.match(state.credit, /EOxCloudless.*EOX IT Services GmbH.*2016 & 2017.*CC BY 4.0/);
     assert.ok(state.creditVisible && state.overflow <= state.viewport, JSON.stringify(state));
+    assert.equal(state.controlsOverlap, false, JSON.stringify(state));
     assert.match(state.src, /s2cloudless_3857/);
     assert.deepEqual(state.errors, []);
     assert.deepEqual(browser.errors, []);
