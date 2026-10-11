@@ -1,0 +1,120 @@
+(function () {
+    'use strict';
+
+    // Draws the itinerary's stops as green numbered pins, with a day toggle.
+    // Stops come from data-plan-day / data-plan-stop in the plan markup (no endpoint).
+    if (!window.TravelMap || window.TravelMap.planLayerRegistered) return;
+    window.TravelMap.planLayerRegistered = true;
+
+    var days = [];
+    var daysKey = '[]';
+    var activeDay = 0; // 0 shows every day
+    var map = null;
+    var group = null;
+    var control = null;
+
+    window.TravelMap.registerLayer('plan', { add: add, remove: remove });
+    document.addEventListener('travelmap:plan-updated', function (event) {
+        var next = (event.detail && event.detail.days) || [];
+        var nextKey = JSON.stringify(next);
+        if (nextKey === daysKey) return;
+        days = next;
+        daysKey = nextKey;
+        activeDay = 0;
+        draw();
+    });
+    document.body.addEventListener('htmx:afterSwap', report);
+    document.body.addEventListener('htmx:historyRestore', report);
+    report();
+
+    function report() {
+        if (!document.querySelector('[data-writers-map]')) return;
+        window.TravelMap.updatePlan(readDays());
+    }
+
+    function readDays() {
+        var result = [];
+        document.querySelectorAll('[data-plan-day]').forEach(function (dayElement) {
+            var stops = [];
+            dayElement.querySelectorAll('[data-plan-stop]').forEach(function (stopElement) {
+                var lat = Number(stopElement.dataset.lat);
+                var lon = Number(stopElement.dataset.lon);
+                if (!Number.isFinite(lat) || !Number.isFinite(lon) || (lat === 0 && lon === 0) ||
+                    Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+                stops.push({ name: stopElement.dataset.name || '', lat: lat, lon: lon });
+            });
+            result.push({ number: Number(dayElement.dataset.planDay), stops: stops });
+        });
+        return result;
+    }
+
+    function add(nextMap) {
+        map = nextMap;
+        draw();
+    }
+
+    function remove() {
+        clear();
+        map = null;
+    }
+
+    function clear() {
+        if (group) group.remove();
+        if (control) control.remove();
+        group = null;
+        control = null;
+    }
+
+    function draw() {
+        clear();
+        if (!map) return;
+        var shown = days.filter(function (day) { return day.stops.length; });
+        if (!shown.length) return;
+        group = window.L.layerGroup().addTo(map);
+        shown.forEach(function (day) {
+            if (activeDay && day.number !== activeDay) return;
+            day.stops.forEach(function (stop, index) {
+                group.addLayer(window.L.marker([stop.lat, stop.lon], {
+                    title: 'Day ' + day.number + ': ' + stop.name,
+                    icon: window.L.divIcon({
+                        className: 'plan-pin-wrap',
+                        iconSize: [26, 26],
+                        html: '<span class="plan-pin" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;' +
+                            'border-radius:50%;background:#2e7d32;color:#fff;border:2px solid #fff;font:600 13px/1 sans-serif;' +
+                            'box-shadow:0 1px 4px rgba(0,0,0,.4)">' + (index + 1) + '</span>'
+                    })
+                }));
+            });
+        });
+        if (shown.length > 1) addToggle(shown);
+    }
+
+    function addToggle(shown) {
+        control = window.L.control({ position: 'topright' });
+        control.onAdd = function () {
+            var box = document.createElement('div');
+            box.className = 'leaflet-bar plan-day-toggle';
+            box.style.background = '#fff';
+            box.setAttribute('role', 'group');
+            box.setAttribute('aria-label', 'Show day plan pins');
+            [{ label: 'All', number: 0 }].concat(shown.map(function (day) {
+                return { label: 'Day ' + day.number, number: day.number };
+            })).forEach(function (item) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = item.label;
+                button.style.cssText = 'display:block;width:100%;padding:4px 10px;border:0;background:' +
+                    (item.number === activeDay ? '#c8e6c9' : '#fff') + ';color:#1b5e20;cursor:pointer;font:600 12px sans-serif';
+                button.setAttribute('aria-pressed', String(item.number === activeDay));
+                button.addEventListener('click', function () {
+                    activeDay = item.number;
+                    draw();
+                });
+                box.appendChild(button);
+            });
+            if (window.L.DomEvent) window.L.DomEvent.disableClickPropagation(box);
+            return box;
+        };
+        control.addTo(map);
+    }
+})();

@@ -83,7 +83,10 @@ func (s *Server) writerMapGeoJSON(ctx *fiber.Ctx) error {
 			},
 		})
 	}
-	return ctx.JSON(mapCollection{Type: "FeatureCollection", Complete: result.Complete, Features: features}, "application/geo+json; charset=utf-8")
+	return ctx.JSON(mapCollection{
+		Type: "FeatureCollection", Complete: result.Complete, Features: features,
+		Itineraries: mapItineraries(result.Itineraries),
+	}, "application/geo+json; charset=utf-8")
 }
 
 func (s *Server) writerMapPlace(ctx *fiber.Ctx) error {
@@ -137,9 +140,10 @@ func mapCoordinates(lat, lon float64) string {
 }
 
 type mapCollection struct {
-	Type     string       `json:"type"`
-	Complete bool         `json:"complete"`
-	Features []mapFeature `json:"features"`
+	Type        string         `json:"type"`
+	Complete    bool           `json:"complete"`
+	Features    []mapFeature   `json:"features"`
+	Itineraries []mapItinerary `json:"itineraries"`
 }
 
 type mapFeature struct {
@@ -165,4 +169,24 @@ type mapProperties struct {
 	Sitelinks   int      `json:"sitelinks"`
 	WriterCount int      `json:"writer_count"`
 	PanelURL    string   `json:"panel_url"`
+}
+
+// mapItinerary is a writer route as the browser sees it; the post's internal reference stays on the server.
+type mapItinerary struct {
+	WriterHost string                   `json:"writer_host"`
+	PostURL    string                   `json:"post_url"`
+	PostTitle  string                   `json:"post_title"`
+	Language   string                   `json:"language"`
+	Days       []writermap.ItineraryDay `json:"days"`
+}
+
+func mapItineraries(itineraries []writermap.Itinerary) []mapItinerary {
+	routes := make([]mapItinerary, 0, len(itineraries))
+	for _, itinerary := range itineraries {
+		routes = append(routes, mapItinerary{
+			WriterHost: itinerary.WriterHost, PostURL: itinerary.PostURL, PostTitle: itinerary.PostTitle,
+			Language: itinerary.Language, Days: itinerary.Days,
+		})
+	}
+	return routes
 }

@@ -24,7 +24,7 @@
             {{ if .Days }}
             <div class="itinerary-days">
                 {{ range $index, $day := .Days }}
-                <details class="itinerary-day" {{ if eq $index 0 }}open{{ end }}>
+                <details class="itinerary-day" data-plan-day="{{ $day.Number }}" {{ if eq $index 0 }}open{{ end }}>
                     <summary class="itinerary-day-summary">
                         <span class="itinerary-day-marker" aria-hidden="true">{{ $day.Number }}</span>
                         <span class="itinerary-day-title">
@@ -52,7 +52,7 @@
                         <div class="itinerary-stop-row">
                             <ol class="itinerary-stops">
                                 {{ range $day.Stops }}
-                                <li class="itinerary-stop">
+                                <li class="itinerary-stop" data-plan-stop data-name="{{ .Name }}" data-lat="{{ .Lat }}" data-lon="{{ .Lon }}">
                                     <figure class="itinerary-stop-media">
                                         <span class="itinerary-stop-fallback" aria-hidden="true"><i class="bi bi-image"></i></span>
                                         {{ if .Image }}

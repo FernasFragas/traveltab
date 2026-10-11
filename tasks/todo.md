@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). **As of October 11, 2026:** PRs 3, 4 and 5 are done; PR 6 code is merged, with the 6a precision review and the 6b local run still open; **PR 7 can start**. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -129,7 +129,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Goal:** with `WRITERS_MAP=1`, every destination shows the new map with fixture data. With it off, Waze is unchanged.
 
 ### 3a. Write the core map JS and CSS
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/3a-map-core.tdd.md)
 
 **Owns:** `public/redesign/writers-map.js`, `public/redesign/writers-map.css`
 
@@ -142,7 +142,7 @@ Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** 
 **Verify:** exercised by 3c.
 
 ### 3b. Wire the template and fixture endpoints · **integrator**
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/3b-map-shell.tdd.md)
 
 **Owns:** `views/map_card.go.tpl`, `views/index.go.tpl`, `views/place_panel.go.tpl` (minimal; 7a builds it out), `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/writermap_test.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
 
@@ -315,7 +315,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 > **6a can start right after PR 1** against the fixture, and waits in its branch until PR 6 opens. On-demand excerpts were dropped on October 6 — summaries (PR 9) replace them.
 
 ### 6a. Write the matcher and itinerary assembly · *early*
-- [ ] Done
+- [ ] Done — code merged (#31), [TDD evidence](../docs/tdd/6a.tdd.md); **open:** the 40-mention precision review
 
 **Owns:** `internal/writermap/match.go`, `match_test.go`, `internal/writermap/itinerary.go`, `itinerary_test.go`
 
@@ -337,7 +337,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Verify:** `go test ./internal/writermap/...`.
 
 ### 6b. Compose the real source and wire it · **integrator**
-- [ ] Done
+- [ ] Done — code merged (#31), [TDD evidence](../docs/tdd/6b.tdd.md); **open:** owner's local run on real Madeira data
 
 **Owns:** `internal/writermap/source.go`, `source_test.go`, `internal/adapters/sqlite/writerdestination.go`, `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
 
@@ -358,9 +358,9 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 ## PR 7 — Map UI Features · needs: PR 3 · *runs on the fake source, parallel with PRs 4–6*
 
 ### 7a. Build pins and the place panel
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7a.tdd.md)
 
-**Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl` (builds out 3b's minimal template), `internal/adapters/httpserver/placepanel_test.go`
+**Owns:** `public/redesign/map-panel.js`, `public/redesign/map-panel.css`, `views/place_panel.go.tpl` (builds out 3b's minimal template), `internal/adapters/httpserver/placepanel_test.go`, `views/index.go.tpl` (the `map-panel` script and stylesheet tags only)
 
 - Writer pins drawn above base pins.
 - **Pin look:** writer pins orange with their writer count, notable (base) places blue; big places labelled. Plan pins (7b) are green numbered and itinerary pins (7c) purple numbered.
@@ -369,17 +369,17 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Base-only panel: description, photo with credit, opening hours, Wikipedia link, Save to plan.
 
 **Acceptance**
-- [ ] Every writer is listed with a post link once the list is expanded.
-- [ ] A writer pin without a summary shows no empty summary box.
-- [ ] A place without opening hours or Wikipedia link shows no empty row.
-- [ ] A base-only destination shows "No writer mentions here yet".
+- [x] Every writer is listed with a post link once the list is expanded.
+- [x] A writer pin without a summary shows no empty summary box.
+- [x] A place without opening hours or Wikipedia link shows no empty row.
+- [x] A base-only destination shows "No writer mentions here yet".
 
 **Verify:** `go test ./internal/adapters/httpserver/ -run PlacePanel`; preview at 375 and 1440 px.
 
 ### 7b. Draw the day plan layer
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7b.tdd.md)
 
-**Owns:** `public/redesign/map-dayplan.js`, `views/itinerary_body.go.tpl`, `views/trip_card.go.tpl`
+**Owns:** `public/redesign/map-dayplan.js`, `views/itinerary_body.go.tpl`, `views/trip_card.go.tpl`, `views/index.go.tpl` (the `map-dayplan` script tag only)
 
 - The plan response emits stop coordinates per day; the script fires `travelmap:plan-updated` and draws green numbered pins per day with a day toggle.
 
@@ -392,21 +392,22 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 ### 7c. Add writers' itinerary layers
 - [ ] Done
 
-**Owns:** `public/redesign/map-itineraries.js`, `public/redesign/map-itineraries.css`
+**Owns:** `public/redesign/map-itineraries.js`, `public/redesign/map-itineraries.css`, `views/index.go.tpl` (the `map-itineraries` script and stylesheet tags only)
 
+- **Data:** the GeoJSON's top-level `itineraries` (`writer_host`, `post_url`, `post_title`, `language`, `days[].qids`), served since the contract change approved October 11, 2026. Register the layer as `itineraries`.
 - One writer's itinerary is drawn at a time: purple numbered pins in order and a line between them, labelled as the writer's route and linked to the post.
 - The **Writers' itineraries** chip (7f) shows the layer; when there are several, a small picker in the `layers` slot chooses one. Hidden when there are none.
 
 **Verify:** preview check with fixture itineraries.
 
 ### 7d. Add "Save to plan"
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7d.tdd.md)
 
-**Owns:** `public/redesign/map-saved.js`
+**Owns:** `public/redesign/map-saved.js`, `views/index.go.tpl` (the `map-saved` script tag only)
 
 - Binds `data-save-qid` buttons; saved QIDs kept in `localStorage` (try/catch). The button toggles to "Saved".
 - On the next plan request the saved QIDs are added as `include` (via `htmx:configRequest`), so 7e seeds them into the days.
-- A line next to the plan form: "N saved places will be included", with a clear link.
+- A line next to the plan form: "N saved places will be included", with a clear link. *Built in the map card's `saved` slot, since the form is in another card (owner decision, October 11, 2026); 7g styles it.*
 
 **Acceptance**
 - [ ] Saves survive a reload.
@@ -418,10 +419,11 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 ### 7e. Seed saved places into the plan (`Include`)
 - [ ] Done
 
-**Owns:** `internal/planner/types.go`, `internal/planner/build.go` (seeding only), `internal/planner/build_test.go`, `internal/adapters/httpserver/trip.go` (query parsing in `planTrip`), `trip_test.go`
+**Owns:** `internal/planner/types.go`, `internal/planner/build.go` (seeding only), `internal/planner/build_test.go`, `internal/adapters/httpserver/trip.go` (query parsing in `planTrip`), `trip_test.go`, `views/itinerary_body.go.tpl` (the "also suggested" block only; after 7b, before 7g)
 
 - `planner.Request` gains `Include []Place` (max ~12); `Build` places them into days first (nearest together where possible), then fills with nearby places as today.
-- `/plan` accepts the QIDs in the query string (`include`), resolved through `WriterMapSource.Place` (the fake in PR 7, the real source after PR 6); unknown QIDs are ignored. The URL is shareable.
+- `/plan` accepts the QIDs in the query string (`include`, repeated: `include=Q1&include=Q2`, as 7d sends them), resolved through `WriterMapSource.Place` (the fake in PR 7, the real source after PR 6); unknown QIDs are ignored. The URL is shareable.
+- With `WRITERS_MAP` off, `include` is ignored and plans are unchanged.
 
 **Acceptance**
 - [ ] All included places appear in the plan; requests without `Include` produce today's plans byte-for-byte.
@@ -430,27 +432,29 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Verify:** `go test ./internal/planner/... ./internal/adapters/httpserver/...`; preview check.
 
 ### 7f. Add the legend chips · *after 7a*
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/7f.tdd.md)
 
-**Owns:** `public/redesign/map-layers.js`, `public/redesign/map-layers.css`
+**Owns:** `public/redesign/map-layers.js`, `public/redesign/map-layers.css`, `views/index.go.tpl` (the `map-layers` script and stylesheet tags only)
 
 - Four chips that toggle their layer: **Notable places** (blue) · **Writers' pins** (orange) · **Your day plan** (green; disabled until a plan exists) · **Writers' itineraries** (purple; hidden when there are none).
 - Chip state is buttons with `aria-pressed`; remembered per tab in `sessionStorage` (try/catch).
 
 **Acceptance**
-- [ ] Every chip toggles its layer without redrawing the others.
-- [ ] All chips off → empty map, no error.
+- [x] Every chip toggles its layer without redrawing the others. *(`pr7-integration.browser.mjs`)*
+- [x] All chips off → empty map, no error. *(`pr7-integration.browser.mjs`)*
 
 **Verify:** preview check.
 
 ### 7g. Rework the itinerary rows · *after 7b, 7e, 7i*
 - [ ] Done
 
-**Owns:** `views/itinerary_body.go.tpl` (after 7b), `internal/adapters/httpserver/itinerary_test.go`
+**Owns:** `views/itinerary_body.go.tpl` (after 7b), `internal/adapters/httpserver/itinerary_test.go`, `public/redesign/map-saved.css`, `views/index.go.tpl` (the `map-saved` stylesheet tag only)
 
 - Buttons: **Export to calendar** (existing ICS) and **View on map** (scrolls to the map and turns on **Your day plan**).
 - Per day: number, date, **max temperature and condition** (from 7i's daily forecast), km walking, collapse toggle.
 - Per stop: number, Commons photo, name, *kind · distance from the previous stop* (`distance_km`, 1f), short description.
+- Style 7d's saved line (`.writers-map-saved` in the map card's `saved` slot) in `map-saved.css`.
+- **View on map** clicks the **Your day plan** chip when it isn't pressed, so 7f's remembered state stays in step. Don't call `TravelMap.setLayerEnabled` directly: 7f re-applies its own state on the next sync.
 
 **Acceptance**
 - [ ] Days without forecast data show no temperature, not "0°".
@@ -480,7 +484,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 
 **Owns:** `views/trip_card.go.tpl` (travelers field only, after 7b), `internal/planner/stays.go`, `internal/planner/stays_test.go`, `internal/adapters/httpserver/trip.go` (travelers parsing only, after 7e)
 
-- **Travelers** select (1–8, default 2) next to Start date and End date.
+- **Travelers** select (1–8, default 2) next to Start date and Days. The form has no end date; keep Days (owner decision, October 11, 2026).
 - Passed to `BookingURL` as `group_adults`; kept in the shareable `/plan` URL.
 
 **Acceptance**

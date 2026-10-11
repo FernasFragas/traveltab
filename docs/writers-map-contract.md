@@ -2,7 +2,8 @@
 
 **Status:** original contract approved by the owner on 2026-10-08. The separate 1f contract
 change was approved by the owner on 2026-10-10 (see **Rules for Agents** in
-[the plan](../tasks/plan.md)). The Go types and ports exist; the HTTP routes, plan-stop distance,
+[the plan](../tasks/plan.md)). The PR 7 change (itineraries in the GeoJSON, layer names) was
+approved by the owner on 2026-10-11. The Go types and ports exist; the HTTP routes, plan-stop distance,
 browser API and template hooks below are planned and not yet served.
 
 This document is the integration boundary for the writers' map. Go models live in
@@ -73,6 +74,10 @@ coordinates are `[longitude, latitude]`. `properties` contains:
 The top-level `complete` boolean indicates whether all configured sources were checked. A result
 can contain useful features while incomplete.
 
+The top-level `itineraries` array carries the writers' routes (an empty array when there are none).
+Each entry has `writer_host`, `post_url`, `post_title`, `language` and `days`; each day has `qids`
+(stops in first-mention order, matching feature `qid`s). The post reference stays on the server.
+
 ## Place panel
 
 `GET /map/:dest/:qid?lat=…&lon=…` returns an HTML fragment with the place name, *kind · area* when known,
@@ -97,7 +102,9 @@ The map core creates `window.TravelMap` and provides:
 TravelMap.registerLayer(name, { add(map, context), remove(map, context) })
 ```
 
-Layer names are unique. `add` and `remove` are called as a layer is enabled or disabled. The core
+Layer names are unique. `add` and `remove` are called as a layer is enabled or disabled. The map
+layers are `notable` (base places), `writers` (writer pins), `plan` (the day plan) and `itineraries`
+(writers' routes); the legend chips toggle them with `TravelMap.setLayerEnabled(name, enabled)`. The core
 dispatches these `CustomEvent`s on `document`:
 
 - `travelmap:ready` — map initialized; `detail` contains `{ map, destination }`.
