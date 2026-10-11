@@ -54,7 +54,7 @@
 
         shell = nextShell;
         var currentRequest = ++requestNumber;
-        showStatus(shell, 'Loading places…');
+        showStatus(shell, '');
         loadLeaflet().then(function () {
             if (currentRequest !== requestNumber) return;
             showMap(placeholder, latitude, longitude);

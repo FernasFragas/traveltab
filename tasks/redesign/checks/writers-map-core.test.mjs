@@ -50,11 +50,12 @@ test('credits OSM when its URL is configured without an explicit credit', async 
   assert.match(app.maps[0].tiles[0].options.attribution, /OpenStreetMap/);
 });
 
-test('renders a keyboard list, emits selection, and shows partial data status', async () => {
+test('hides loading status, renders a keyboard list, and shows partial data status', async () => {
   const app = browser();
   app.run();
   const shell = app.mount();
-  assert.equal(shell.status.textContent, 'Loading places…');
+  assert.equal(shell.status.textContent, '');
+  assert.equal(shell.status.hidden, true);
   app.loadLeaflet();
   await app.flush();
   assert.equal(app.maps.length, 1);
