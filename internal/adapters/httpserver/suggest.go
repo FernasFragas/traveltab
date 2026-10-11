@@ -1,17 +1,21 @@
 package httpserver
 
 import (
+	"context"
+	"log"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 	"weatherservice/internal/application"
+	"weatherservice/internal/writermap"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 const suggestionTTL = 10 * time.Minute
 const suggestionCacheLimit = 128
+const baseWarmInterval = 2 * time.Second
 
 type suggestionEntry struct {
 	places  []application.PlaceSuggestion
@@ -19,12 +23,26 @@ type suggestionEntry struct {
 }
 
 type suggestionCache struct {
-	mu      sync.Mutex
-	entries map[string]suggestionEntry
+	mu           sync.Mutex
+	entries      map[string]suggestionEntry
+	baseSource   application.BasePlaceSource
+	baseStarted  map[baseWarmKey]bool
+	clientWarmAt map[string]time.Time
+	now          func() time.Time
 }
 
 func newSuggestionCache() *suggestionCache {
-	return &suggestionCache{entries: make(map[string]suggestionEntry)}
+	return &suggestionCache{
+		entries:      make(map[string]suggestionEntry),
+		baseStarted:  make(map[baseWarmKey]bool),
+		clientWarmAt: make(map[string]time.Time),
+		now:          time.Now,
+	}
+}
+
+type baseWarmKey struct {
+	name, country string
+	lat, lon      float64
 }
 
 func (c *suggestionCache) get(query string) ([]application.PlaceSuggestion, bool) {
@@ -58,6 +76,15 @@ func (s *Server) SetPlaceSuggester(source application.PlaceSuggester) {
 	s.placeSuggester = source
 }
 
+func (s *Server) SetBasePlaceSource(source application.BasePlaceSource, enabled bool) {
+	if !enabled {
+		source = nil
+	}
+	s.suggestions.mu.Lock()
+	s.suggestions.baseSource = source
+	s.suggestions.mu.Unlock()
+}
+
 func validCountryCode(code string) bool {
 	return len(code) == 2 && code[0] >= 'A' && code[0] <= 'Z' && code[1] >= 'A' && code[1] <= 'Z'
 }
@@ -77,5 +104,55 @@ func (s *Server) suggestPlaces(ctx *fiber.Ctx) error {
 		}
 		s.suggestions.put(key, places)
 	}
+	if len(places) > 0 {
+		client := ctx.Get("Fly-Client-IP")
+		if client == "" {
+			client = ctx.IP()
+		}
+		s.suggestions.warm(client, places[0])
+	}
 	return ctx.Render("search_suggestions", fiber.Map{"Suggestions": places})
+}
+
+func (c *suggestionCache) warm(client string, place application.PlaceSuggestion) {
+	if !validCoordinates(place.Lat, place.Lon) {
+		return
+	}
+	key := baseWarmKey{place.Name, place.Country, place.Lat, place.Lon}
+	c.mu.Lock()
+	source := c.baseSource
+	if source == nil {
+		c.mu.Unlock()
+		return
+	}
+	if c.baseStarted[key] {
+		c.mu.Unlock()
+		return
+	}
+	now := c.now()
+	if last, ok := c.clientWarmAt[client]; ok && now.Sub(last) < baseWarmInterval {
+		c.mu.Unlock()
+		return
+	}
+	for ip, last := range c.clientWarmAt {
+		if now.Sub(last) >= baseWarmInterval {
+			delete(c.clientWarmAt, ip)
+		}
+	}
+	c.clientWarmAt[strings.Clone(client)] = now
+	c.baseStarted[key] = true
+	c.mu.Unlock()
+	go c.loadBase(source, key, writermap.Area{Name: place.Name, Country: place.Country, Lat: place.Lat, Lon: place.Lon})
+}
+
+func (c *suggestionCache) loadBase(source application.BasePlaceSource, key baseWarmKey, area writermap.Area) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err := source.Places(ctx, area)
+	if err != nil {
+		c.mu.Lock()
+		delete(c.baseStarted, key)
+		c.mu.Unlock()
+		log.Printf("Could not warm base places for %s, %s: %v", area.Name, area.Country, err)
+	}
 }

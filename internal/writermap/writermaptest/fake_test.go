@@ -169,24 +169,40 @@ func TestFakeSourcePlace_UnavailableReturnsError(t *testing.T) {
 
 func TestFakeBaseSource_PlacesReturnsTheConfiguredPlacesAndCountsCalls(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
-	source := &FakeBaseSource{Result: fixture.Places}
+	source := &FakeBaseSource{Result: writermap.BasePlaces{Pins: fixture.Places, Gazetteer: fixture.Places}}
 
 	places, err := source.Places(context.Background(), writermap.Area{Name: "Madeira"})
 
 	require.NoError(t, err)
-	assert.Len(t, places, 15)
+	assert.Len(t, places.Pins, 15)
+	assert.Len(t, places.Gazetteer, 15)
 	assert.Equal(t, 1, source.PlacesCalls())
+}
+
+func TestFakeBaseSource_PlacesKeepsPinsAndGazetteerSeparate(t *testing.T) {
+	source := &FakeBaseSource{Result: writermap.BasePlaces{
+		Pins:      []writermap.Place{{QID: "Q1", Names: []string{"Pico Ruivo"}}},
+		Gazetteer: []writermap.Place{{QID: "Q2", Names: []string{"Câmara de Lobos"}}},
+	}}
+
+	result, err := source.Places(context.Background(), writermap.Area{Name: "Madeira"})
+
+	require.NoError(t, err)
+	assert.Equal(t, "Q1", result.Pins[0].QID)
+	assert.Equal(t, "Q2", result.Gazetteer[0].QID)
 }
 
 func TestFakeBaseSource_EditingAResultLeavesTheFakeUnchanged(t *testing.T) {
 	fixture := loadMadeiraFixture(t)
-	source := &FakeBaseSource{Result: fixture.Places}
+	source := &FakeBaseSource{Result: writermap.BasePlaces{Pins: fixture.Places, Gazetteer: fixture.Places}}
 	places, err := source.Places(context.Background(), writermap.Area{})
 	require.NoError(t, err)
 
-	places[0].Names[0] = "changed"
+	places.Pins[0].Names[0] = "changed"
+	places.Gazetteer[0].Types = []string{"Q0"}
 
-	assert.Equal(t, "Madeira", source.Result[0].Names[0])
+	assert.Equal(t, "Madeira", source.Result.Pins[0].Names[0])
+	assert.Empty(t, source.Result.Gazetteer[0].Types)
 }
 
 func TestFakeBaseSource_ReturnsConfiguredError(t *testing.T) {

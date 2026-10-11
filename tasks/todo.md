@@ -206,7 +206,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 ## PR 4 — Base Layer · needs: PR 1
 
 ### 4a. Write the Wikidata nearby adapter
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/4a.tdd.md)
 
 **Owns:** `internal/adapters/api/wikidatanearby.go`, `wikidatanearby_test.go`, `internal/adapters/api/testdata/wikidata_*.json`
 
@@ -218,13 +218,13 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Retry-After honored; identified user agent.
 
 **Acceptance**
-- [ ] Madeira fixture's base pins include Pico Ruivo and Cabo Girão and exclude the airport; Câmara de Lobos (a municipality/freguesia) is in the gazetteer but not a base pin.
-- [ ] Missing image, description, Wikipedia link or opening hours → field left empty.
+- [x] Madeira fixture's base pins include Pico Ruivo and Cabo Girão and exclude the airport; Câmara de Lobos (a municipality/freguesia) is in the gazetteer but not a base pin.
+- [x] Missing image, description, Wikipedia link or opening hours → field left empty.
 
 **Verify:** `go test ./internal/adapters/api/...`.
 
 ### 4b. Add the cache decorator
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/4b.tdd.md)
 
 **Owns:** `internal/adapters/sqlite/wikidatanearby.go`, `wikidatanearby_test.go`
 
@@ -236,7 +236,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Verify:** `go test -race ./internal/adapters/sqlite/...` (20 concurrent callers → 1 query).
 
 ### 4c. Warm from search suggestions · **integrator**
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/4c.tdd.md)
 
 **Owns:** `internal/adapters/httpserver/suggest.go`, `suggest_test.go`, `cmd/web/main.go` (wiring only)
 
