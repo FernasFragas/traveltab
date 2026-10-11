@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -58,225 +59,317 @@ func TestParseSources_RejectsInvalidJSON(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSyncJob_InitialCrawlIndexesEveryPostAndCompletes(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(5)...)
+func TestSyncJob_IndexesOnlyTheSelectedPosts(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(130)...)
+	wp.put(blogAPI, bodyOnlyPost(500)) // the body names Madeira, the title and slug do not
 	index := newFakeIndex()
 	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
 
 	require.NoError(t, job.Run(context.Background()))
 
-	assert.Len(t, index.postsFor(blogHost), 5)
-	post := index.post(blogHost, 3)
-	assert.Equal(t, "https://blog.example/3", post.URL)
-	assert.Equal(t, "Post 3", post.Title)
+	assert.Len(t, index.postsFor(blogHost), writermap.MaxIndexedPosts)
+	assert.Equal(t, writermap.MaxIndexedPosts, wp.blog(blogAPI).fetched, "only chosen posts are fetched")
+	assert.NotContains(t, index.postIDs(blogHost), int64(500))
+	post := index.post(blogHost, 130)
+	assert.Equal(t, "https://blog.example/130", post.URL)
+	assert.Equal(t, "Post 130 in Madeira", post.Title)
 	assert.Equal(t, "en", post.Language)
 	assert.Contains(t, foldedPhrases(post), "pico ruivo")
 	state := index.state(blogHost)
 	assert.Equal(t, writermap.StatusActive, state.Status)
 	assert.Equal(t, crawlTime, state.LastFull)
-	assert.True(t, state.LastDelta.IsZero())
-	assert.Equal(t, testModified(5).Format(time.RFC3339Nano), state.Cursor)
-	assert.True(t, wp.blog(blogAPI).listedAfter[0].IsZero(), "a first crawl lists every post")
 }
 
-func TestSyncJob_InterruptedCrawlResumesFromCursor(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(5)...)
-	wp.blog(blogAPI).listErr = func(call int) error {
-		if call == 2 {
-			return errors.New("connection reset")
-		}
-		return nil
-	}
+func TestSyncJob_SearchesEachTermOncePerBlogAndFetchesEachPostOnce(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	wp.put(blogAPI, namedPost(4, "Madeira and Lisboa", "two-places"))
 	index := newFakeIndex()
 	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.Areas = []writermap.Area{{Name: "Madeira"}, {Name: "madeira"}, {Name: "Lisboa"}}
+	job.Destinations = fakeDestinations{{Name: "Funchal"}, {Name: "LISBOA"}}
 
-	require.Error(t, job.Run(context.Background()))
-
-	interrupted := index.state(blogHost)
-	assert.Equal(t, writermap.StatusPartial, interrupted.Status)
-	assert.True(t, interrupted.LastFull.IsZero())
-	assert.Equal(t, testModified(2).Format(time.RFC3339Nano), interrupted.Cursor, "cursor saved after page 1")
-	assert.Len(t, index.postsFor(blogHost), 2)
-
-	wp.blog(blogAPI).listErr = nil
-	upsertsBefore := index.upsertCount()
 	require.NoError(t, job.Run(context.Background()))
 
-	listed := wp.blog(blogAPI).listedAfter
-	assert.Equal(t, testModified(2).Add(-time.Second), listed[2], "resume lists from the saved cursor")
-	assert.Len(t, index.postsFor(blogHost), 5)
-	assert.LessOrEqual(t, index.upsertCount()-upsertsBefore, 4, "resume does not restart the crawl")
-	assert.Equal(t, writermap.StatusActive, index.state(blogHost).Status)
-	assert.Equal(t, crawlTime, index.state(blogHost).LastFull)
+	assert.ElementsMatch(t, []string{"Madeira", "Lisboa", "Funchal"}, wp.blog(blogAPI).searched)
+	assert.Equal(t, 4, wp.blog(blogAPI).fetched, "post 4 matches two terms and is fetched once")
+	assert.Equal(t, []int64{1, 2, 3, 4}, index.postIDs(blogHost))
 }
 
-func TestSyncJob_CrawlWithEqualTimestampsAcrossPagesIndexesEveryPost(t *testing.T) {
-	wp := newFakeWordPress(2)
-	posts := testPosts(5)
-	for i := range posts {
-		posts[i].Modified = testModified(1)
-	}
-	wp.addBlog(blogAPI, posts...)
+func TestSyncJob_PlaceNamesFromTheMatcherCountAsDestinationNames(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(1)...)
+	hike := namedPost(2, "Hiking to Pico Ruivo", "hiking")
+	hike.Content = "<p>" + postText + " Our week in Madeira.</p>" // found by the Madeira search
+	wp.put(blogAPI, hike)
 	index := newFakeIndex()
 	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.PlaceNames = func(context.Context) ([]string, error) { return []string{"Pico Ruivo"}, nil }
 
 	require.NoError(t, job.Run(context.Background()))
 
-	assert.Len(t, index.postsFor(blogHost), 5)
+	assert.Equal(t, []int64{1, 2}, index.postIDs(blogHost), "post 2 is found by Madeira and its title names Pico Ruivo")
 }
 
-func TestSyncJob_MonthlyRunReindexesEditedPosts(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(5)...)
+func TestSyncJob_PlaceNamesErrorStopsTheRunBeforeAnyRequest(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(2)...)
+	job := newTestJob(newFakeIndex(), wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.PlaceNames = func(context.Context) ([]string, error) { return nil, errors.New("database locked") }
+
+	require.ErrorContains(t, job.Run(context.Background()), "database locked")
+
+	assert.Empty(t, wp.blog(blogAPI).searched)
+}
+
+func TestSyncJob_ListingCachedDestinationsFailsTheRunBeforeAnyRequest(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(2)...)
+	job := newTestJob(newFakeIndex(), wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.Destinations = failingDestinations{}
+
+	require.ErrorContains(t, job.Run(context.Background()), "list cached destinations")
+
+	assert.Empty(t, wp.blog(blogAPI).searched)
+}
+
+func TestSyncJob_PurgesPostsThatDropOut(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(130)...)
+	wp.blog(blogAPI).comments = map[int64]int{}
+	for id := int64(1); id <= 100; id++ {
+		wp.blog(blogAPI).comments[id] = 10 // posts 1-100 are the most commented
+	}
 	index := newFakeIndex()
 	clock := &testClock{now: crawlTime}
 	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
 	require.NoError(t, job.Run(context.Background()))
+	require.Equal(t, int64(1), index.postIDs(blogHost)[0])
 
-	edited := testPost(3)
-	edited.Title = "Post 3 edited"
-	edited.Content = "<p>" + postText + " Now about Cabo Girão.</p>"
-	edited.Modified = time.Date(2026, 10, 20, 9, 0, 0, 0, time.UTC)
-	wp.put(blogAPI, edited)
-	added := testPost(6)
-	added.Modified = time.Date(2026, 10, 21, 9, 0, 0, 0, time.UTC)
-	wp.put(blogAPI, added)
-	callsBefore := len(wp.blog(blogAPI).listedAfter)
-	clock.set(monthlyTime)
-	require.NoError(t, job.Run(context.Background()))
-
-	post := index.post(blogHost, 3)
-	assert.Equal(t, "Post 3 edited", post.Title)
-	assert.Contains(t, foldedPhrases(post), "cabo girao")
-	assert.NotContains(t, foldedPhrases(post), "pico ruivo")
-	assert.Len(t, index.postsFor(blogHost), 6)
-	listed := wp.blog(blogAPI).listedAfter
-	assert.Equal(t, testModified(5).Add(-time.Second), listed[callsBefore], "monthly run lists changes since the cursor")
-	state := index.state(blogHost)
-	assert.Equal(t, monthlyTime, state.LastDelta)
-	assert.Equal(t, crawlTime, state.LastFull)
-	assert.Equal(t, added.Modified.Format(time.RFC3339Nano), state.Cursor)
-}
-
-func TestSyncJob_MonthlyRunDropsDeletedPosts(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(5)...)
-	index := newFakeIndex()
-	clock := &testClock{now: crawlTime}
-	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
-	require.NoError(t, job.Run(context.Background()))
-
-	wp.remove(blogAPI, 2)
-	clock.set(monthlyTime)
-	require.NoError(t, job.Run(context.Background()))
-
-	assert.Equal(t, []int64{1, 3, 4, 5}, index.postIDs(blogHost))
-	assert.Equal(t, writermap.StatusActive, index.state(blogHost).Status)
-}
-
-func TestSyncJob_SweepConfirmsMissingIDsBeforeDeleting(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(6)...)
-	index := newFakeIndex()
-	clock := &testClock{now: crawlTime}
-	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
-	require.NoError(t, job.Run(context.Background()))
-
-	// Post 1 was really deleted. Post 6 is deleted after the first sweep page is read, so post 4
-	// shifts onto page 1 and the first sweep never sees it, although it still exists.
-	wp.remove(blogAPI, 1)
-	blog := wp.blog(blogAPI)
-	blog.afterIDsPage = func(b *fakeBlog, page int) {
-		if page == 1 && b.idsCalls == 1 {
-			delete(b.posts, 6)
-		}
+	wp.blog(blogAPI).comments = map[int64]int{}
+	for id := int64(31); id <= 130; id++ {
+		wp.blog(blogAPI).comments[id] = 10 // month 2: posts 31-130 lead
 	}
 	clock.set(monthlyTime)
 	require.NoError(t, job.Run(context.Background()))
 
-	assert.Equal(t, []int64{2, 3, 4, 5, 6}, index.postIDs(blogHost), "4 kept; 6 goes next month")
+	ids := index.postIDs(blogHost)
+	assert.Len(t, ids, writermap.MaxIndexedPosts)
+	assert.Equal(t, int64(31), ids[0], "posts 1-30 were purged")
+	assert.Equal(t, int64(130), ids[len(ids)-1], "posts 101-130 were indexed")
+	assert.Equal(t, monthlyTime, index.state(blogHost).LastFull)
 }
 
-func TestSyncJob_FailedSweepDeletesNothing(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(5)...)
+func TestSyncJob_SharesTheCapAcrossBlogsByTheirDestinationPosts(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(150)...)
+	wp.addBlog(otherAPI, testPosts(50)...)
 	index := newFakeIndex()
-	clock := &testClock{now: crawlTime}
-	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+
 	require.NoError(t, job.Run(context.Background()))
 
-	wp.remove(blogAPI, 1)
-	wp.blog(blogAPI).idsErr = func(page int) error {
-		if page == 2 {
-			return errors.New("status 500")
-		}
-		return nil
-	}
-	clock.set(monthlyTime)
-	require.Error(t, job.Run(context.Background()))
-
-	assert.Equal(t, []int64{1, 2, 3, 4, 5}, index.postIDs(blogHost))
-	assert.Equal(t, writermap.StatusPartial, index.state(blogHost).Status)
-	assert.True(t, index.state(blogHost).LastDelta.IsZero())
+	assert.Len(t, index.postsFor(blogHost), 75)
+	assert.Len(t, index.postsFor(otherHost), 25)
 }
 
-func TestSyncJob_EmptySweepDeletesNothing(t *testing.T) {
-	wp := newFakeWordPress(2)
+func TestSyncJob_BlockedBlogsRowsStayAndCountInsideTheCap(t *testing.T) {
+	const blockedHost = "blocked.example"
+	for name, block := range map[string]func(*fakeIndex, *writermap.Source){
+		"blocked in the allowlist": func(_ *fakeIndex, s *writermap.Source) { s.Status = writermap.StatusBlocked },
+		"blocked by an earlier run": func(i *fakeIndex, s *writermap.Source) {
+			require.NoError(t, i.SaveSyncState(context.Background(), writermap.SyncState{Host: s.Host, Status: writermap.StatusBlocked}))
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			wp := newFakeWordPress()
+			wp.addBlog(blogAPI, testPosts(150)...)
+			wp.addBlog(otherAPI, testPosts(150)...)
+			index := newFakeIndex()
+			seedRows(t, index, blockedHost, 30)
+			blocked := activeSource(blockedHost, "https://blocked.example/wp-json/wp/v2/posts")
+			block(index, &blocked)
+			job := newTestJob(index, wp, crawlTime, blocked, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+
+			require.NoError(t, job.Run(context.Background()))
+
+			assert.Len(t, index.postsFor(blockedHost), 30, "the blocked blog keeps its rows")
+			assert.Len(t, index.postsFor(blogHost), 35)
+			assert.Len(t, index.postsFor(otherHost), 35)
+		})
+	}
+}
+
+func TestSyncJob_BlogBlockedDuringTheRunKeepsItsRowsInsideTheCap(t *testing.T) {
+	const blockedHost = "blocked.example"
+	const blockedAPI = "https://blocked.example/wp-json/wp/v2/posts"
+	wp := newFakeWordPress()
+	wp.addBlog(blockedAPI, testPosts(5)...)
+	wp.blog(blockedAPI).searchErr = api.ErrBlocked
+	wp.addBlog(blogAPI, testPosts(150)...)
+	wp.addBlog(otherAPI, testPosts(150)...)
+	index := newFakeIndex()
+	seedRows(t, index, blockedHost, 30)
+	job := newTestJob(index, wp, crawlTime, activeSource(blockedHost, blockedAPI), activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	job.BlockedErrors = []error{api.ErrBlocked}
+
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Equal(t, writermap.StatusBlocked, index.state(blockedHost).Status)
+	assert.Len(t, index.postsFor(blockedHost), 30)
+	assert.Len(t, index.postsFor(blogHost), 35)
+	assert.Len(t, index.postsFor(otherHost), 35)
+}
+
+func TestSyncJob_SuddenEmptySearchKeepsRowsWarnsAndRetries(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(150)...)
+	wp.addBlog(otherAPI) // the search returns nothing this run
+	index := newFakeIndex()
+	seedRows(t, index, otherHost, 30)
+	require.NoError(t, index.SaveSyncState(context.Background(), writermap.SyncState{Host: otherHost, Status: writermap.StatusActive, LastFull: crawlTime}))
+	clock := &testClock{now: monthlyTime}
+	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	var lines []string
+	job.Logf = func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Len(t, index.postsFor(otherHost), 30, "the rows are kept")
+	assert.Len(t, index.postsFor(blogHost), 70, "and count inside the cap")
+	assert.Equal(t, crawlTime, index.state(otherHost).LastFull, "not finished, so the next run retries")
+	assert.Equal(t, monthlyTime, index.state(blogHost).LastFull)
+	assert.Contains(t, strings.Join(lines, "\n"), "writers sync "+otherHost+": warning")
+
+	for id := int64(1); id <= 150; id++ {
+		wp.put(otherAPI, testPost(id))
+	}
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Equal(t, monthlyTime, index.state(otherHost).LastFull)
+	assert.Len(t, index.postsFor(otherHost), 50)
+	assert.Len(t, index.postsFor(blogHost), 50)
+}
+
+func TestSyncJob_BlogThatNeverHadPostsAndFindsNoneIsJustSkipped(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(150)...)
+	wp.addBlog(otherAPI)
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	var lines []string
+	job.Logf = func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Len(t, index.postsFor(blogHost), writermap.MaxIndexedPosts)
+	assert.Empty(t, index.postsFor(otherHost))
+	assert.Equal(t, crawlTime, index.state(otherHost).LastFull, "nothing to retry")
+	assert.NotContains(t, strings.Join(lines, "\n"), "warning")
+}
+
+func TestSyncJob_UsesCommentCountsToRankAndNoCommentsNewest(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(120)...)
+	wp.addBlog(otherAPI, testPosts(120)...)
+	wp.blog(blogAPI).comments = map[int64]int{1: 50}
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Contains(t, index.postIDs(blogHost), int64(1), "the only commented post is kept although it is the oldest")
+	assert.NotContains(t, index.postIDs(otherHost), int64(1))
+	assert.Contains(t, index.postIDs(otherHost), int64(120), "without comments the newest are taken")
+}
+
+func TestSyncJob_RunWaitsForNewMonthAndOffPeak(t *testing.T) {
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(3)...)
 	index := newFakeIndex()
 	clock := &testClock{now: crawlTime}
 	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
 	require.NoError(t, job.Run(context.Background()))
-
-	for id := int64(1); id <= 3; id++ {
-		wp.remove(blogAPI, id)
-	}
-	clock.set(monthlyTime)
-	require.Error(t, job.Run(context.Background()))
-
-	assert.Equal(t, []int64{1, 2, 3}, index.postIDs(blogHost))
-}
-
-func TestSyncJob_PartialMonthlyRunResumesInNextWindow(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(5)...)
-	index := newFakeIndex()
-	clock := &testClock{now: crawlTime}
-	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
-	require.NoError(t, job.Run(context.Background()))
-	wp.remove(blogAPI, 1)
-	wp.blog(blogAPI).idsErr = func(int) error { return errors.New("status 500") }
-	clock.set(monthlyTime)
-	require.Error(t, job.Run(context.Background()))
-
-	wp.blog(blogAPI).idsErr = nil
-	clock.set(monthlyTime.Add(24 * time.Hour))
-	require.NoError(t, job.Run(context.Background()))
-
-	assert.Equal(t, []int64{2, 3, 4, 5}, index.postIDs(blogHost))
-	assert.Equal(t, monthlyTime.Add(24*time.Hour), index.state(blogHost).LastDelta)
-}
-
-func TestSyncJob_MonthlyRunWaitsForNewMonthAndOffPeak(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(3)...)
-	index := newFakeIndex()
-	clock := &testClock{now: crawlTime}
-	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
-	require.NoError(t, job.Run(context.Background()))
-	calls := wp.blog(blogAPI).listCalls
+	calls := len(wp.blog(blogAPI).searched)
 
 	clock.set(time.Date(2026, 10, 12, 3, 0, 0, 0, time.UTC)) // off-peak, same month
 	require.NoError(t, job.Run(context.Background()))
 	clock.set(time.Date(2026, 11, 1, 14, 0, 0, 0, time.UTC)) // new month, peak hours
 	require.NoError(t, job.Run(context.Background()))
-	assert.Equal(t, calls, wp.blog(blogAPI).listCalls, "nothing is due")
+	assert.Equal(t, calls, len(wp.blog(blogAPI).searched), "nothing is due")
 
 	clock.set(monthlyTime)
 	require.NoError(t, job.Run(context.Background()))
-	assert.Greater(t, wp.blog(blogAPI).listCalls, calls)
+	assert.Greater(t, len(wp.blog(blogAPI).searched), calls)
+}
+
+func TestSyncJob_DueRunSearchesEveryActiveBlogEvenWhenOnlyOneIsDue(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	wp.addBlog(otherAPI, testPosts(3)...)
+	index := newFakeIndex()
+	clock := &testClock{now: crawlTime}
+	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
+	require.NoError(t, job.Run(context.Background()))
+
+	job = newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	require.NoError(t, job.Run(context.Background())) // the new blog has never synced
+
+	assert.Len(t, wp.blog(blogAPI).searched, 2, "the cap is shared, so every blog is re-picked together")
+	assert.Len(t, index.postsFor(otherHost), 3)
+}
+
+func TestSyncJob_FailedRunWritesNothingAndRetriesNextWindow(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	wp.addBlog(otherAPI, testPosts(3)...)
+	wp.blog(otherAPI).searchErr = errors.New("status 500")
+	index := newFakeIndex()
+	clock := &testClock{now: crawlTime}
+	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+
+	require.ErrorContains(t, job.Run(context.Background()), "status 500")
+
+	assert.Empty(t, index.postsFor(blogHost), "a half-seen cap is never applied")
+	assert.True(t, index.state(blogHost).LastFull.IsZero())
+
+	wp.blog(otherAPI).searchErr = nil
+	require.NoError(t, job.Run(context.Background()))
+	assert.Len(t, index.postsFor(blogHost), 3)
+	assert.Len(t, index.postsFor(otherHost), 3)
+}
+
+func TestSyncJob_CommentErrorFailsTheRun(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	wp.blog(blogAPI).commentsErr = errors.New("status 500")
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+
+	require.ErrorContains(t, job.Run(context.Background()), "status 500")
+
+	assert.Empty(t, index.postsFor(blogHost))
+}
+
+func TestSyncJob_FetchErrorKeepsThatBlogsRowsAndRetries(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	wp.addBlog(otherAPI, testPosts(3)...)
+	index := newFakeIndex()
+	clock := &testClock{now: crawlTime}
+	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	require.NoError(t, job.Run(context.Background()))
+
+	wp.blog(blogAPI).fetchErr = errors.New("status 502")
+	wp.remove(otherAPI, 3)
+	clock.set(monthlyTime)
+	require.ErrorContains(t, job.Run(context.Background()), "status 502")
+
+	assert.Len(t, index.postsFor(blogHost), 3, "the failed blog keeps its rows")
+	assert.Equal(t, crawlTime, index.state(blogHost).LastFull, "and stays due")
+	assert.Equal(t, []int64{1, 2}, index.postIDs(otherHost), "the other blog is still updated")
+	assert.Equal(t, monthlyTime, index.state(otherHost).LastFull)
 }
 
 func TestSyncJob_BlockedOrDisallowedHostIsMarkedAndSkipped(t *testing.T) {
@@ -298,14 +391,15 @@ func TestSyncJob_BlockedOrDisallowedHostIsMarkedAndSkipped(t *testing.T) {
 			}))
 			t.Cleanup(server.Close)
 			blocked := activeSource("blocked.example", server.URL+"/wp-json/wp/v2/posts")
-			wp := newFakeWordPress(2)
+			wp := newFakeWordPress()
 			wp.addBlog(otherAPI, testPosts(2)...)
-			lister := routedLister{
-				blocked.APIBase: clientLister{api.NewWordPressClient(server.Client(), api.NewHostLimiter())},
+			source := routedSource{
+				blocked.APIBase: clientSource{api.NewWordPressClient(server.Client(), api.NewHostLimiter())},
 				otherAPI:        wp,
 			}
 			index := newFakeIndex()
-			job := writermap.NewSyncJob([]writermap.Source{blocked, activeSource(otherHost, otherAPI)}, index, lister)
+			job := writermap.NewSyncJob([]writermap.Source{blocked, activeSource(otherHost, otherAPI)}, index, source)
+			job.Areas = []writermap.Area{{Name: "Madeira"}}
 			job.Now = func() time.Time { return crawlTime }
 			job.Logf = func(string, ...any) {}
 			job.BlockedErrors = []error{api.ErrBlocked, api.ErrDisallowed}
@@ -323,15 +417,15 @@ func TestSyncJob_BlockedOrDisallowedHostIsMarkedAndSkipped(t *testing.T) {
 	}
 }
 
-func TestSyncJob_RemovedSourceIsPurgedAndAllowlistBlockedIsSkipped(t *testing.T) {
-	wp := newFakeWordPress(2)
+func TestSyncJob_SkipsBlockedAndRemovedSources(t *testing.T) {
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(2)...)
 	wp.addBlog(otherAPI, testPosts(2)...)
 	index := newFakeIndex()
 	sources := []writermap.Source{activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI)}
 	job := newTestJob(index, wp, crawlTime, sources...)
 	require.NoError(t, job.Run(context.Background()))
-	calls, removedCalls := wp.blog(otherAPI).listCalls, wp.blog(blogAPI).listCalls
+	searches, removedSearches := len(wp.blog(otherAPI).searched), len(wp.blog(blogAPI).searched)
 
 	sources[0].Status = writermap.StatusRemoved
 	sources[1].Status = writermap.StatusBlocked
@@ -341,15 +435,15 @@ func TestSyncJob_RemovedSourceIsPurgedAndAllowlistBlockedIsSkipped(t *testing.T)
 	assert.Empty(t, index.postsFor(blogHost))
 	assert.Equal(t, writermap.SyncState{Host: blogHost}, index.state(blogHost), "sync state purged too")
 	assert.Len(t, index.postsFor(otherHost), 2, "allowlist-blocked source keeps its rows")
-	assert.Equal(t, calls, wp.blog(otherAPI).listCalls, "allowlist-blocked source is not requested")
-	assert.Equal(t, removedCalls, wp.blog(blogAPI).listCalls, "removed source is not requested")
+	assert.Equal(t, searches, len(wp.blog(otherAPI).searched), "allowlist-blocked source is not requested")
+	assert.Equal(t, removedSearches, len(wp.blog(blogAPI).searched), "removed source is not requested")
 }
 
 func TestSyncJob_ConcurrentRunIsRejected(t *testing.T) {
-	wp := newFakeWordPress(2)
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(2)...)
 	entered, release := make(chan struct{}), make(chan struct{})
-	wp.blog(blogAPI).onList = func() {
+	wp.blog(blogAPI).onSearch = func() {
 		close(entered)
 		<-release
 	}
@@ -368,7 +462,7 @@ func TestSyncJob_ConcurrentRunIsRejected(t *testing.T) {
 }
 
 func TestSyncJob_RefreshesCachedDestinationsThenRunsSummaryStep(t *testing.T) {
-	wp := newFakeWordPress(2)
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(3)...)
 	index := newFakeIndex()
 	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
@@ -393,21 +487,20 @@ func TestSyncJob_RefreshesCachedDestinationsThenRunsSummaryStep(t *testing.T) {
 	assert.Equal(t, []string{"refresh Funchal", "refresh Lisbon", "summaries after 3 posts"}, steps)
 }
 
-func TestSyncJob_RefreshListErrorStillRunsSummaryStep(t *testing.T) {
-	wp := newFakeWordPress(2)
-	wp.addBlog(blogAPI, testPosts(1)...)
+func TestSyncJob_SummaryStepIsSkippedWhenNothingWasIndexed(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, bodyOnlyPost(1))
 	job := newTestJob(newFakeIndex(), wp, crawlTime, activeSource(blogHost, blogAPI))
-	job.Destinations = failingDestinations{}
-	job.Refresher = refresherFunc(func(context.Context, writermap.Area) error { return nil })
 	summarized := false
 	job.SummaryStep = func(context.Context) error { summarized = true; return nil }
 
-	require.ErrorContains(t, job.Run(context.Background()), "list cached destinations")
-	assert.True(t, summarized)
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.False(t, summarized, "no post was added or removed")
 }
 
 func TestSyncJob_NothingDueSkipsRefreshAndSummaryStep(t *testing.T) {
-	wp := newFakeWordPress(2)
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(1)...)
 	index := newFakeIndex()
 	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
@@ -423,7 +516,7 @@ func TestSyncJob_NothingDueSkipsRefreshAndSummaryStep(t *testing.T) {
 }
 
 func TestSyncJob_LogsOneLinePerHostWithoutPostText(t *testing.T) {
-	wp := newFakeWordPress(2)
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(3)...)
 	index := newFakeIndex()
 	sources := []writermap.Source{
@@ -437,9 +530,9 @@ func TestSyncJob_LogsOneLinePerHostWithoutPostText(t *testing.T) {
 	require.NoError(t, job.Run(context.Background()))
 
 	require.Len(t, lines, 2)
-	assert.Contains(t, lines[0], blogHost)
-	assert.Contains(t, lines[0], "3 posts")
-	assert.Contains(t, lines[1], otherHost)
+	assert.Contains(t, lines[0], otherHost, "removed sources are handled first")
+	assert.Contains(t, lines[1], blogHost)
+	assert.Contains(t, lines[1], "3 posts")
 	for _, line := range lines {
 		assert.NotContains(t, line, postText)
 		assert.NotContains(t, line, "Post 1")
@@ -447,14 +540,9 @@ func TestSyncJob_LogsOneLinePerHostWithoutPostText(t *testing.T) {
 }
 
 func TestSyncJob_ScheduleRunsAtStartupThenEachOffPeakWindow(t *testing.T) {
-	wp := newFakeWordPress(2)
+	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(1)...)
-	wp.blog(blogAPI).listErr = func(call int) error {
-		if call == 1 {
-			return errors.New("connection reset")
-		}
-		return nil
-	}
+	wp.blog(blogAPI).searchErr = errors.New("connection reset")
 	index := newFakeIndex()
 	clock := &testClock{now: crawlTime}
 	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
@@ -463,6 +551,7 @@ func TestSyncJob_ScheduleRunsAtStartupThenEachOffPeakWindow(t *testing.T) {
 	job.Sleep = func(_ context.Context, d time.Duration) error {
 		sleeps = append(sleeps, d)
 		clock.set(clock.Now().Add(d))
+		wp.blog(blogAPI).searchErr = nil // the 02:00 run succeeds
 		if len(sleeps) == 2 {
 			cancel()
 			return context.Canceled
@@ -473,12 +562,11 @@ func TestSyncJob_ScheduleRunsAtStartupThenEachOffPeakWindow(t *testing.T) {
 	job.Schedule(ctx)
 
 	assert.Equal(t, []time.Duration{12 * time.Hour, 24 * time.Hour}, sleeps)
-	assert.Equal(t, 2, wp.blog(blogAPI).listCalls, "startup run failed, the 02:00 run resumed")
-	assert.Len(t, index.postsFor(blogHost), 1)
+	assert.Len(t, index.postsFor(blogHost), 1, "startup run failed, the 02:00 run retried")
 }
 
 func TestSyncJob_DefaultSleepStopsWhenContextEnds(t *testing.T) {
-	job := writermap.NewSyncJob(nil, newFakeIndex(), newFakeWordPress(1))
+	job := writermap.NewSyncJob(nil, newFakeIndex(), newFakeWordPress())
 	job.Now = func() time.Time { return crawlTime }
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -491,12 +579,13 @@ func TestSyncJob_TwoUnchangedRunsKeepRowCountsAndFileSize(t *testing.T) {
 	store, err := sqlite.Open(path)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = store.Close() })
-	wp := newFakeWordPress(2)
+	wp := newFakeWordPress()
 	posts := testPosts(5)
 	posts[1].Content = "<h2>Day 1</h2><p>Pico Ruivo.</p><h2>Day 2</h2><p>Cabo Girão.</p>"
 	wp.addBlog(blogAPI, posts...)
 	clock := &testClock{now: crawlTime}
 	job := writermap.NewSyncJob([]writermap.Source{activeSource(blogHost, blogAPI)}, storeIndex{store}, wp)
+	job.Areas = []writermap.Area{{Name: "Madeira"}}
 	job.Now = clock.Now
 	job.Logf = func(string, ...any) {}
 	require.NoError(t, job.Run(context.Background()))
@@ -517,12 +606,13 @@ func TestSyncJob_TwoUnchangedRunsKeepRowCountsAndFileSize(t *testing.T) {
 
 // --- test helpers ---
 
-func newTestJob(index writermap.SyncIndex, posts writermap.PostLister, now time.Time, sources ...writermap.Source) *writermap.SyncJob {
+func newTestJob(index writermap.SyncIndex, posts writermap.PostSource, now time.Time, sources ...writermap.Source) *writermap.SyncJob {
 	return newTestJobWithClock(index, posts, &testClock{now: now}, sources...)
 }
 
-func newTestJobWithClock(index writermap.SyncIndex, posts writermap.PostLister, clock *testClock, sources ...writermap.Source) *writermap.SyncJob {
+func newTestJobWithClock(index writermap.SyncIndex, posts writermap.PostSource, clock *testClock, sources ...writermap.Source) *writermap.SyncJob {
 	job := writermap.NewSyncJob(sources, index, posts)
+	job.Areas = []writermap.Area{{Name: "Madeira"}}
 	job.Now = clock.Now
 	job.Logf = func(string, ...any) {}
 	return job
@@ -530,6 +620,14 @@ func newTestJobWithClock(index writermap.SyncIndex, posts writermap.PostLister, 
 
 func activeSource(host, apiBase string) writermap.Source {
 	return writermap.Source{Host: host, Name: host, APIBase: apiBase, Language: "en", Status: writermap.StatusActive}
+}
+
+// seedRows stores n already-indexed posts for host, as an earlier run would have.
+func seedRows(t *testing.T, index *fakeIndex, host string, n int) {
+	t.Helper()
+	for i := 1; i <= n; i++ {
+		require.NoError(t, index.UpsertPost(context.Background(), writermap.IndexedPost{Host: host, PostID: int64(1000 + i)}))
+	}
 }
 
 func testPosts(n int) []writermap.SourcePost {
@@ -541,17 +639,31 @@ func testPosts(n int) []writermap.SourcePost {
 }
 
 func testPost(id int64) writermap.SourcePost {
+	post := namedPost(id, fmt.Sprintf("Post %d in Madeira", id), fmt.Sprintf("post-%d", id))
+	post.Link = fmt.Sprintf("https://blog.example/%d", id)
+	return post
+}
+
+// namedPost has a place-naming title; the slug is kept in Link's tail by the fake.
+func namedPost(id int64, title, slug string) writermap.SourcePost {
 	return writermap.SourcePost{
 		ID:       id,
-		Link:     fmt.Sprintf("https://blog.example/%d", id),
-		Title:    fmt.Sprintf("Post %d", id),
+		Link:     "https://blog.example/" + slug,
+		Title:    title,
 		Modified: testModified(int(id)),
 		Content:  "<p>" + postText + " We walked up Pico Ruivo.</p>",
 	}
 }
 
+// bodyOnlyPost matches a search on the body, but neither its title nor its slug names a place.
+func bodyOnlyPost(id int64) writermap.SourcePost {
+	post := namedPost(id, "Packing list", "packing-list")
+	post.Content = "<p>" + postText + " Our week in Madeira.</p>"
+	return post
+}
+
 func testModified(id int) time.Time {
-	return time.Date(2026, 1, 1, id, 0, 0, 0, time.UTC)
+	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(id) * time.Hour)
 }
 
 func foldedPhrases(post writermap.IndexedPost) []string {
@@ -579,27 +691,26 @@ func (c *testClock) set(now time.Time) {
 	c.now = now
 }
 
-// fakeWordPress serves posts like the WordPress REST API: listings ordered by modified time
-// (oldest first) with a strict modified_after, and id sweeps newest id first.
+// fakeWordPress serves posts like the WordPress REST API: search matches the title, slug or body,
+// and every call is counted so tests can see what was requested.
 type fakeWordPress struct {
-	mu      sync.Mutex
-	perPage int
-	blogs   map[string]*fakeBlog
+	mu    sync.Mutex
+	blogs map[string]*fakeBlog
 }
 
 type fakeBlog struct {
-	posts        map[int64]writermap.SourcePost
-	listCalls    int
-	idsCalls     int
-	listedAfter  []time.Time
-	listErr      func(call int) error
-	idsErr       func(page int) error
-	afterIDsPage func(b *fakeBlog, page int)
-	onList       func()
+	posts       map[int64]writermap.SourcePost
+	comments    map[int64]int
+	searched    []string
+	fetched     int
+	searchErr   error
+	commentsErr error
+	fetchErr    error
+	onSearch    func()
 }
 
-func newFakeWordPress(perPage int) *fakeWordPress {
-	return &fakeWordPress{perPage: perPage, blogs: map[string]*fakeBlog{}}
+func newFakeWordPress() *fakeWordPress {
+	return &fakeWordPress{blogs: map[string]*fakeBlog{}}
 }
 
 func (f *fakeWordPress) addBlog(apiBase string, posts ...writermap.SourcePost) {
@@ -628,103 +739,99 @@ func (f *fakeWordPress) remove(apiBase string, id int64) {
 	delete(f.blogs[apiBase].posts, id)
 }
 
-func (f *fakeWordPress) ListPosts(_ context.Context, apiBase string, modifiedAfter time.Time, page int) ([]writermap.SourcePost, bool, error) {
+func (f *fakeWordPress) SearchPosts(_ context.Context, apiBase, term string, page int) ([]writermap.SearchHit, bool, error) {
 	f.mu.Lock()
 	blog := f.blogs[apiBase]
-	blog.listCalls++
-	blog.listedAfter = append(blog.listedAfter, modifiedAfter)
-	onList := blog.onList
+	blog.searched = append(blog.searched, term)
+	onSearch := blog.onSearch
 	f.mu.Unlock()
-	if onList != nil {
-		onList()
+	if onSearch != nil {
+		onSearch()
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if blog.listErr != nil {
-		if err := blog.listErr(blog.listCalls); err != nil {
-			return nil, false, err
-		}
+	if blog.searchErr != nil {
+		return nil, false, blog.searchErr
 	}
-	after := modifiedAfter.Truncate(time.Second)
-	var matching []writermap.SourcePost
+	var hits []writermap.SearchHit
 	for _, post := range blog.posts {
-		if modifiedAfter.IsZero() || post.Modified.After(after) {
-			matching = append(matching, post)
+		text := strings.ToLower(post.Title + " " + post.Link + " " + post.Content)
+		if page == 1 && strings.Contains(text, strings.ToLower(term)) {
+			slug := post.Link[strings.LastIndex(post.Link, "/")+1:]
+			hits = append(hits, writermap.SearchHit{ID: post.ID, Link: post.Link, Slug: slug, Title: post.Title, Published: post.Modified})
 		}
 	}
-	sort.Slice(matching, func(i, j int) bool {
-		if !matching[i].Modified.Equal(matching[j].Modified) {
-			return matching[i].Modified.Before(matching[j].Modified)
-		}
-		return matching[i].ID < matching[j].ID
-	})
-	items, more := paginate(matching, page, f.perPage)
-	return items, more, nil
+	return hits, false, nil
 }
 
-func (f *fakeWordPress) PostIDs(_ context.Context, apiBase string, page int) ([]int64, bool, error) {
+func (f *fakeWordPress) RecentCommentCounts(_ context.Context, apiBase string, _ int) (map[int64]int, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	blog := f.blogs[apiBase]
-	blog.idsCalls++
-	if blog.idsErr != nil {
-		if err := blog.idsErr(page); err != nil {
-			return nil, false, err
+	return blog.comments, blog.commentsErr
+}
+
+func (f *fakeWordPress) PostsByID(_ context.Context, apiBase string, ids []int64) ([]writermap.SourcePost, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	blog := f.blogs[apiBase]
+	if blog.fetchErr != nil {
+		return nil, blog.fetchErr
+	}
+	var posts []writermap.SourcePost
+	for _, id := range ids {
+		if post, ok := blog.posts[id]; ok {
+			posts = append(posts, post)
+			blog.fetched++
 		}
 	}
-	var ids []int64
-	for id := range blog.posts {
-		ids = append(ids, id)
-	}
-	sort.Slice(ids, func(i, j int) bool { return ids[i] > ids[j] })
-	items, more := paginate(ids, page, f.perPage)
-	if blog.afterIDsPage != nil {
-		blog.afterIDsPage(blog, page)
-	}
-	return items, more, nil
+	return posts, nil
 }
 
-func paginate[T any](all []T, page, perPage int) ([]T, bool) {
-	start := (page - 1) * perPage
-	if start >= len(all) {
-		return nil, false
-	}
-	end := min(start+perPage, len(all))
-	return all[start:end], end < len(all)
+// routedSource sends each API base to its own source.
+type routedSource map[string]writermap.PostSource
+
+func (r routedSource) SearchPosts(ctx context.Context, apiBase, term string, page int) ([]writermap.SearchHit, bool, error) {
+	return r[apiBase].SearchPosts(ctx, apiBase, term, page)
 }
 
-// routedLister sends each API base to its own lister.
-type routedLister map[string]writermap.PostLister
-
-func (r routedLister) ListPosts(ctx context.Context, apiBase string, after time.Time, page int) ([]writermap.SourcePost, bool, error) {
-	return r[apiBase].ListPosts(ctx, apiBase, after, page)
+func (r routedSource) RecentCommentCounts(ctx context.Context, apiBase string, maxPages int) (map[int64]int, error) {
+	return r[apiBase].RecentCommentCounts(ctx, apiBase, maxPages)
 }
 
-func (r routedLister) PostIDs(ctx context.Context, apiBase string, page int) ([]int64, bool, error) {
-	return r[apiBase].PostIDs(ctx, apiBase, page)
+func (r routedSource) PostsByID(ctx context.Context, apiBase string, ids []int64) ([]writermap.SourcePost, error) {
+	return r[apiBase].PostsByID(ctx, apiBase, ids)
 }
 
-// clientLister adapts the real WordPress client, as cmd/web does.
-type clientLister struct{ client *api.WordPressClient }
+// clientSource adapts the real WordPress client, as cmd/web does.
+type clientSource struct{ client *api.WordPressClient }
 
-func (c clientLister) ListPosts(ctx context.Context, apiBase string, after time.Time, page int) ([]writermap.SourcePost, bool, error) {
-	posts, more, err := c.client.ListPosts(ctx, apiBase, after, page)
-	out := make([]writermap.SourcePost, len(posts))
-	for i, post := range posts {
-		out[i] = writermap.SourcePost{ID: post.ID, Link: post.Link, Title: post.Title, Modified: post.Modified, Content: post.Content}
+func (c clientSource) SearchPosts(ctx context.Context, apiBase, term string, page int) ([]writermap.SearchHit, bool, error) {
+	hits, more, err := c.client.SearchPosts(ctx, apiBase, term, page)
+	out := make([]writermap.SearchHit, len(hits))
+	for i, hit := range hits {
+		out[i] = writermap.SearchHit{ID: hit.ID, Link: hit.Link, Slug: hit.Slug, Title: hit.Title, Published: hit.Published}
 	}
 	return out, more, err
 }
 
-func (c clientLister) PostIDs(ctx context.Context, apiBase string, page int) ([]int64, bool, error) {
-	return c.client.PostIDs(ctx, apiBase, page)
+func (c clientSource) RecentCommentCounts(ctx context.Context, apiBase string, maxPages int) (map[int64]int, error) {
+	return c.client.RecentCommentCounts(ctx, apiBase, maxPages)
+}
+
+func (c clientSource) PostsByID(ctx context.Context, apiBase string, ids []int64) ([]writermap.SourcePost, error) {
+	posts, err := c.client.PostsByID(ctx, apiBase, ids)
+	out := make([]writermap.SourcePost, len(posts))
+	for i, post := range posts {
+		out[i] = writermap.SourcePost{ID: post.ID, Link: post.Link, Title: post.Title, Modified: post.Modified, Content: post.Content}
+	}
+	return out, err
 }
 
 type fakeIndex struct {
-	mu      sync.Mutex
-	posts   map[string]map[int64]writermap.IndexedPost
-	states  map[string]writermap.SyncState
-	upserts int
+	mu     sync.Mutex
+	posts  map[string]map[int64]writermap.IndexedPost
+	states map[string]writermap.SyncState
 }
 
 func newFakeIndex() *fakeIndex {
@@ -738,7 +845,6 @@ func (f *fakeIndex) UpsertPost(_ context.Context, post writermap.IndexedPost) er
 		f.posts[post.Host] = map[int64]writermap.IndexedPost{}
 	}
 	f.posts[post.Host][post.PostID] = post
-	f.upserts++
 	return nil
 }
 
@@ -802,12 +908,6 @@ func (f *fakeIndex) state(host string) writermap.SyncState {
 		return state
 	}
 	return writermap.SyncState{Host: host}
-}
-
-func (f *fakeIndex) upsertCount() int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.upserts
 }
 
 type fakeDestinations []writermap.Area

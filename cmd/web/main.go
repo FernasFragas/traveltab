@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
+	"slices"
 	guidedata "weatherservice/guides"
 	"weatherservice/internal/adapters/api"
 	"weatherservice/internal/adapters/httpserver"
@@ -52,7 +52,7 @@ func main() {
 	writerSource := writermap.NewMapSource(basePlaces, storage, storage, writerIndexStore{storage}, sources, overrides)
 	wireWritersMap(server, writerSource)
 	wireBaseLayer(server, basePlaces)
-	wireWriterSync(storage, basePlaces.(application.BasePlaceRefresher), sources, writerSource)
+	wireWriterSync(storage, basePlaces, sources, overrides, writerSource)
 	server.SetPlaceSuggester(api.NewOpenMeteoGeocodingAPI(nil))
 
 	// The trip planner reads free, keyless sources. Each one goes through the SQLite cache, so a
@@ -99,19 +99,48 @@ func wireBaseLayer(server *httpserver.Server, basePlaces application.BasePlaceSo
 	}
 }
 
-// wireWriterSync starts the writers index sync in the background. The monthly run also refreshes
-// every cached destination's base places, then recomputes the stored writers' map results; the
-// summary step (PR 9) runs after the recompute.
-func wireWriterSync(storage *sqlite.Store, refresher application.BasePlaceRefresher, sources []writermap.Source, writerSource *writermap.MapSource) {
+// wireWriterSync starts the writers index sync in the background. Each run picks at most 100
+// destination posts. The search terms are the override areas and the cached destinations; the
+// known place names add the matcher's names for those destinations' base places. The monthly run
+// also refreshes every cached destination's base places, then recomputes the stored writers' map
+// results; the summary step (PR 9) runs after the recompute.
+func wireWriterSync(storage *sqlite.Store, basePlaces application.BasePlaceSource, sources []writermap.Source, overrides writermap.Overrides, writerSource *writermap.MapSource) {
 	if !config.LoadFeatureFlags().WritersSync {
 		return
 	}
 	client := api.NewWordPressClient(nil, api.NewHostLimiter())
 	job := writermap.NewSyncJob(sources, writerIndexStore{storage}, wordPressPosts{client})
 	job.BlockedErrors = []error{api.ErrBlocked, api.ErrDisallowed}
-	job.Destinations, job.Refresher = storage, refresher
+	job.Areas = overrides.Areas
+	job.Destinations, job.Refresher = storage, basePlaces.(application.BasePlaceRefresher)
+	job.PlaceNames = func(ctx context.Context) ([]string, error) {
+		return cachedPlaceNames(ctx, storage, basePlaces, overrides)
+	}
 	job.SummaryStep = writerSource.Recompute
 	go job.Schedule(context.Background())
+}
+
+// cachedPlaceNames returns the matcher's place names for every cached destination, so a post
+// whose title names any of them counts as a destination post.
+func cachedPlaceNames(ctx context.Context, storage *sqlite.Store, basePlaces application.BasePlaceSource, overrides writermap.Overrides) ([]string, error) {
+	destinations, err := storage.CachedDestinations(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var contextNames []string
+	for _, area := range overrides.Areas {
+		contextNames = append(contextNames, area.Name)
+	}
+	var names []string
+	for _, destination := range destinations {
+		base, err := basePlaces.Places(ctx, destination)
+		if err != nil {
+			log.Printf("writers sync: place names for %s: %v", destination.Name, err)
+			continue
+		}
+		names = append(names, writermap.MatchLookupPhrases(base.Gazetteer, append(slices.Clone(contextNames), destination.Name), overrides.MatchOverrides)...)
+	}
+	return names, nil
 }
 
 // loadWriterData reads the embedded allowlist and reviewed overrides.
@@ -166,20 +195,29 @@ func (s writerIndexStore) SaveSyncState(ctx context.Context, state writermap.Syn
 	return s.store.SaveWriterSyncState(ctx, sqlite.WriterSyncState(state))
 }
 
-// wordPressPosts adapts the WordPress client to writermap.PostLister.
+// wordPressPosts adapts the WordPress client to writermap.PostSource.
 type wordPressPosts struct{ client *api.WordPressClient }
 
-func (w wordPressPosts) ListPosts(ctx context.Context, apiBase string, modifiedAfter time.Time, page int) ([]writermap.SourcePost, bool, error) {
-	posts, more, err := w.client.ListPosts(ctx, apiBase, modifiedAfter, page)
-	out := make([]writermap.SourcePost, len(posts))
-	for i, post := range posts {
-		out[i] = writermap.SourcePost{ID: post.ID, Link: post.Link, Title: post.Title, Modified: post.Modified, Content: post.Content}
+func (w wordPressPosts) SearchPosts(ctx context.Context, apiBase, term string, page int) ([]writermap.SearchHit, bool, error) {
+	hits, more, err := w.client.SearchPosts(ctx, apiBase, term, page)
+	out := make([]writermap.SearchHit, len(hits))
+	for i, hit := range hits {
+		out[i] = writermap.SearchHit{ID: hit.ID, Link: hit.Link, Slug: hit.Slug, Title: hit.Title, Published: hit.Published}
 	}
 	return out, more, err
 }
 
-func (w wordPressPosts) PostIDs(ctx context.Context, apiBase string, page int) ([]int64, bool, error) {
-	return w.client.PostIDs(ctx, apiBase, page)
+func (w wordPressPosts) RecentCommentCounts(ctx context.Context, apiBase string, maxPages int) (map[int64]int, error) {
+	return w.client.RecentCommentCounts(ctx, apiBase, maxPages)
+}
+
+func (w wordPressPosts) PostsByID(ctx context.Context, apiBase string, ids []int64) ([]writermap.SourcePost, error) {
+	posts, err := w.client.PostsByID(ctx, apiBase, ids)
+	out := make([]writermap.SourcePost, len(posts))
+	for i, post := range posts {
+		out[i] = writermap.SourcePost{ID: post.ID, Link: post.Link, Title: post.Title, Modified: post.Modified, Content: post.Content}
+	}
+	return out, err
 }
 
 // overpassURLs uses OVERPASS_URLS when it is set, and the public servers otherwise.

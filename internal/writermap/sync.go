@@ -10,11 +10,9 @@ import (
 	"time"
 )
 
-// Source statuses. The allowlist uses active, blocked and removed; partial (a crawl or monthly
-// update stopped part-way and will resume from its cursor) only appears in the sync state.
+// Source statuses used by the allowlist and the sync state.
 const (
 	StatusActive  = "active"
-	StatusPartial = "partial"
 	StatusBlocked = "blocked"
 	StatusRemoved = "removed"
 )
@@ -25,26 +23,40 @@ const (
 	offPeakEnd   = 6
 )
 
+// commentPages is how many pages of recent comments (100 each) are tallied per blog.
+const commentPages = 10
+
 // ErrSyncRunning means another run holds the single-run lock.
 var ErrSyncRunning = errors.New("writers sync already running")
 
-// SyncJob keeps the writers index up to date. A source's first crawl starts at once (and
-// resumes after a restart); afterwards each source gets one update per calendar month, in the
-// off-peak window: changed posts since the cursor, then a deleted-posts sweep. When any source
-// finished a crawl or update, cached destinations are refreshed and the summary step runs.
-// Only names, positions and post metadata are indexed or logged, never post text.
+// SyncJob keeps the writers index at no more than MaxIndexedPosts posts, picked afresh on every
+// run: for each active blog it searches the destination names, keeps the hits whose title or
+// slug names a known place, ranks them by recent comments, and Select shares the cap across blogs.
+// Only the chosen posts are fetched and indexed; indexed posts that were not chosen are deleted.
+// Rows of a blocked blog, or of a blog whose search suddenly returns nothing, stay and count
+// inside the cap, so the total never exceeds MaxIndexedPosts; the other blogs share what is left.
+// The first run for a source starts at once; afterwards a run is due once per calendar month, in
+// the off-peak window. When a run finishes, cached destinations are refreshed, and the summary
+// step runs if any post was added or removed. Only names, positions and post metadata are
+// indexed or logged, never post text.
 type SyncJob struct {
 	sources []Source
 	index   SyncIndex
-	posts   PostLister
+	posts   PostSource
 
+	// Areas are the destination areas (writerdata/overrides.json). Their names, with the cached
+	// destinations' names, are the search terms and count as known places.
+	Areas []Area
+	// PlaceNames lists more known place names (the matcher's names for the cached destinations);
+	// nil means the destination names alone.
+	PlaceNames func(ctx context.Context) ([]string, error)
 	// Destinations and Refresher re-run the base query of every cached destination; the step
-	// is skipped when either is nil.
+	// is skipped when either is nil. Destinations also adds search terms.
 	Destinations CachedDestinations
 	Refresher    DestinationRefresher
 	// SummaryStep is the hook for the summary job (PR 9); nil skips it.
 	SummaryStep func(ctx context.Context) error
-	// BlockedErrors are lister errors that mark a source blocked so it is not requested again.
+	// BlockedErrors are source errors that mark a source blocked so it is not requested again.
 	BlockedErrors []error
 
 	Now   func() time.Time
@@ -55,7 +67,7 @@ type SyncJob struct {
 }
 
 // NewSyncJob returns a job with the real clock and the standard logger.
-func NewSyncJob(sources []Source, index SyncIndex, posts PostLister) *SyncJob {
+func NewSyncJob(sources []Source, index SyncIndex, posts PostSource) *SyncJob {
 	return &SyncJob{
 		sources: sources,
 		index:   index,
@@ -106,7 +118,8 @@ type IndexedPost struct {
 	Extracted ExtractedPost
 }
 
-// SyncState is one source's status and progress. Cursor is the latest indexed modified time.
+// SyncState is one source's status and progress. LastFull is when its last run finished. LastDelta
+// and Cursor are no longer written; the SQLite schema still holds them.
 type SyncState struct {
 	Host      string
 	Status    string
@@ -115,14 +128,16 @@ type SyncState struct {
 	Cursor    string
 }
 
-// PostLister reads a writer site one page at a time. ListPosts returns posts modified after
-// modifiedAfter (all posts when it is zero), oldest change first; PostIDs lists every post id.
-type PostLister interface {
-	ListPosts(ctx context.Context, apiBase string, modifiedAfter time.Time, page int) ([]SourcePost, bool, error)
-	PostIDs(ctx context.Context, apiBase string, page int) ([]int64, bool, error)
+// PostSource reads a writer site. SearchPosts returns one page of search hits (metadata only),
+// RecentCommentCounts tallies the newest comments per post ID (empty when the blog shows none),
+// and PostsByID fetches full posts, used only for the posts chosen for the index.
+type PostSource interface {
+	SearchPosts(ctx context.Context, apiBase, term string, page int) ([]SearchHit, bool, error)
+	RecentCommentCounts(ctx context.Context, apiBase string, maxPages int) (map[int64]int, error)
+	PostsByID(ctx context.Context, apiBase string, ids []int64) ([]SourcePost, error)
 }
 
-// SourcePost is one listed post. Content is processed in memory and dropped.
+// SourcePost is one fetched post. Content is processed in memory and dropped.
 type SourcePost struct {
 	ID       int64
 	Link     string
@@ -153,194 +168,254 @@ func (j *SyncJob) Schedule(ctx context.Context) {
 	}
 }
 
-// Run syncs every source that is due, one at a time, then refreshes cached destinations and
-// runs the summary step if any source finished. It returns ErrSyncRunning if a run is active.
+// Run syncs the writers index if any source is due, then refreshes cached destinations and
+// runs the summary step if a post was added or removed. It returns ErrSyncRunning if a run is
+// active.
 func (j *SyncJob) Run(ctx context.Context) error {
 	if !j.running.TryLock() {
 		return ErrSyncRunning
 	}
 	defer j.running.Unlock()
 
-	offPeak := inOffPeak(j.Now())
-	var errs []error
-	finished := false
-	for _, source := range j.sources {
-		outcome, done, err := j.syncSource(ctx, source, offPeak)
-		if err != nil {
-			j.Logf("writers sync %s: %s: %v", source.Host, outcome, err)
-			errs = append(errs, fmt.Errorf("%s: %w", source.Host, err))
-		} else {
-			j.Logf("writers sync %s: %s", source.Host, outcome)
+	active, held, errs := j.activeSources(ctx)
+	if !j.due(active) {
+		for _, source := range active {
+			j.Logf("writers sync %s: not due", source.source.Host)
 		}
-		finished = finished || done
+		return errors.Join(errs...)
 	}
+	finished, changed, err := j.syncSources(ctx, active, held)
+	errs = append(errs, err)
 	if finished {
 		errs = append(errs, j.refreshDestinations(ctx))
-		if j.SummaryStep != nil {
+		if changed && j.SummaryStep != nil {
 			errs = append(errs, j.SummaryStep(ctx))
 		}
 	}
 	return errors.Join(errs...)
 }
 
-// syncSource handles one source and describes the outcome for the progress line. done is
-// true when a crawl or monthly update finished.
-func (j *SyncJob) syncSource(ctx context.Context, source Source, offPeak bool) (outcome string, done bool, err error) {
-	switch source.Status {
-	case StatusRemoved:
-		if err := j.index.PurgeHost(ctx, source.Host); err != nil {
-			return "purge failed", false, err
-		}
-		return "removed, rows purged", false, nil
-	case StatusBlocked:
-		return "skipped, blocked in the allowlist", false, nil
-	}
-	state, err := j.index.SyncState(ctx, source.Host)
-	if err != nil {
-		return "sync state unavailable", false, err
-	}
-	if state.Status == StatusBlocked {
-		return "skipped, blocked", false, nil
-	}
-	crawl := state.LastFull.IsZero()
-	due := crawl || offPeak && (state.Status == StatusPartial || monthlyDue(state, j.Now()))
-	if !due {
-		return "not due", false, nil
-	}
-
-	state.Status = StatusPartial
-	indexed, err := j.indexChanges(ctx, source, &state)
-	deleted := 0
-	if err == nil && !crawl {
-		deleted, err = j.sweepDeleted(ctx, source)
-	}
-	if err != nil && j.blocked(err) {
-		state.Status = StatusBlocked
-		if saveErr := j.index.SaveSyncState(ctx, state); saveErr != nil {
-			return "blocked", false, saveErr
-		}
-		return fmt.Sprintf("blocked after %d posts, not requested again", indexed), false, nil
-	}
-	if err != nil {
-		return fmt.Sprintf("stopped after %d posts, will resume", indexed), false, err
-	}
-
-	state.Status = StatusActive
-	if crawl {
-		state.LastFull = j.Now()
-		outcome = fmt.Sprintf("crawled %d posts", indexed)
-	} else {
-		state.LastDelta = j.Now()
-		outcome = fmt.Sprintf("updated %d posts, removed %d", indexed, deleted)
-	}
-	if err := j.index.SaveSyncState(ctx, state); err != nil {
-		return outcome, false, err
-	}
-	return outcome, true, nil
+// trackedSource pairs a source with its stored state.
+type trackedSource struct {
+	source Source
+	state  SyncState
 }
 
-// indexChanges indexes posts modified after the cursor, one page at a time, saving the cursor
-// after each page. Each page starts one second before the cursor (re-indexing is an idempotent
-// upsert), so posts sharing the cursor's second are not skipped and an edit mid-crawl cannot
-// shift an unread post onto an earlier page. If the cursor did not move past that overlap, the
-// next page of the same listing is read instead. A post re-listed unchanged in the same run is
-// not indexed twice.
-func (j *SyncJob) indexChanges(ctx context.Context, source Source, state *SyncState) (int, error) {
-	cursor, err := parseCursor(state.Cursor)
-	if err != nil {
-		return 0, err
-	}
-	after := overlap(cursor)
-	indexed := make(map[int64]time.Time)
-	for page := 1; ; {
-		posts, more, err := j.posts.ListPosts(ctx, source.APIBase, after, page)
-		if err != nil {
-			return len(indexed), err
-		}
-		for _, post := range posts {
-			if modified, ok := indexed[post.ID]; ok && modified.Equal(post.Modified) {
+// activeSources purges removed sources, skips blocked ones, and returns the rest with their
+// state. The hosts of the blocked ones are returned too: their rows stay and count in the cap.
+func (j *SyncJob) activeSources(ctx context.Context) (active []trackedSource, held []string, errs []error) {
+	for _, source := range j.sources {
+		switch source.Status {
+		case StatusRemoved:
+			if err := j.index.PurgeHost(ctx, source.Host); err != nil {
+				j.Logf("writers sync %s: purge failed: %v", source.Host, err)
+				errs = append(errs, fmt.Errorf("%s: %w", source.Host, err))
 				continue
 			}
+			j.Logf("writers sync %s: removed, rows purged", source.Host)
+			continue
+		case StatusBlocked:
+			j.Logf("writers sync %s: skipped, blocked in the allowlist", source.Host)
+			held = append(held, source.Host)
+			continue
+		}
+		state, err := j.index.SyncState(ctx, source.Host)
+		if err != nil {
+			j.Logf("writers sync %s: sync state unavailable: %v", source.Host, err)
+			errs = append(errs, fmt.Errorf("%s: %w", source.Host, err))
+			continue
+		}
+		if state.Status == StatusBlocked {
+			j.Logf("writers sync %s: skipped, blocked", source.Host)
+			held = append(held, source.Host)
+			continue
+		}
+		active = append(active, trackedSource{source: source, state: state})
+	}
+	return active, held, errs
+}
+
+// due reports whether any source needs a run: one that has never finished (this includes a
+// run that failed before saving), or, in the off-peak window, one whose last run was in an
+// earlier month. The cap is shared, so one due source re-picks every blog.
+func (j *SyncJob) due(active []trackedSource) bool {
+	offPeak := inOffPeak(j.Now())
+	for _, entry := range active {
+		if entry.state.LastFull.IsZero() || offPeak && monthlyDue(entry.state, j.Now()) {
+			return true
+		}
+	}
+	return false
+}
+
+// syncSources gathers every blog's candidates first, so the cap is applied to the whole set,
+// then fetches and indexes the chosen posts. A failure while gathering stops the run before any
+// write, so a half-seen set never purges rows. finished is true when at least one source
+// completed; changed is true when a post was added or removed. held are the hosts whose rows
+// stay as they are (blocked blogs); a blog found blocked or suddenly empty joins them.
+func (j *SyncJob) syncSources(ctx context.Context, active []trackedSource, held []string) (finished, changed bool, err error) {
+	terms, known, err := j.destinationNames(ctx)
+	if err != nil {
+		return false, false, err
+	}
+	var errs []error
+	var blogs []BlogCandidates
+	var live []trackedSource
+	for _, entry := range active {
+		blog, err := j.candidates(ctx, entry.source, terms)
+		if err != nil && j.blocked(err) {
+			errs = append(errs, j.markBlocked(ctx, entry, err))
+			held = append(held, entry.source.Host)
+			continue
+		}
+		if err != nil {
+			j.Logf("writers sync %s: stopped, %v", entry.source.Host, err)
+			return false, false, fmt.Errorf("%s: %w", entry.source.Host, err)
+		}
+		if len(blog.Hits) == 0 {
+			kept, err := j.index.PostIDs(ctx, entry.source.Host)
+			if err != nil {
+				return false, false, fmt.Errorf("%s: %w", entry.source.Host, err)
+			}
+			if len(kept) > 0 {
+				j.Logf("writers sync %s: warning: search returned no posts, keeping %d indexed posts, retrying next run", entry.source.Host, len(kept))
+				held = append(held, entry.source.Host)
+				continue
+			}
+		}
+		blogs, live = append(blogs, blog), append(live, entry)
+	}
+	reserved := 0
+	for _, host := range held {
+		kept, err := j.index.PostIDs(ctx, host)
+		if err != nil {
+			return false, false, fmt.Errorf("%s: %w", host, err)
+		}
+		reserved += len(kept)
+	}
+	picks := Select(blogs, known, max(0, MaxIndexedPosts-reserved))
+	for _, entry := range live {
+		indexed, deleted, err := j.store(ctx, entry, picks)
+		if err != nil && j.blocked(err) {
+			errs = append(errs, j.markBlocked(ctx, entry, err))
+			continue
+		}
+		if err != nil {
+			j.Logf("writers sync %s: stopped, %v", entry.source.Host, err)
+			errs = append(errs, fmt.Errorf("%s: %w", entry.source.Host, err))
+			continue
+		}
+		j.Logf("writers sync %s: indexed %d posts, removed %d", entry.source.Host, indexed, deleted)
+		finished, changed = true, changed || indexed > 0 || deleted > 0
+	}
+	return finished, changed, errors.Join(errs...)
+}
+
+// destinationNames returns the search terms (area and cached destination names, once each) and
+// every name that makes a post a destination post.
+func (j *SyncJob) destinationNames(ctx context.Context) (terms, known []string, err error) {
+	names := make([]string, 0, len(j.Areas))
+	for _, area := range j.Areas {
+		names = append(names, area.Name)
+	}
+	if j.Destinations != nil {
+		cached, err := j.Destinations.CachedDestinations(ctx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("list cached destinations: %w", err)
+		}
+		for _, area := range cached {
+			names = append(names, area.Name)
+		}
+	}
+	seen := make(map[string]bool, len(names))
+	for _, name := range names {
+		if folded := foldName(name); folded != "" && !seen[folded] {
+			seen[folded] = true
+			terms = append(terms, name)
+		}
+	}
+	known = append(known, terms...)
+	if j.PlaceNames != nil {
+		more, err := j.PlaceNames(ctx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("list place names: %w", err)
+		}
+		known = append(known, more...)
+	}
+	return terms, known, nil
+}
+
+// candidates searches one blog for each term (first page only) and tallies its recent comments.
+func (j *SyncJob) candidates(ctx context.Context, source Source, terms []string) (BlogCandidates, error) {
+	blog := BlogCandidates{Host: source.Host}
+	for _, term := range terms {
+		hits, _, err := j.posts.SearchPosts(ctx, source.APIBase, term, 1)
+		if err != nil {
+			return BlogCandidates{}, err
+		}
+		blog.Hits = append(blog.Hits, hits...)
+	}
+	comments, err := j.posts.RecentCommentCounts(ctx, source.APIBase, commentPages)
+	if err != nil {
+		return BlogCandidates{}, err
+	}
+	blog.Comments = comments
+	return blog, nil
+}
+
+// store indexes the source's chosen posts, deletes its indexed posts that were not chosen, and
+// saves the finished state. It returns how many posts were indexed and deleted.
+func (j *SyncJob) store(ctx context.Context, entry trackedSource, picks []Pick) (indexed, deleted int, err error) {
+	source := entry.source
+	var ids []int64
+	chosen := make(map[int64]bool)
+	for _, pick := range picks {
+		if pick.Host == source.Host {
+			ids = append(ids, pick.PostID)
+			chosen[pick.PostID] = true
+		}
+	}
+	if len(ids) > 0 {
+		posts, err := j.posts.PostsByID(ctx, source.APIBase, ids)
+		if err != nil {
+			return 0, 0, err
+		}
+		for _, post := range posts {
 			if err := j.index.UpsertPost(ctx, IndexedPost{
 				Host: source.Host, PostID: post.ID, URL: post.Link, Title: post.Title,
 				Language: source.Language, Modified: post.Modified,
 				Extracted: ExtractPost(post.Title, post.Content),
 			}); err != nil {
-				return len(indexed), err
+				return indexed, 0, err
 			}
-			indexed[post.ID] = post.Modified
-			if post.Modified.After(cursor) {
-				cursor = post.Modified
-			}
-		}
-		state.Cursor = formatCursor(cursor)
-		if err := j.index.SaveSyncState(ctx, *state); err != nil {
-			return len(indexed), err
-		}
-		if !more {
-			return len(indexed), nil
-		}
-		if next := overlap(cursor); next.After(after) {
-			after, page = next, 1
-		} else {
-			page++
+			chosen[post.ID] = true
+			indexed++
 		}
 	}
-}
-
-// sweepDeleted drops stored posts the site no longer lists. Pages can shift while a sweep
-// runs, so an id missing from one sweep is only deleted if a second sweep also misses it. A
-// failed or empty sweep deletes nothing.
-func (j *SyncJob) sweepDeleted(ctx context.Context, source Source) (int, error) {
 	stored, err := j.index.PostIDs(ctx, source.Host)
-	if err != nil || len(stored) == 0 {
-		return 0, err
-	}
-	missing, err := j.missingIDs(ctx, source, stored)
 	if err != nil {
-		return 0, err
+		return indexed, 0, err
 	}
-	if len(missing) > 0 {
-		if missing, err = j.missingIDs(ctx, source, missing); err != nil {
-			return 0, err
+	for _, id := range stored {
+		if chosen[id] {
+			continue
 		}
-	}
-	for _, id := range missing {
 		if err := j.index.DeletePost(ctx, source.Host, id); err != nil {
-			return 0, err
+			return indexed, deleted, err
 		}
+		deleted++
 	}
-	return len(missing), nil
+	state := entry.state
+	state.Status, state.LastFull = StatusActive, j.Now()
+	return indexed, deleted, j.index.SaveSyncState(ctx, state)
 }
 
-// missingIDs returns the candidates absent from one complete id sweep.
-func (j *SyncJob) missingIDs(ctx context.Context, source Source, candidates []int64) ([]int64, error) {
-	missing := make(map[int64]bool, len(candidates))
-	for _, id := range candidates {
-		missing[id] = true
-	}
-	seen := 0
-	for page, more := 1, true; more; page++ {
-		var ids []int64
-		var err error
-		if ids, more, err = j.posts.PostIDs(ctx, source.APIBase, page); err != nil {
-			return nil, err
-		}
-		seen += len(ids)
-		for _, id := range ids {
-			delete(missing, id)
-		}
-	}
-	if seen == 0 {
-		return nil, errors.New("deleted-posts sweep listed no posts")
-	}
-	var result []int64
-	for _, id := range candidates {
-		if missing[id] {
-			result = append(result, id)
-		}
-	}
-	return result, nil
+// markBlocked records that a source refused us, so it is not requested again.
+func (j *SyncJob) markBlocked(ctx context.Context, entry trackedSource, cause error) error {
+	j.Logf("writers sync %s: blocked, not requested again: %v", entry.source.Host, cause)
+	state := entry.state
+	state.Status = StatusBlocked
+	return j.index.SaveSyncState(ctx, state)
 }
 
 // refreshDestinations re-runs every cached destination's base query, continuing past errors.
@@ -395,31 +470,6 @@ func untilOffPeak(now time.Time) time.Duration {
 		next = next.AddDate(0, 0, 1)
 	}
 	return next.Sub(now)
-}
-
-func overlap(cursor time.Time) time.Time {
-	if cursor.IsZero() {
-		return cursor
-	}
-	return cursor.Add(-time.Second)
-}
-
-func parseCursor(cursor string) (time.Time, error) {
-	if cursor == "" {
-		return time.Time{}, nil
-	}
-	parsed, err := time.Parse(time.RFC3339Nano, cursor)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("parse sync cursor: %w", err)
-	}
-	return parsed, nil
-}
-
-func formatCursor(cursor time.Time) string {
-	if cursor.IsZero() {
-		return ""
-	}
-	return cursor.UTC().Format(time.RFC3339Nano)
 }
 
 func sleepContext(ctx context.Context, d time.Duration) error {

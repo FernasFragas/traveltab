@@ -142,9 +142,10 @@ happens.
 
 ## Writers' map
 
-**Status (2026-10-11):** the map shell and fixture routes exist. There is no sync job, WordPress
-client or summary pass yet, so the sync, robots and takedown rules below are requirements for that
-work, not current behaviour.
+**Status (2026-10-11):** the map, the WordPress client, the capped sync job and the matcher exist.
+The sync runs when `WRITERS_SYNC=1` and the map shows its results when `WRITERS_MAP=1`. A first
+live run (see [post-limit-results.md](../tasks/post-limit-results.md#coverage-l4)) indexed 100
+posts. The summary pass (`WRITERS_AI=1`) is separate and not covered by this section.
 
 ### Basemap source (task 3e)
 
@@ -192,12 +193,36 @@ and share a per-host limiter of at least 1.5 seconds between requests. If a site
 around a block. A robots disallow also stops fetches. Record status changes and their check date in
 the embedded source data.
 
-The monthly sync runs off peak when `WRITERS_SYNC=1`. It updates post, name, day, destination and
+The sync runs once at startup (a source that never finished is due at once) and then, off peak,
+once per calendar month when `WRITERS_SYNC=1`. It updates post, name, day, destination and
 summary rows in place. It retains names, positions, post metadata and generated summaries; raw post
 text and HTML are processed in memory and discarded after indexing or summarization. Never store,
 log or commit post text, excerpts or fetched response bodies. The optional monthly summary pass is
 gated by `WRITERS_AI=1`; it sends mention passages to the configured LLM Gateway and keeps only the
 English summary, source post references, model and generation time.
+
+**The 100-post cap** (`writermap.MaxIndexedPosts`). The index holds at most 100 posts in total, across
+all blogs. Every run picks the set again from scratch; there is no cursor crawl or deleted-posts
+sweep any more. How the posts are picked:
+1. Search terms are the destination names: the override areas (`writerdata/overrides.json`) plus
+   every destination the app has cached (a city page or map visit caches it). One `search=` request
+   (first page, newest first) per term per blog.
+2. A search hit is a **destination post** only if its title or URL slug names a known place (the
+   matcher's names for the cached destinations, accent- and case-insensitive). Hits that only mention
+   a place in the body are dropped.
+3. Each blog's share of the 100 is proportional to its destination posts (largest remainder, at least
+   one for any blog that has one, never more than it has).
+4. Within a blog, posts are ranked by how many of the blog's newest 1,000 comments they have
+   (up to 10 pages), then the newest first. A blog without readable comments (404) takes its newest.
+5. Only the chosen posts are fetched (`include=`) and indexed. Indexed posts that were not chosen
+   are deleted, so a post that drops out of the top is purged on the next monthly run.
+
+**Blocked and empty blogs.** A blog that is blocked (allowlist or 403) keeps its already-indexed
+posts, and they count inside the 100: the other blogs share what is left, so the total never exceeds
+the cap. A blog that has indexed posts but whose search suddenly returns nothing (no error) keeps its
+rows too, counts inside the cap, logs `writers sync <host>: warning: search returned no posts ...`, and is not
+marked finished, so the next run retries it. A blog that never had posts and finds none is just
+skipped. To remove a blog's rows for good, use the takedown below.
 
 For a takedown, mark the source `removed` in `writerdata/sources.json`. The next sync purges that
 host's indexed rows and removes its post references from summaries; recompute affected destination

@@ -1,19 +1,23 @@
 # Writers index: cap at 100 posts
 
-**Status:** planned 2026-10-11, not started. Tasks: [post-limit-todo.md](post-limit-todo.md).
+**Status:** planned 2026-10-11; L1 done, owner decisions recorded, L2–L4 not started. Tasks: [post-limit-todo.md](post-limit-todo.md).
 
-**Goal:** the writers index holds **at most 100 posts in total**: the **most popular posts of each active blog**, re-chosen on every monthly sync. Posts that drop out are purged.
+**Goal:** the writers index holds **at most 100 posts in total**: each blog's **most-commented destination posts**, split proportionally (see **Owner decisions**), re-chosen on every monthly sync. Posts that drop out are purged.
 
 **When:** after PR 7 merges and **before 8b** (live measurement), since it changes crawl volume and coverage. It owns PR 5 files (`internal/writermap/sync.go`, `internal/adapters/api/wordpress.go`), which no open Writers' Map task edits. See [todo.md](todo.md).
 
 ## Owner decisions (2026-10-11)
-- **100 in total**, across all blogs.
-- **The most popular posts of each blog.**
+- **100 in total**, across all blogs. Fixed constant `MaxIndexedPosts = 100`.
 - **Rolling:** each monthly run re-picks the set; posts that fall out are purged.
-
-## Assumptions: confirm in L1
-- **Even share:** 11 active blogs → **9 posts each** (99). If a blog has fewer usable posts, its unused share goes to the next blogs in allowlist order, so the cap is still 100. Blocked or removed sources get no share.
-- **`MaxIndexedPosts = 100`** is a constant, not an environment variable (nothing asked for configurability).
+- **After L1** ([results](post-limit-results.md)):
+  1. **Signal:** only **destination posts**, ranked by the **recent-comments tally**, with the **newest** destination posts as fill.
+  2. **Destination post** = a `search=` hit **whose title or URL slug names a known place**, from the matcher's existing place names (destination areas + Wikidata labels), not a hand-written list.
+  3. **Share: proportional** to each blog's destination posts. Largest-remainder rounding, **minimum 1** for any blog with at least one destination post (assumed; owner may drop the minimum).
+  4. **No readable comments** (Viaje Comigo, Portugalist: 404) → newest destination posts.
+  5. **Lower coverage accepted**; L4 measures it against PR 2's 24/49 and the owner reviews before 8b.
+- **After L3** (2026-10-11):
+  6. **Blocked blog:** its indexed posts stay and **count inside the 100** (hard cap holds; pins survive a temporary 403). Permanent removal stays the `removed` takedown.
+  7. **Sudden empty search:** a blog that had indexed posts but now returns **0 candidates** keeps its rows and logs a warning; retried next run.
 
 ## The hard part: "popular" has no free, standard signal
 **The WordPress REST API exposes no view counts.** `orderby` supports date, modified, title, relevance and similar, but not popularity. Jetpack stats need the site owner's login. **L1 is a spike** to choose a signal from free public data:
@@ -33,12 +37,15 @@
 - **Option for the owner (in L1):** take "most popular **among posts matching the destinations**" by using WP `search=` on destination names (Madeira, Açores, Lisboa…) before ranking. This adds 1–2 requests per destination per blog.
 - L4 measures coverage before and after, so the trade-off is visible before launch.
 
-## Design (after L1)
-1. **Selection (`wordpress.go`):** a new client method returns a blog's post IDs ranked by the chosen signal. It is paged, uses the existing host limiter, robots.txt check and user agent, and stores no post text.
-2. **Sync (`sync.go`):**
-   - compute each blog's share
-   - fetch content only for the chosen IDs, through the existing `UpsertPost`/`ExtractPost`
-   - purge indexed posts no longer chosen, using the existing per-post delete
-   - the cursor-based incremental crawl goes away, since every run re-picks the set
-3. **Recompute:** the existing `SummaryStep` runs after the sync, so stored destination results refresh.
-4. **Docs:** update the writers' map section of `docs/maintenance.md` (100-post cap, how posts are picked, purge on drop-out).
+## Design
+1. **Client (`wordpress.go`), 3 small read methods**, all paged, using the existing limiter, robots.txt check and user agent; no post text:
+   - `SearchPosts(term)` → IDs, titles, slugs, dates (`search=`, `_fields=id,title,slug,date,link`)
+   - `RecentCommentCounts(pages)` → post ID → count, from `/wp/v2/comments?_fields=post` (newest first, ≤10 pages); a 404 means "no comments" for that blog, not an error
+   - `PostsByID(ids)` → full posts for extraction, used only for the chosen IDs
+2. **Selection (`internal/writermap/`, new `selection.go`): a pure function**, no I/O:
+   - destination posts = search hits whose title or slug names a known place (matcher's place names, accent- and case-insensitive)
+   - per-blog share: proportional, largest remainder, minimum 1, total exactly ≤100
+   - within a blog: by comment count, then newest as fill and tie-break; no comments → newest
+3. **Sync (`sync.go`):** search terms → candidates → comment counts → `Select` → fetch only the chosen posts → `UpsertPost`/`ExtractPost` → purge indexed posts not chosen. The cursor crawl and deleted-posts sweep go away (every run re-picks). Keep blocked/removed handling and `SummaryStep`.
+4. **Search terms:** destination names and aliases from `writerdata/overrides.json` areas plus the cities the planner caches; 1 request per term per blog.
+5. **Docs:** writers' map section of `docs/maintenance.md`.
