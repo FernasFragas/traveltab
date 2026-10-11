@@ -251,7 +251,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 ## PR 5 — Writers Index and Monthly Sync · needs: PR 1, **PR 2 verdict**
 
 ### 5a. Create the index tables and store
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/5a.tdd.md)
 
 **Owns:** `internal/adapters/sqlite/writerindex.go`, `writerindex_test.go`
 
@@ -259,27 +259,27 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - Store methods: upsert a post with its names and days in one transaction, delete a post, purge a host, look up by phrases, read and write the sync cursor.
 
 **Acceptance**
-- [ ] Re-indexing a post replaces its rows and never duplicates them.
-- [ ] Purging a host removes every row for it.
-- [ ] An existing database file is untouched otherwise.
+- [x] Re-indexing a post replaces its rows and never duplicates them.
+- [x] Purging a host removes every row for it.
+- [x] An existing database file is untouched otherwise.
 
 **Verify:** `go test ./internal/adapters/sqlite/...`.
 
 ### 5b. Extract name phrases and day headings
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/5b.tdd.md)
 
 **Owns:** `internal/writermap/extract.go`, `extract_test.go`, `internal/writermap/testdata/posts/`
 
 - Pure function: HTML in → phrases (folded, original-case flag, positions, sub-spans of up to 5 words), day sections, and an itinerary flag out. No text is returned.
 
 **Acceptance**
-- [ ] "Miradouro do Pico dos Barcelos" yields both the full name and "Pico dos Barcelos".
-- [ ] The EN and PT itinerary fixtures split into the right days; a listicle isn't flagged as an itinerary.
+- [x] "Miradouro do Pico dos Barcelos" yields both the full name and "Pico dos Barcelos".
+- [x] The EN and PT itinerary fixtures split into the right days; a listicle isn't flagged as an itinerary.
 
 **Verify:** `go test ./internal/writermap/...`.
 
 ### 5c. Write the WordPress client and host limiter
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/5c.tdd.md)
 
 **Owns:** `internal/adapters/api/wordpress.go`, `wordpress_test.go`, `internal/adapters/api/hostlimiter.go`, `hostlimiter_test.go`
 
@@ -290,7 +290,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Verify:** `go test -race` with `httptest` covering pages, 400 past the last page, 403, timeout and robots disallow.
 
 ### 5d. Build the monthly sync job · *after 5a–5c* · **integrator**
-- [ ] Done
+- [x] Done — [TDD evidence](../docs/tdd/5d.tdd.md)
 
 **Owns:** `internal/writermap/sync.go`, `sync_test.go`, `internal/adapters/sqlite/database.go` (table creation call), `cmd/web/main.go` (start only when `WRITERS_SYNC` is on)
 
@@ -300,9 +300,9 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - One progress line per host per run.
 
 **Acceptance**
-- [ ] An interrupted crawl resumes from its cursor.
-- [ ] Edited posts are re-indexed; deleted posts are dropped after the sweep.
-- [ ] Two consecutive runs over unchanged data leave row counts and file size unchanged.
+- [x] An interrupted crawl resumes from its cursor.
+- [x] Edited posts are re-indexed; deleted posts are dropped after the sweep.
+- [x] Two consecutive runs over unchanged data leave row counts and file size unchanged.
 
 **Verify:** `go test -race ./internal/writermap/...` with the 5c fake server; CI green.
 

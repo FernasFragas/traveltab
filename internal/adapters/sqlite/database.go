@@ -47,6 +47,9 @@ func (s *Store) initialize() error {
 	if err := createSitemapSlugsTable(s.db); err != nil {
 		return err
 	}
+	if err := s.CreateWriterIndexTables(); err != nil {
+		return err
+	}
 	return migrateLegacySitemapIndex(s.db)
 }
 
