@@ -7,10 +7,10 @@
     window.TravelMap.itinerariesLayerRegistered = true;
 
     var loads = {};
-    var map = null;
+    var context = null;
     var shell = null;
-    var group = null;
     var picker = null;
+    var openPopup = null;
     var selected = 0;
     var drawNumber = 0;
 
@@ -20,28 +20,29 @@
         if (current) load(current);
     });
 
-    function add(nextMap, context) {
-        map = nextMap;
+    function add(map, nextContext) {
+        context = nextContext;
         shell = context && context.shell;
         if (!shell) return;
         var number = ++drawNumber;
         load(shell).then(function (data) {
-            if (number === drawNumber && map) draw(data);
+            if (number === drawNumber && context) draw(data);
         });
     }
 
     function remove() {
         drawNumber++;
         clear();
-        map = null;
+        context = null;
         shell = null;
     }
 
     function clear() {
-        if (group) group.remove();
+        if (context) context.draw.clear('itineraries');
         if (picker) picker.remove();
-        group = null;
+        if (openPopup) openPopup.remove();
         picker = null;
+        openPopup = null;
     }
 
     // Fetches the GeoJSON once per URL and marks the shell when it has routes (the chip shows only then).
@@ -70,27 +71,32 @@
 
     function draw(data) {
         clear();
-        if (!map || !data.itineraries.length) return;
+        if (!context || !data.itineraries.length) return;
         if (selected >= data.itineraries.length) selected = 0;
         var itinerary = data.itineraries[selected];
         var stops = stopsOf(itinerary, data.features);
-        group = window.L.layerGroup().addTo(map);
         if (stops.length > 1) {
-            group.addLayer(window.L.polyline(stops.map(function (stop) { return [stop.lat, stop.lon]; }), {
-                className: 'itinerary-line'
-            }).bindTooltip('Route by ' + itinerary.writer_host));
+            context.draw.line('itineraries', stops.map(function (stop) { return [stop.lon, stop.lat]; }),
+                { color: '#7b3fb8', width: 3, dash: [6, 6] });
         }
-        stops.forEach(function (stop, index) {
-            group.addLayer(window.L.marker([stop.lat, stop.lon], {
+        context.draw.markers('itineraries', stops.map(function (stop, index) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'itinerary-pin';
+            button.textContent = String(index + 1);
+            return { lngLat: [stop.lon, stop.lat], element: button,
                 title: 'Stop ' + (index + 1) + ': ' + stop.name,
-                icon: window.L.divIcon({
-                    className: 'itinerary-pin-wrap',
-                    iconSize: [26, 26],
-                    html: '<span class="itinerary-pin">' + (index + 1) + '</span>'
-                })
-            }).bindPopup(popup(itinerary, stop)));
-        });
+                onClick: function () { showPopup(itinerary, stop); }, z: 500 };
+        }));
         if (data.itineraries.length > 1) addPicker(data);
+    }
+
+    function showPopup(itinerary, stop) {
+        if (openPopup) openPopup.remove();
+        var canvas = shell && shell.querySelector('[data-map-canvas]');
+        if (!canvas) return;
+        openPopup = popup(itinerary, stop);
+        canvas.appendChild(openPopup);
     }
 
     function stopsOf(itinerary, features) {
@@ -131,6 +137,12 @@
             link.setAttribute('rel', 'noopener noreferrer');
             box.appendChild(link);
         }
+        var close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'itinerary-popup-close';
+        close.textContent = 'Close';
+        close.addEventListener('click', function () { box.remove(); openPopup = null; });
+        box.appendChild(close);
         return box;
     }
 

@@ -1,22 +1,35 @@
 /* Pins for the notable and writers layers, and the place panel. */
-/* Doubled class: Leaflet's stylesheet loads later and sets display on .leaflet-marker-icon. */
-.map-pin.leaflet-marker-icon {
+.map-pin {
+    position: relative;
     display: grid;
     place-items: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
     border: 2px solid #fff;
     border-radius: 50%;
     box-shadow: 0 1px 4px #0006;
+    cursor: pointer;
 }
+
+.travelmap-marker .map-pin { transform: translate(-50%, -50%); }
+
+.map-pin:focus-visible { outline: 3px solid #18212b; outline-offset: 3px; }
 
 .map-pin-notable { background: #2685ee; }
 
 .map-pin-writer {
+    width: 28px;
+    height: 28px;
     background: #f35a2c;
     color: #fff;
     font: 700 12px / 1 var(--tt-font-body);
 }
 
 .map-pin-label {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 4px);
     padding: 2px 6px;
     border: 0;
     background: #fffe;
@@ -24,9 +37,10 @@
     font-size: 12px;
     font-weight: 600;
     box-shadow: 0 1px 3px #0004;
+    white-space: nowrap;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
-
-.map-pin-label::before { display: none; }
 
 .writers-map-body > [data-map-slot="panel"]:has(.map-place-panel) {
     place-items: start stretch;

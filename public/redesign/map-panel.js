@@ -25,30 +25,25 @@
     });
 
     function pinLayer(writers) {
-        var group = null;
+        var id = writers ? 'writers' : 'notable';
         return {
-            add: function (map, context) {
+            add: function (_map, context) {
                 var labelled = biggestPlaces(context.features);
-                group = window.L.layerGroup();
-                context.features.forEach(function (feature) {
+                var markers = context.features.map(function (feature) {
                     var place = feature.properties || {};
-                    if (!place.qid || (place.writer_count > 0) !== writers) return;
-                    var marker = window.L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
-                        icon: pinIcon(place, writers),
+                    if (!place.qid || (place.writer_count > 0) !== writers) return null;
+                    return {
+                        lngLat: feature.geometry.coordinates,
+                        element: pinElement(place, writers, labelled.has(place.qid)),
                         title: place.name,
-                        zIndexOffset: writers ? writerPinZ : 0
-                    });
-                    marker.on('click', function () { context.selectPlace(place.qid); });
-                    if (labelled.has(place.qid)) {
-                        marker.bindTooltip(place.name, { permanent: true, direction: 'right', className: 'map-pin-label' });
-                    }
-                    group.addLayer(marker);
-                });
-                group.addTo(map);
+                        onClick: function () { context.selectPlace(place.qid); },
+                        z: writers ? writerPinZ : 0
+                    };
+                }).filter(Boolean);
+                context.draw.markers(id, markers);
             },
-            remove: function (map) {
-                if (group) map.removeLayer(group);
-                group = null;
+            remove: function (_map, context) {
+                context.draw.clear(id);
             }
         };
     }
@@ -91,13 +86,25 @@
             .map(function (feature) { return feature.properties.qid; }));
     }
 
-    function pinIcon(place, writers) {
-        return window.L.divIcon({
-            className: 'map-pin ' + (writers ? 'map-pin-writer' : 'map-pin-notable'),
-            html: writers ? '<span>' + Number(place.writer_count) + '</span>' : '',
-            iconSize: writers ? [28, 28] : [16, 16],
-            tooltipAnchor: writers ? [14, 0] : [8, 0]
-        });
+    function pinElement(place, writers, labelled) {
+        var pin = document.createElement('button');
+        pin.type = 'button';
+        pin.className = 'map-pin ' + (writers ? 'map-pin-writer' : 'map-pin-notable');
+        pin.title = place.name;
+        pin.setAttribute('aria-label', place.name);
+        if (writers) {
+            var count = document.createElement('span');
+            count.textContent = String(Number(place.writer_count));
+            pin.appendChild(count);
+        }
+        if (labelled) {
+            var label = document.createElement('span');
+            label.className = 'map-pin-label';
+            label.textContent = place.name;
+            label.setAttribute('aria-hidden', 'true');
+            pin.appendChild(label);
+        }
+        return pin;
     }
 
     function initials(name) {

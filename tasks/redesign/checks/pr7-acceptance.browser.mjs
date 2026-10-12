@@ -5,7 +5,8 @@
 import assert from 'node:assert/strict';
 import { connect, startPreview, sleep } from './lib/browser.mjs';
 
-const preview = await startPreview({ scenario: 'writers-map' });
+for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
+const preview = await startPreview({ scenario });
 let browser;
 try {
   browser = await connect();
@@ -30,7 +31,7 @@ try {
     // 7b: base-only destination (Porto), and the map destination, leave no duplicate layers.
     for (const slug of ['porto-pt', 'madeira-pt']) {
       await browser.navigate(`${preview.url}/trip/${slug}`);
-      await browser.until("Boolean(document.querySelector('.leaflet-container') && document.querySelector('#trip-card form'))");
+      await browser.until(`Boolean(document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}') && document.querySelector('#trip-card form'))`);
       assert.equal(await count('.plan-pin'), 0, `${slug}: no plan pins before a plan`);
       await generate();
       await browser.until("document.querySelectorAll('.plan-pin').length > 0");
@@ -42,13 +43,12 @@ try {
         await sleep(150);
         const now = await count('[data-plan-stop]');
         assert.equal(await count('.plan-pin'), now, `${slug}: pins equal stops after regenerate ${i + 1}`);
-        assert.equal(await count('.plan-pin-wrap'), now, `${slug}: no duplicate marker layers`);
         assert.ok(await count('.plan-day-toggle') <= 1, `${slug}: one day toggle`);
       }
       await browser.evaluate('window.TravelMap.updatePlan([])');
       assert.equal(await count('.plan-pin'), 0, `${slug}: cleared`);
       assert.equal(await count('.plan-day-toggle'), 0, `${slug}: toggle cleared`);
-      console.log(`PASS 7b ${slug} ${width}px: ${stops} stops, no duplicates after regenerate, clear`);
+      console.log(`PASS 7b ${engine} ${slug} ${width}px: ${stops} stops, no duplicates after regenerate, clear`);
     }
 
     // 7d: saves make no server call; only the plan request carries include.
@@ -70,7 +70,7 @@ try {
     assert.match(new URL(withInclude[0]).pathname, /^\/plan$/);
     assert.ok(requests().filter(u => u.includes('include=')).every(u => new URL(u).pathname === '/plan'), 'include only on /plan');
     assert.match(withInclude[0], /include=Q473169/);
-    console.log(`PASS 7d ${width}px: save made 0 requests; only ${new URL(withInclude[0]).pathname} carried include`);
+    console.log(`PASS 7d ${engine} ${width}px: save made 0 requests; only ${new URL(withInclude[0]).pathname} carried include`);
 
     // 7e in the preview: five saved places and a one-day plan -> the day holds four, one is "also suggested".
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
@@ -92,7 +92,7 @@ try {
     assert.equal(planned.length, 4, JSON.stringify(planned));
     assert.ok(names.slice(0, 4).every(n => planned.includes(n)), JSON.stringify({ names, planned }));
     assert.equal(also, 1, 'one place is also suggested');
-    console.log(`PASS 7e preview ${width}px: saved places in the day (${planned.join(', ')}), ${also} also suggested`);
+    console.log(`PASS 7e preview ${engine} ${width}px: saved places in the day (${planned.join(', ')}), ${also} also suggested`);
     await browser.evaluate('(() => { try { localStorage.clear(); } catch {} })()');
 
     // 7g: View on map presses the plan chip only when needed, scrolls to the map, no inline handler.
@@ -111,7 +111,7 @@ try {
     assert.equal(await browser.evaluate(`${chip("day plan")}.getAttribute('aria-pressed')`), 'true', 'already pressed stays pressed');
     assert.ok(await count('.plan-pin') > 0);
     assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
-    console.log(`PASS 7g ${width}px: View on map presses chip once, scrolls ${scrolled} -> ${await browser.evaluate('window.scrollY')}`);
+    console.log(`PASS 7g ${engine} ${width}px: View on map presses chip once, scrolls ${scrolled} -> ${await browser.evaluate('window.scrollY')}`);
   }
 
   // 7d: blocked storage hides the buttons and the saved line.
@@ -131,8 +131,9 @@ try {
   await browser.until("document.querySelectorAll('[data-plan-stop]').length > 0");
   assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
   await browser.call('Page.removeScriptToEvaluateOnNewDocument', { identifier: blocker.identifier });
-  console.log('PASS 7d blocked storage: buttons and saved line hidden, plan still works, console clean');
+  console.log(`PASS 7d ${engine} blocked storage: buttons and saved line hidden, plan still works, console clean`);
 } finally {
   await browser?.close?.();
   preview.stop();
+}
 }

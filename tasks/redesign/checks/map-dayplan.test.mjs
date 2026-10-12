@@ -5,199 +5,173 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../../../public/redesign/map-dayplan.js', import.meta.url), 'utf8');
 
-test('registers one layer named plan with the core', () => {
+test('registers one layer named plan and reports valid stops after swaps', () => {
   const app = browser();
   app.run();
   assert.deepEqual(app.registered, ['plan']);
+  app.swap([[['Tower', 38.69, -9.21], ['Invalid', 0, 0]]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(app.updates.at(-1))), [
+    { number: 1, stops: [{ name: 'Tower', lat: 38.69, lon: -9.21 }] }
+  ]);
 });
 
-test('does nothing when the core or the map shell is missing', () => {
+test('does nothing when the core or map shell is missing', () => {
   const noCore = browser({ core: false });
   noCore.run();
   assert.deepEqual(noCore.registered, []);
-
   const noShell = browser({ shell: false });
   noShell.run();
   noShell.swap([[['A', 1, 2]]]);
   assert.equal(noShell.updates.length, 0);
 });
 
-test('reads stop coordinates after a swap and reports them to the core', () => {
-  const app = browser();
-  app.run();
-  app.swap([[['Tower', 38.69, -9.21], ['Museum', 38.72, -9.11]], [['Park', 38.7, -9.1]]]);
-  assert.deepEqual(JSON.parse(JSON.stringify(app.updates.at(-1))), [
-    { number: 1, stops: [{ name: 'Tower', lat: 38.69, lon: -9.21 }, { name: 'Museum', lat: 38.72, lon: -9.11 }] },
-    { number: 2, stops: [{ name: 'Park', lat: 38.7, lon: -9.1 }] }
-  ]);
-});
-
-test('draws green numbered pins per day', () => {
+test('uses drawing API for green, numbered, focusable pins and a day control', () => {
   const app = browser();
   app.run();
   app.mount();
   app.swap([[['Tower', 38.69, -9.21], ['Museum', 38.72, -9.11]], [['Park', 38.7, -9.1]]]);
-  const pins = app.pins();
-  assert.equal(pins.length, 3);
-  assert.match(pins[0].icon.html, /plan-pin/);
-  assert.match(pins[0].icon.html, />1</);
-  assert.match(pins[1].icon.html, />2</);
-  assert.match(pins[2].icon.html, />1</);
-  assert.match(pins[0].icon.html, /#2e7d32/);
+  assert.deepEqual(JSON.parse(JSON.stringify(app.pins().map(pin => pin.lngLat))), [[-9.21, 38.69], [-9.11, 38.72], [-9.1, 38.7]]);
+  assert.deepEqual(Array.from(app.pins(), pin => pin.element.textContent), ['1', '2', '1']);
+  assert.ok(app.pins().every(pin => pin.element.tagName === 'BUTTON' && pin.element.className === 'plan-pin'));
+  assert.ok(app.pins().every(pin => pin.element.style.background === '#2e7d32'));
+  assert.match(app.pins()[0].title, /Day 1: Tower/);
+  assert.deepEqual(Array.from(app.control().buttons(), button => button.textContent), ['All', 'Day 1', 'Day 2']);
+  assert.equal(app.control().position, 'top-right');
+  assert.deepEqual(app.drawCalls().map(call => call.method).slice(-2), ['markers', 'control']);
 });
 
-test('regenerating and clearing leave no duplicate pins', () => {
-  const app = browser();
-  app.run();
-  app.mount();
-  app.swap([[['A', 1, 2], ['B', 3, 4]]]);
-  app.swap([[['A', 1, 2], ['B', 3, 4]]]);
-  assert.equal(app.pins().length, 2);
-  assert.equal(app.maps[0].groups.length, 1);
-  app.swap([]);
-  assert.equal(app.pins().length, 0);
-  assert.equal(app.maps[0].controls.filter(c => c.attached).length, 0);
-});
-
-test('day toggle shows one day or all days', () => {
-  const app = browser();
-  app.run();
-  app.mount();
-  app.swap([[['A', 1, 2]], [['B', 3, 4], ['C', 5, 6]]]);
-  const buttons = app.maps[0].controls.find(c => c.attached).buttons();
-  assert.deepEqual(buttons.map(b => b.textContent), ['All', 'Day 1', 'Day 2']);
-  buttons[2].click();
-  assert.equal(app.pins().length, 2);
-  buttons[1].click();
-  assert.equal(app.pins().length, 1);
-  buttons[0].click();
-  assert.equal(app.pins().length, 3);
-});
-
-test('keeps the selected day across unrelated swaps and an unchanged plan', () => {
+test('generate, regenerate, day toggle, clear and enable leave one current set', () => {
   const app = browser();
   app.run();
   app.mount();
   const plan = [[['A', 1, 2]], [['B', 3, 4], ['C', 5, 6]]];
   app.swap(plan);
-  app.maps[0].controls.find(c => c.attached).buttons()[2].click();
+  assert.equal(app.pins().length, 3);
+  app.control().buttons()[2].click();
   assert.equal(app.pins().length, 2);
   app.swap(plan);
   assert.equal(app.pins().length, 2);
-  const pressed = app.maps[0].controls.find(c => c.attached).buttons().map(b => b.attrs['aria-pressed']);
-  assert.deepEqual(pressed, ['false', 'false', 'true']);
-});
-
-test('resets to all days when the plan changes', () => {
-  const app = browser();
-  app.run();
-  app.mount();
-  app.swap([[['A', 1, 2]], [['B', 3, 4]]]);
-  app.maps[0].controls.find(c => c.attached).buttons()[2].click();
-  assert.equal(app.pins().length, 1);
-  app.swap([[['A', 1, 2]], [['B', 3, 4]], [['C', 5, 6]]]);
+  assert.deepEqual(app.control().buttons().map(button => button.attrs['aria-pressed']), ['false', 'false', 'true']);
+  app.swap([[['D', 7, 8]], [['E', 9, 10]]]);
+  assert.deepEqual(Array.from(app.pins(), pin => pin.title), ['Day 1: D', 'Day 2: E']);
+  assert.deepEqual(app.control().buttons().map(button => button.attrs['aria-pressed']), ['true', 'false', 'false']);
+  app.swap([]);
+  assert.equal(app.pins().length, 0);
+  assert.equal(app.control(), null);
+  app.swap(plan);
+  app.setEnabled(false);
+  assert.equal(app.pins().length, 0);
+  assert.equal(app.control(), null);
+  app.setEnabled(true);
   assert.equal(app.pins().length, 3);
+  assert.equal(app.control().buttons().length, 3);
 });
 
-test('disabling the layer removes pins and enabling restores them', () => {
+test('re-adding on another map context draws once and clears the old context', () => {
   const app = browser();
   app.run();
   app.mount();
   app.swap([[['A', 1, 2]]]);
-  app.setEnabled(false);
-  assert.equal(app.pins().length, 0);
-  app.setEnabled(true);
+  const old = app.context();
+  app.remount();
+  assert.equal(old.markers.size, 0);
   assert.equal(app.pins().length, 1);
+  assert.equal(app.context().markers.size, 1);
 });
 
-test('skips stops without usable coordinates', () => {
+test('View on map activates the plan chip and scrolls to the shell', () => {
   const app = browser();
   app.run();
-  app.mount();
-  app.swap([[['A', 0, 0], ['B', 'x', 4], ['C', 5, 6]]]);
-  assert.equal(app.pins().length, 1);
+  app.viewOnMap();
+  assert.equal(app.chipPressed(), 'true');
+  assert.equal(app.scrolls(), 1);
 });
 
 function browser({ core = true, shell = true } = {}) {
   const registered = [];
   const updates = [];
-  const maps = [];
   const listeners = new Map();
   let layer = null;
   let enabled = true;
   let days = [];
-  let currentMap = null;
-
-  const stopEl = ([name, lat, lon]) => ({ dataset: { name, lat: String(lat), lon: String(lon) } });
+  let drawing = drawContext();
+  let scrollCount = 0;
+  let chip = element('button');
+  chip.setAttribute('aria-pressed', 'false');
+  chip.addEventListener('click', () => chip.setAttribute('aria-pressed', 'true'));
+  const shellElement = { scrollIntoView() { scrollCount++; } };
   const document = {
     body: { addEventListener: (n, cb) => listeners.set(n, cb) },
     createElement: tag => element(tag),
-    querySelector: sel => (shell && sel === '[data-writers-map]' ? {} : null),
+    querySelector: sel => sel === '[data-writers-map]' && shell ? shellElement : sel === '.writers-map-layer-plan' ? chip : null,
     querySelectorAll: sel => sel === '[data-plan-day]' ? days : [],
     addEventListener(n, cb) { listeners.set('doc:' + n, cb); }
   };
   document.dispatchEvent = event => listeners.get('doc:' + event.type)?.(event);
-  const L = {
-    divIcon: options => options,
-    marker: (point, options) => ({ point, icon: options.icon }),
-    layerGroup: () => ({
-      layers: [],
-      addLayer(l) { this.layers.push(l); return this; },
-      removeLayer(l) { this.layers = this.layers.filter(x => x !== l); return this; },
-      clearLayers() { this.layers = []; return this; },
-      addTo(map) { map.groups.push(this); this.map = map; return this; },
-      remove() { this.map.groups = this.map.groups.filter(g => g !== this); }
-    }),
-    control: options => ({
-      options, attached: false,
-      addTo(map) { this.el = this.onAdd(map); this.attached = true; map.controls.push(this); return this; },
-      remove() { this.attached = false; },
-      buttons() { return this.el.children; }
-    }),
-    DomEvent: { disableClickPropagation() {} }
+  const window = {};
+  if (core) window.TravelMap = {
+    registerLayer(name, value) { registered.push(name); layer = value; },
+    setLayerEnabled(name, on) {
+      if (on === enabled) return;
+      enabled = on;
+      if (on) layer.add({}, { draw: drawing.draw });
+      else layer.remove({}, { draw: drawing.draw });
+    },
+    updatePlan(value) {
+      updates.push(value);
+      document.dispatchEvent({ type: 'travelmap:plan-updated', detail: { days: value } });
+    }
   };
-  const window = { L };
-  if (core) {
-    window.TravelMap = {
-      registerLayer(name, l) { registered.push(name); layer = l; },
-      setLayerEnabled(name, on) {
-        if (on === enabled) return;
-        enabled = on;
-        if (on) layer.add(currentMap, {}); else layer.remove(currentMap, {});
-      },
-      updatePlan(d) {
-        updates.push(d);
-        document.dispatchEvent({ type: 'travelmap:plan-updated', detail: { days: d } });
-      }
-    };
-  }
   const vmContext = vm.createContext({ document, window, CustomEvent: class {} });
   return {
-    registered, updates, maps,
+    registered, updates,
     run: () => vm.runInContext(source, vmContext),
-    mount() {
-      currentMap = { groups: [], controls: [] };
-      maps.push(currentMap);
-      layer.add(currentMap, {});
+    mount() { layer.add({}, { draw: drawing.draw }); },
+    remount() {
+      layer.remove({}, { draw: drawing.draw });
+      drawing = drawContext();
+      layer.add({}, { draw: drawing.draw });
     },
+    context: () => drawing,
     swap(dayStops) {
-      days = dayStops.map((stops, i) => {
-        const els = stops.map(stopEl);
-        return { dataset: { planDay: String(i + 1) }, querySelectorAll: () => els };
-      });
+      days = dayStops.map((stops, i) => ({
+        dataset: { planDay: String(i + 1) },
+        querySelectorAll: () => stops.map(([name, lat, lon]) => ({ dataset: { name, lat: String(lat), lon: String(lon) } }))
+      }));
       listeners.get('htmx:afterSwap')?.({});
     },
     setEnabled: on => window.TravelMap.setLayerEnabled('plan', on),
-    pins: () => maps[0].groups.flatMap(g => g.layers)
+    pins: () => drawing.markers.get('plan') || [],
+    control: () => drawing.controls.get('plan') || null,
+    drawCalls: () => drawing.calls,
+    viewOnMap() { listeners.get('doc:click')?.({ target: { closest: selector => selector === '[data-view-on-map]' } }); },
+    chipPressed: () => chip.attrs['aria-pressed'],
+    scrolls: () => scrollCount
+  };
+}
+
+function drawContext() {
+  const markers = new Map();
+  const controls = new Map();
+  const calls = [];
+  return {
+    markers, controls, calls,
+    draw: {
+      markers(id, items) { calls.push({ method: 'markers', id }); markers.set(id, items); },
+      control(id, element, position) { calls.push({ method: 'control', id }); controls.set(id, { element, position, buttons: () => element.children }); },
+      clear(id) { calls.push({ method: 'clear', id }); markers.delete(id); controls.delete(id); }
+    }
   };
 }
 
 function element(tagName) {
   const listeners = new Map();
   return {
-    tagName: tagName.toUpperCase(), children: [], dataset: {}, className: '', textContent: '', style: {},
-    attrs: {}, setAttribute(n, v) { this.attrs[n] = v; }, appendChild(c) { this.children.push(c); return c; },
+    tagName: tagName.toUpperCase(), children: [], className: '', textContent: '', style: {}, attrs: {},
+    setAttribute(n, v) { this.attrs[n] = v; },
+    getAttribute(n) { return this.attrs[n]; },
+    appendChild(child) { this.children.push(child); return child; },
     addEventListener(n, cb) { listeners.set(n, cb); },
-    click() { listeners.get('click')({ preventDefault() {}, stopPropagation() {} }); }
+    click() { listeners.get('click')?.({ preventDefault() {}, stopPropagation() {} }); }
   };
 }

@@ -9,9 +9,7 @@
     var days = [];
     var daysKey = '[]';
     var activeDay = 0; // 0 shows every day
-    var map = null;
-    var group = null;
-    var control = null;
+    var drawAPI = null;
 
     window.TravelMap.registerLayer('plan', { add: add, remove: remove });
     document.addEventListener('travelmap:plan-updated', function (event) {
@@ -56,73 +54,70 @@
         return result;
     }
 
-    function add(nextMap) {
-        map = nextMap;
+    function add(map, context) {
+        drawAPI = context.draw;
         draw();
     }
 
     function remove() {
         clear();
-        map = null;
+        drawAPI = null;
     }
 
     function clear() {
-        if (group) group.remove();
-        if (control) control.remove();
-        group = null;
-        control = null;
+        if (drawAPI) drawAPI.clear('plan');
     }
 
     function draw() {
         clear();
-        if (!map) return;
+        if (!drawAPI) return;
         var shown = days.filter(function (day) { return day.stops.length; });
         if (!shown.length) return;
-        group = window.L.layerGroup().addTo(map);
+        var pins = [];
         shown.forEach(function (day) {
             if (activeDay && day.number !== activeDay) return;
             day.stops.forEach(function (stop, index) {
-                group.addLayer(window.L.marker([stop.lat, stop.lon], {
+                var pin = document.createElement('button');
+                pin.type = 'button';
+                pin.className = 'plan-pin';
+                pin.textContent = String(index + 1);
+                pin.style.cssText = 'display:flex;align-items:center;justify-content:center;width:26px;height:26px;' +
+                    'border-radius:50%;color:#fff;border:2px solid #fff;font:600 13px/1 sans-serif;' +
+                    'box-shadow:0 1px 4px rgba(0,0,0,.4);cursor:pointer';
+                pin.style.background = '#2e7d32';
+                pins.push({
+                    lngLat: [stop.lon, stop.lat],
+                    element: pin,
                     title: 'Day ' + day.number + ': ' + stop.name,
-                    icon: window.L.divIcon({
-                        className: 'plan-pin-wrap',
-                        iconSize: [26, 26],
-                        html: '<span class="plan-pin" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;' +
-                            'border-radius:50%;background:#2e7d32;color:#fff;border:2px solid #fff;font:600 13px/1 sans-serif;' +
-                            'box-shadow:0 1px 4px rgba(0,0,0,.4)">' + (index + 1) + '</span>'
-                    })
-                }));
+                    z: 30
+                });
             });
         });
+        drawAPI.markers('plan', pins);
         if (shown.length > 1) addToggle(shown);
     }
 
     function addToggle(shown) {
-        control = window.L.control({ position: 'topright' });
-        control.onAdd = function () {
-            var box = document.createElement('div');
-            box.className = 'leaflet-bar plan-day-toggle';
-            box.style.background = '#fff';
-            box.setAttribute('role', 'group');
-            box.setAttribute('aria-label', 'Show day plan pins');
-            [{ label: 'All', number: 0 }].concat(shown.map(function (day) {
-                return { label: 'Day ' + day.number, number: day.number };
-            })).forEach(function (item) {
-                var button = document.createElement('button');
-                button.type = 'button';
-                button.textContent = item.label;
-                button.style.cssText = 'display:block;width:100%;padding:4px 10px;border:0;background:' +
-                    (item.number === activeDay ? '#c8e6c9' : '#fff') + ';color:#1b5e20;cursor:pointer;font:600 12px sans-serif';
-                button.setAttribute('aria-pressed', String(item.number === activeDay));
-                button.addEventListener('click', function () {
-                    activeDay = item.number;
-                    draw();
-                });
-                box.appendChild(button);
+        var box = document.createElement('div');
+        box.className = 'plan-day-toggle';
+        box.style.background = '#fff';
+        box.setAttribute('role', 'group');
+        box.setAttribute('aria-label', 'Show day plan pins');
+        [{ label: 'All', number: 0 }].concat(shown.map(function (day) {
+            return { label: 'Day ' + day.number, number: day.number };
+        })).forEach(function (item) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = item.label;
+            button.style.cssText = 'display:block;width:100%;padding:4px 10px;border:0;background:' +
+                (item.number === activeDay ? '#c8e6c9' : '#fff') + ';color:#1b5e20;cursor:pointer;font:600 12px sans-serif';
+            button.setAttribute('aria-pressed', String(item.number === activeDay));
+            button.addEventListener('click', function () {
+                activeDay = item.number;
+                draw();
             });
-            if (window.L.DomEvent) window.L.DomEvent.disableClickPropagation(box);
-            return box;
-        };
-        control.addTo(map);
+            box.appendChild(button);
+        });
+        drawAPI.control('plan', box, 'top-right');
     }
 })();

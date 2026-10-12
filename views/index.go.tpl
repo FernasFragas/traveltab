@@ -31,6 +31,7 @@
     <script defer src="/redesign/planner.js"></script>
     <script defer src="/redesign/discovery.js"></script>
     <script defer src="/redesign/search.js"></script>
+    <script defer src="/redesign/writers-map-leaflet.js"></script>
     <script defer src="/redesign/writers-map.js"></script>
     <script defer src="/redesign/map-panel.js"></script>
     <script defer src="/redesign/map-dayplan.js"></script>

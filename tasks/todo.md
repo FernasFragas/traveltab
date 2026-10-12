@@ -468,6 +468,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - [x] Done — [TDD evidence](../docs/tdd/7i.tdd.md)
 - Gap closed: hero line falls back to the city's Wikidata description when there is no tagline — [evidence](../docs/tdd/descriptions.tdd.md).
 - Phone: the hero line shows below the photo, above the weather card — [evidence](../docs/tdd/hero-phone-line.tdd.md).
+- Hero contrast: narrower desktop wash (flat to 40%), dark label restored on phones, 2-line clamp dropped on the hero line and stop descriptions — [evidence](../docs/tdd/hero-overlay-clamp.tdd.md).
 
 **Owns:** `views/weather_display.go.tpl`, `views/weather_card.go.tpl`, `public/redesign/destination.css`, `views/index.go.tpl` (header order only), `internal/adapters/api/openweather.go`, `openweather_test.go`, `internal/adapters/api/openmeteo_forecast.go`, `openmeteo_forecast_test.go`, `internal/adapters/httpserver/presentation.go`, `presentation_test.go`
 
@@ -500,6 +501,8 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Integrator for PR 7:** whoever lands last adds the script and style tags to `views/index.go.tpl` and runs the full preview journey on fixture data.
 
 **Integrator result (October 11, 2026):** evidence in [pr7-integration.tdd.md](../docs/tdd/pr7-integration.tdd.md). Full journey runs clean on fixture data at 375 and 1440 px. Not in this PR (open): the hero falls back to the manifest tagline only (no Wikidata description), stops show no short description (`planner.Place` has none), and `include` / `travelers` are not carried on the `/trip/:slug` re-plan or the `.ics` / `.kml` exports.
+
+**Follow-up (October 11, 2026):** the descriptions and the exports gap are closed (links under 7e, 7g, 7i); `/trip/:slug` still re-plans without `include` (owner decision). Browser regressions found after integration (stale `scenarios.mjs` weather check, hero contrast, mobile-menu tab order, clamped text under text spacing) are fixed against a HEAD baseline — [evidence](../docs/tdd/pr7-browser-regressions.tdd.md).
 
 **PR 7 done when:** with `WRITERS_MAP=1`, the full UI works on fixture data and matches the Funchal mockup's layout.
 

@@ -20,6 +20,7 @@ const (
 	wordpressPerPage    = 100
 	wordpressRetryDelay = 5 * time.Second
 	wordpressListFields = "id,link,title,modified_gmt,content"
+	wordpressHitFields  = "id,link,slug,title,date_gmt,date"
 	wordpressTimeLayout = "2006-01-02T15:04:05"
 	robotsAgent         = "traveltab"
 	robotsMaxBytes      = 512 << 10
@@ -32,6 +33,7 @@ var (
 	ErrDisallowed = errors.New("wordpress: disallowed by robots.txt")
 
 	errBadRequest = errors.New("status 400")
+	errNotFound   = errors.New("status 404")
 )
 
 // WordPressClient reads public WordPress REST posts politely: every request, robots.txt included,
@@ -68,58 +70,13 @@ type WordPressPost struct {
 	Content  string
 }
 
-// ListPosts returns one page (1-based, 100 posts) of posts modified after modifiedAfter, oldest
-// change first. A zero modifiedAfter lists every post. more is false on the last page, and a page
-// past the last one returns no posts and no error.
-func (c *WordPressClient) ListPosts(ctx context.Context, apiBase string, modifiedAfter time.Time, page int) (posts []WordPressPost, more bool, err error) {
-	params := url.Values{"_fields": {wordpressListFields}, "orderby": {"modified"}, "order": {"asc"}}
-	if !modifiedAfter.IsZero() {
-		params.Set("modified_after", modifiedAfter.UTC().Format(time.RFC3339))
-	}
-	var items []struct {
-		ID          int64  `json:"id"`
-		Link        string `json:"link"`
-		ModifiedGMT string `json:"modified_gmt"`
-		Title       struct {
-			Rendered string `json:"rendered"`
-		} `json:"title"`
-		Content struct {
-			Rendered string `json:"rendered"`
-		} `json:"content"`
-	}
-	header, err := c.listPage(ctx, apiBase, page, params, &items)
-	if err != nil || len(items) == 0 {
-		return nil, false, err
-	}
-	posts = make([]WordPressPost, len(items))
-	for i, item := range items {
-		modified, _ := time.Parse(wordpressTimeLayout, item.ModifiedGMT)
-		posts[i] = WordPressPost{
-			ID:       item.ID,
-			Link:     item.Link,
-			Title:    html.UnescapeString(item.Title.Rendered),
-			Modified: modified,
-			Content:  item.Content.Rendered,
-		}
-	}
-	return posts, morePages(header, page, len(items)), nil
-}
-
-// PostIDs returns one page (1-based, 100 ids) of every published post id, for the deleted-posts
-// sweep. A page past the last one returns no ids and no error.
-func (c *WordPressClient) PostIDs(ctx context.Context, apiBase string, page int) (ids []int64, more bool, err error) {
-	var items []struct {
-		ID int64 `json:"id"`
-	}
-	header, err := c.listPage(ctx, apiBase, page, url.Values{"_fields": {"id"}}, &items)
-	if err != nil || len(items) == 0 {
-		return nil, false, err
-	}
-	ids = make([]int64, len(items))
-	for i, item := range items {
-		ids[i] = item.ID
-	}
-	return ids, morePages(header, page, len(items)), nil
+// WordPressHit is one search result: names only, no content.
+type WordPressHit struct {
+	ID        int64
+	Link      string
+	Slug      string
+	Title     string
+	Published time.Time // UTC, from "date_gmt" (fall back to "date")
 }
 
 // PostContent returns the rendered HTML of one post.
@@ -139,6 +96,89 @@ func (c *WordPressClient) PostContent(ctx context.Context, apiBase string, id in
 		return "", err
 	}
 	return post.Content.Rendered, nil
+}
+
+// SearchPosts returns one page (1-based, 100) of posts matching term (WordPress search=), newest first.
+// A page past the last one returns no hits and no error.
+func (c *WordPressClient) SearchPosts(ctx context.Context, apiBase, term string, page int) (hits []WordPressHit, more bool, err error) {
+	params := url.Values{"_fields": {wordpressHitFields}, "search": {term}, "orderby": {"date"}, "order": {"desc"}}
+	var items []struct {
+		ID      int64  `json:"id"`
+		Link    string `json:"link"`
+		Slug    string `json:"slug"`
+		DateGMT string `json:"date_gmt"`
+		Date    string `json:"date"`
+		Title   struct {
+			Rendered string `json:"rendered"`
+		} `json:"title"`
+	}
+	header, err := c.listPage(ctx, apiBase, page, params, &items)
+	if err != nil || len(items) == 0 {
+		return nil, false, err
+	}
+	hits = make([]WordPressHit, len(items))
+	for i, item := range items {
+		published, err := time.Parse(wordpressTimeLayout, item.DateGMT)
+		if err != nil {
+			published, _ = time.Parse(wordpressTimeLayout, item.Date)
+		}
+		hits[i] = WordPressHit{
+			ID:        item.ID,
+			Link:      item.Link,
+			Slug:      item.Slug,
+			Title:     html.UnescapeString(item.Title.Rendered),
+			Published: published,
+		}
+	}
+	return hits, morePages(header, page, len(items)), nil
+}
+
+// RecentCommentCounts tallies the newest comments (up to maxPages pages of 100) per post ID.
+// A 404 on the comments route means the blog exposes no comments: empty map, nil error.
+func (c *WordPressClient) RecentCommentCounts(ctx context.Context, apiBase string, maxPages int) (map[int64]int, error) {
+	counts := make(map[int64]int)
+	commentsBase, err := url.JoinPath(apiBase, "..", "comments")
+	if err != nil {
+		return nil, fmt.Errorf("wordpress api base: %w", err)
+	}
+	for page := 1; page <= maxPages; page++ {
+		var items []struct {
+			Post int64 `json:"post"`
+		}
+		header, err := c.listPage(ctx, commentsBase, page, url.Values{"_fields": {"post"}}, &items)
+		if errors.Is(err, errNotFound) {
+			return counts, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			counts[item.Post]++
+		}
+		if len(items) == 0 || !morePages(header, page, len(items)) {
+			break
+		}
+	}
+	return counts, nil
+}
+
+// PostsByID fetches the full posts for ids (include=, batches of up to 100), for extraction only.
+func (c *WordPressClient) PostsByID(ctx context.Context, apiBase string, ids []int64) ([]WordPressPost, error) {
+	var posts []WordPressPost
+	for start := 0; start < len(ids); start += wordpressPerPage {
+		batch := ids[start:min(start+wordpressPerPage, len(ids))]
+		include := make([]string, len(batch))
+		for i, id := range batch {
+			include[i] = strconv.FormatInt(id, 10)
+		}
+		var items []wordpressItem
+		params := url.Values{"_fields": {wordpressListFields}, "include": {strings.Join(include, ",")}}
+		if _, err := c.listPage(ctx, apiBase, 1, params, &items); err != nil {
+			return nil, err
+		}
+		posts = append(posts, wordpressPosts(items)...)
+	}
+	return posts, nil
 }
 
 // listPage fetches one page into out. WordPress answers 400 for a page past the last one, which
@@ -188,6 +228,8 @@ func (c *WordPressClient) getOnce(ctx context.Context, endpoint *url.URL, out an
 		return nil, fmt.Errorf("%w: %s", ErrBlocked, endpoint.Host)
 	case http.StatusBadRequest:
 		return nil, fmt.Errorf("wordpress %s: %w", endpoint.Host, errBadRequest)
+	case http.StatusNotFound:
+		return nil, fmt.Errorf("wordpress %s: %w", endpoint.Host, errNotFound)
 	default:
 		return nil, fmt.Errorf("wordpress %s: status %d", endpoint.Host, resp.StatusCode)
 	}
@@ -338,6 +380,34 @@ func robotsMatch(pattern, path string) bool {
 		rest = rest[j+len(part):]
 	}
 	return !anchored || rest == ""
+}
+
+// wordpressItem is one post as listed with wordpressListFields.
+type wordpressItem struct {
+	ID          int64  `json:"id"`
+	Link        string `json:"link"`
+	ModifiedGMT string `json:"modified_gmt"`
+	Title       struct {
+		Rendered string `json:"rendered"`
+	} `json:"title"`
+	Content struct {
+		Rendered string `json:"rendered"`
+	} `json:"content"`
+}
+
+func wordpressPosts(items []wordpressItem) []WordPressPost {
+	posts := make([]WordPressPost, len(items))
+	for i, item := range items {
+		modified, _ := time.Parse(wordpressTimeLayout, item.ModifiedGMT)
+		posts[i] = WordPressPost{
+			ID:       item.ID,
+			Link:     item.Link,
+			Title:    html.UnescapeString(item.Title.Rendered),
+			Modified: modified,
+			Content:  item.Content.Rendered,
+		}
+	}
+	return posts
 }
 
 func isTimeout(err error) bool {

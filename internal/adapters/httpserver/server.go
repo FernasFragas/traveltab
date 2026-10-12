@@ -35,8 +35,14 @@ type Server struct {
 	writersMapEnabled bool
 	writerMapTileURL  string
 	writerMapTileAttr string
-	now               func() time.Time
-	newCityLimiter    *newCityLimiter
+
+	writerMapStyleURL   string
+	writerMapTerrainURL string
+	writerMapTerrainOff bool
+	writerMapEngine     string
+
+	now            func() time.Time
+	newCityLimiter *newCityLimiter
 }
 
 type TemplateData struct {

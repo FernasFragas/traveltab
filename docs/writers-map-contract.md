@@ -3,7 +3,9 @@
 **Status:** original contract approved by the owner on 2026-10-08. The separate 1f contract
 change was approved by the owner on 2026-10-10 (see **Rules for Agents** in
 [the plan](../tasks/plan.md)). The PR 7 change (itineraries in the GeoJSON, layer names) was
-approved by the owner on 2026-10-11. The Go types and ports exist; the HTTP routes, plan-stop distance,
+approved by the owner on 2026-10-11. The map-3d change (task M0: map engines, the drawing API and
+the fallback, in **Browser extension API** and **Template hooks**) was approved by the owner on
+2026-10-11. The Go types and ports exist; the HTTP routes, plan-stop distance,
 browser API and template hooks below are planned and not yet served.
 
 This document is the integration boundary for the writers' map. Go models live in
@@ -100,16 +102,74 @@ The map core creates `window.TravelMap` and provides:
 
 ```js
 TravelMap.registerLayer(name, { add(map, context), remove(map, context) })
+TravelMap.setLayerEnabled(name, enabled)
+TravelMap.selectPlace(qid)
+TravelMap.updatePlan(days)
 ```
 
 Layer names are unique. `add` and `remove` are called as a layer is enabled or disabled. The map
 layers are `notable` (base places), `writers` (writer pins), `plan` (the day plan) and `itineraries`
-(writers' routes); the legend chips toggle them with `TravelMap.setLayerEnabled(name, enabled)`. The core
-dispatches these `CustomEvent`s on `document`:
+(writers' routes); the legend chips toggle them with `TravelMap.setLayerEnabled(name, enabled)`.
 
-- `travelmap:ready` — map initialized; `detail` contains `{ map, destination }`.
+### Map engines
+
+The core draws the map with one of two engines:
+
+- **`maplibre`** (default): MapLibre GL JS, a vector style with 3D buildings and terrain.
+- **`leaflet`** (fallback): Leaflet with the raster basemap (EOX imagery, OSM on tile error),
+  maximum zoom 18.
+
+The core picks `leaflet` when WebGL is unavailable, or when the style, its tiles or the terrain
+fail to load. It decides **once per mount**. If MapLibre fails after layers were added, the core
+removes them, mounts the fallback and adds the enabled layers again. Layers never choose an engine.
+
+### Layer context
+
+`add` and `remove` receive `map` and `context`. **`map` is opaque**: it is the engine's own map
+object, and layers must not call it, `maplibregl` or `L` directly. Layers draw only through
+`context.draw`. `context` contains:
+
+| Field | Meaning |
+| --- | --- |
+| `engine` | `"maplibre"` or `"leaflet"`, for logging and tests only; layers must not branch on it |
+| `destination` | The destination slug (or the map URL when no slug is set) |
+| `features` | The GeoJSON features from the map URL; empty until loaded |
+| `shell` | The map shell element (for the named slots) |
+| `selectPlace(qid)` | Selects a place, as `TravelMap.selectPlace` |
+| `draw` | The drawing API below |
+
+### Drawing API
+
+`context.draw` behaves the same on both engines. Every call takes an `id` (a string the layer
+owns, e.g. `"plan"`); calling it again with the same `id` **replaces** that group, so redraws
+never duplicate.
+
+| Call | Meaning |
+| --- | --- |
+| `markers(id, items)` | Shows HTML markers. Each item is `{ lngLat: [lon, lat], element, title, onClick, z }`. `element` is a DOM node the layer builds and styles; `title` is its accessible name; `z` orders overlapping markers (higher on top). |
+| `line(id, coords, style)` | Shows a line through `[[lon, lat], …]`. `style` is `{ color, width, dash }` (`dash` is an array or omitted). |
+| `control(id, element, position)` | Places a control element in a map corner (`"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"`). |
+| `clear(id)` | Removes everything drawn under `id` (markers, line and control). Clearing an unknown `id` does nothing. |
+| `fit(bounds, options)` | Fits `[[west, south], [east, north]]`, with `options.padding` in pixels. |
+| `flyTo(lngLat, zoom)` | Moves the camera to `[lon, lat]`; `zoom` is optional. |
+
+- **Markers and controls survive style reloads.** The core redraws lines after a style reload, so
+  layers don't listen for engine events.
+- **Remove contract:** a layer's `remove` must `clear` every `id` it drew. `add` after `remove` must
+  give the same result as the first `add`.
+- **Accessibility:** marker elements must be focusable buttons or links with a visible focus style;
+  `title` sets the accessible name. The `list` slot stays the keyboard alternative to the map.
+
+### Events
+
+The core dispatches these `CustomEvent`s on `document`:
+
+- `travelmap:ready` — map initialized; `detail` contains `{ map, destination, engine }`. `map` is
+  opaque, as above.
 - `travelmap:place-selected` — a place is selected; `detail` contains `{ qid, place }`.
 - `travelmap:plan-updated` — the trip plan changed; `detail` contains `{ days }`.
+
+`travelmap:ready` fires again when the core switches to the fallback.
 
 ## Template hooks
 
@@ -125,3 +185,19 @@ Templates provide one element for each map slot:
 
 The `list` slot is the keyboard-accessible alternative to interacting with map markers. Save
 buttons use `data-save-qid` and may be handled entirely in the browser.
+
+The map shell (`data-writers-map`) carries its configuration as data attributes. The server
+fills them, and the browser never builds URLs:
+
+| Attribute | Meaning |
+| --- | --- |
+| `data-map-url` | GeoJSON URL, coordinates included (required) |
+| `data-map-lat`, `data-map-lon` | Destination centre (required) |
+| `data-map-destination` | Destination slug |
+| `data-map-style-url` | MapLibre style URL; default the OpenFreeMap Liberty style |
+| `data-map-terrain-url` | Terrain (raster-dem) tile URL template; default Mapterhorn; empty turns terrain off |
+| `data-map-tile-url`, `data-map-attribution` | Fallback raster tiles and their credit; default EOX imagery |
+| `data-map-engine` | `leaflet` forces the fallback (tests and the design preview only) |
+
+The design preview points the style, terrain and fallback tiles at local fixtures, so tests never
+hit the network.

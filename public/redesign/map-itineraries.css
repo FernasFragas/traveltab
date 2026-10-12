@@ -9,21 +9,56 @@
     background: #7b3fb8;
     color: #fff;
     border: 2px solid #fff;
+    padding: 0;
     font: 600 13px/1 sans-serif;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
 }
 
-path.itinerary-line {
-    stroke: #7b3fb8;
-    stroke-width: 3;
-    stroke-dasharray: 6 6;
-    stroke-opacity: 0.85;
+.itinerary-pin:focus-visible {
+    outline: 3px solid #2685ee;
+    outline-offset: 2px;
+}
+
+.writers-map-card [data-map-canvas] {
+    position: relative;
+}
+
+.itinerary-popup {
+    position: absolute;
+    z-index: 1001;
+    right: 12px;
+    bottom: 12px;
+    max-width: min(260px, calc(100% - 24px));
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fff;
+    color: #252525;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    font-size: 13px;
 }
 
 .itinerary-popup a {
     display: block;
     margin-top: 4px;
     color: #5b2a8c;
+}
+
+.itinerary-popup-close {
+    display: block;
+    margin: 6px 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #5b2a8c;
+    cursor: pointer;
+    font: inherit;
+    text-decoration: underline;
+}
+
+.itinerary-popup-close:focus-visible {
+    outline: 2px solid #2685ee;
+    outline-offset: 2px;
 }
 
 .itinerary-picker {

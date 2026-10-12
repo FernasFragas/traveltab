@@ -22,7 +22,7 @@ const freePort = () => new Promise((resolve, reject) => {
 
 // Builds (once) and starts the design preview for one scenario. Returns { url, mapUrl, stop }.
 let builtBinary = null;
-export const startPreview = async ({ scenario = 'default', slow = false } = {}) => {
+export const startPreview = async ({ scenario = 'default', slow = false, liveTiles = false } = {}) => {
   if (!builtBinary) {
     builtBinary = process.env.PREVIEW_BIN || `${process.env.TMPDIR || '/tmp'}/traveltab-preview-${process.pid}`;
     if (!process.env.PREVIEW_BIN) execFileSync('go', ['build', '-o', builtBinary, './cmd/design-preview'], { cwd: repoRoot, stdio: 'inherit' });
@@ -30,6 +30,7 @@ export const startPreview = async ({ scenario = 'default', slow = false } = {}) 
   const [port, mapPort] = [await freePort(), await freePort()];
   const args = ['-addr', `127.0.0.1:${port}`, '-map-addr', `127.0.0.1:${mapPort}`, '-scenario', scenario];
   if (slow) args.push('-slow');
+  if (liveTiles) args.push('-live-tiles');
   const child = spawn(builtBinary, args, { cwd: repoRoot, stdio: 'ignore' });
   const url = `http://127.0.0.1:${port}`;
   const deadline = Date.now() + 15000;
@@ -79,6 +80,7 @@ export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227 } = {}) =
   const pending = new Map();
   const errors = [];
   const events = [];
+  const navigations = new Set();
   // imageMode decides what third-party image and video hosts answer, so no run depends on them:
   // 'synthetic' (a generated gradient photo, the default), 'white' (worst case behind light
   // overlay text) or 'block' (the request fails, showing every image-error fallback).
@@ -114,7 +116,9 @@ export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227 } = {}) =
       }
       // A request cancelled by a navigation is already gone, so answering it fails; that is not a page error.
       action.catch(error => { if (error?.message !== 'Invalid InterceptionId.') errors.push(error?.message ? String(error.message) : JSON.stringify(error)); });
-    } else if (message.method === 'Network.loadingFailed' || message.method === 'Network.responseReceived') {
+    } else if (message.method === 'Page.frameNavigated') {
+      navigations.add(message.params.frame.loaderId);
+    } else if (['Network.loadingFailed', 'Network.responseReceived', 'Network.loadingFinished'].includes(message.method)) {
       events.push(message);
     }
   });
@@ -144,7 +148,20 @@ export const connect = async ({ cdpPort = process.env.CDP_PORT || 9227 } = {}) =
     await until("[...document.images].filter(i => i.loading !== 'lazy').every(i => i.complete)");
     await sleep(80);
   };
-  const navigate = async url => { await call('Page.navigate', { url }); await ready(); await settle(); };
+  const navigate = async url => {
+    const { loaderId } = await call('Page.navigate', { url });
+    if (loaderId) {
+      const deadline = Date.now() + 15000;
+      while (!navigations.has(loaderId)) {
+        if (Date.now() > deadline) throw new Error(`Timed out waiting for navigation to ${url}`);
+        await sleep(25);
+      }
+      navigations.delete(loaderId);
+    }
+    await ready(); await settle();
+    // Headless Chromium can defer IntersectionObserver callbacks after a mobile-to-desktop navigation.
+    await call('Page.bringToFront');
+  };
   const key = async (name, code, vk, modifiers = 0, text) => {
     await call('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers, ...(text ? { text } : {}) });
     await call('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers });

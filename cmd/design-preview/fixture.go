@@ -246,7 +246,7 @@ func fixtureDelay(ctx context.Context, delay time.Duration) error {
 
 func validScenario(name string) bool {
 	switch name {
-	case "default", "photos-missing", "forecast-absent", "forecast-uncertain", "stays-0", "stays-1", "stays-6", "stays-unavailable", "videos-0", "videos-1", "videos-10", "fallback", "writers-map":
+	case "default", "photos-missing", "forecast-absent", "forecast-uncertain", "stays-0", "stays-1", "stays-6", "stays-unavailable", "videos-0", "videos-1", "videos-10", "fallback", "writers-map", "writers-map-leaflet":
 		return true
 	default:
 		return false

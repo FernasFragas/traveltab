@@ -17,6 +17,10 @@ type writerMapCardView struct {
 	URL         string
 	TileURL     string
 	Attribution string
+	StyleURL    string
+	TerrainURL  string
+	TerrainOff  bool
+	Engine      string
 }
 
 // SetWriterMapSource enables the map only when the feature flag is on.
@@ -29,6 +33,20 @@ func (s *Server) SetWriterMapSource(source application.WriterMapSource, enabled 
 func (s *Server) SetWriterMapTiles(tileURL, attribution string) {
 	s.writerMapTileURL = tileURL
 	s.writerMapTileAttr = attribution
+}
+
+// SetWriterMapBasemap sets the MapLibre style URL, the terrain tile URL template and the map
+// engine. An empty value is left out of the page, so the browser default applies. Production sets
+// none of them; the design preview points them at local fixtures.
+func (s *Server) SetWriterMapBasemap(styleURL, terrainURL, engine string) {
+	s.writerMapStyleURL = styleURL
+	s.writerMapTerrainURL = terrainURL
+	s.writerMapEngine = engine
+}
+
+// SetWriterMapTerrainOff renders an empty terrain URL, which turns terrain off in the browser.
+func (s *Server) SetWriterMapTerrainOff() {
+	s.writerMapTerrainOff = true
 }
 
 func (s *Server) writerMapCard(info application.GeneralWeatherInfo) *writerMapCardView {
@@ -46,6 +64,10 @@ func (s *Server) writerMapCard(info application.GeneralWeatherInfo) *writerMapCa
 		URL:         "/map/" + url.PathEscape(slug) + ".geojson" + mapCoordinates(info.Lat, info.Lon),
 		TileURL:     s.writerMapTileURL,
 		Attribution: s.writerMapTileAttr,
+		StyleURL:    s.writerMapStyleURL,
+		TerrainURL:  s.writerMapTerrainURL,
+		TerrainOff:  s.writerMapTerrainOff,
+		Engine:      s.writerMapEngine,
 	}
 }
 

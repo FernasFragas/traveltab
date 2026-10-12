@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -21,118 +23,14 @@ const (
 	wpPastLastPageJSON = `{"code":"rest_post_invalid_page_number","message":"The page number requested is larger than the number of pages available.","data":{"status":400}}`
 )
 
-func TestWordPress_ListPosts_SendsQueryAndDecodesPage(t *testing.T) {
-	var got *http.Request
-	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
-		got = r
-		w.Header().Set("X-WP-TotalPages", "3")
-		_, _ = w.Write([]byte(wpPostsJSON))
-	})
-	since := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
-
-	posts, more, err := testWordPressClient(server).ListPosts(context.Background(), wordpressAPIBase(server), since, 2)
-
-	require.NoError(t, err)
-	assert.True(t, more)
-	assert.Equal(t, "/wp-json/wp/v2/posts", got.URL.Path)
-	assert.Equal(t, UserAgent, got.Header.Get("User-Agent"))
-	query := got.URL.Query()
-	assert.Equal(t, "2", query.Get("page"))
-	assert.Equal(t, "100", query.Get("per_page"))
-	assert.Equal(t, "2026-09-01T00:00:00Z", query.Get("modified_after"))
-	assert.Equal(t, "modified", query.Get("orderby"))
-	assert.Equal(t, "asc", query.Get("order"))
-	assert.Equal(t, "id,link,title,modified_gmt,content", query.Get("_fields"))
-	require.Len(t, posts, 2)
-	assert.Equal(t, WordPressPost{
-		ID:       11,
-		Link:     "https://blog.example/funchal-3-days/",
-		Title:    "Funchal – 3 days",
-		Modified: time.Date(2026, 9, 30, 8, 15, 0, 0, time.UTC),
-		Content:  "<p>Synthetic body one.</p>",
-	}, posts[0])
-	assert.Equal(t, int64(12), posts[1].ID)
-}
-
-func TestWordPress_ListPosts_LastPageHasNoMore(t *testing.T) {
-	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("X-WP-TotalPages", "3")
-		_, _ = w.Write([]byte(wpPostsJSON))
-	})
-
-	posts, more, err := testWordPressClient(server).ListPosts(context.Background(), wordpressAPIBase(server), time.Time{}, 3)
-
-	require.NoError(t, err)
-	assert.Len(t, posts, 2)
-	assert.False(t, more)
-}
-
-func TestWordPress_ListPosts_ZeroTimeOmitsModifiedAfter(t *testing.T) {
-	var query map[string][]string
-	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
-		query = r.URL.Query()
-		_, _ = w.Write([]byte(`[]`))
-	})
-
-	posts, more, err := testWordPressClient(server).ListPosts(context.Background(), wordpressAPIBase(server), time.Time{}, 1)
-
-	require.NoError(t, err)
-	assert.Empty(t, posts)
-	assert.False(t, more)
-	assert.NotContains(t, query, "modified_after")
-}
-
-func TestWordPress_ListPosts_400PastLastPageEndsCleanly(t *testing.T) {
-	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(wpPastLastPageJSON))
-	})
-
-	posts, more, err := testWordPressClient(server).ListPosts(context.Background(), wordpressAPIBase(server), time.Time{}, 4)
-
-	require.NoError(t, err)
-	assert.Empty(t, posts)
-	assert.False(t, more)
-}
-
-func TestWordPress_ListPosts_400OnFirstPageIsError(t *testing.T) {
+func TestWordPress_FirstPage400IsError(t *testing.T) {
 	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	})
 
-	_, _, err := testWordPressClient(server).ListPosts(context.Background(), wordpressAPIBase(server), time.Time{}, 1)
+	_, _, err := testWordPressClient(server).SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
 
 	assert.ErrorContains(t, err, "status 400")
-}
-
-func TestWordPress_PostIDs_RequestsOnlyIDs(t *testing.T) {
-	var query map[string][]string
-	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
-		query = r.URL.Query()
-		w.Header().Set("X-WP-TotalPages", "2")
-		_, _ = w.Write([]byte(`[{"id":11},{"id":12}]`))
-	})
-
-	ids, more, err := testWordPressClient(server).PostIDs(context.Background(), wordpressAPIBase(server), 1)
-
-	require.NoError(t, err)
-	assert.Equal(t, []int64{11, 12}, ids)
-	assert.True(t, more)
-	assert.Equal(t, []string{"id"}, query["_fields"])
-	assert.Equal(t, []string{"100"}, query["per_page"])
-	assert.Equal(t, []string{"1"}, query["page"])
-}
-
-func TestWordPress_PostIDs_400PastLastPageEndsCleanly(t *testing.T) {
-	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-	})
-
-	ids, more, err := testWordPressClient(server).PostIDs(context.Background(), wordpressAPIBase(server), 3)
-
-	require.NoError(t, err)
-	assert.Empty(t, ids)
-	assert.False(t, more)
 }
 
 func TestWordPress_PostContent_FetchesByID(t *testing.T) {
@@ -157,12 +55,10 @@ func TestWordPress_403ReturnsErrBlocked(t *testing.T) {
 	client := testWordPressClient(server)
 	base := wordpressAPIBase(server)
 
-	_, _, listErr := client.ListPosts(context.Background(), base, time.Time{}, 1)
-	_, _, idsErr := client.PostIDs(context.Background(), base, 1)
+	_, _, searchErr := client.SearchPosts(context.Background(), base, "madeira", 1)
 	_, contentErr := client.PostContent(context.Background(), base, 42)
 
-	assert.ErrorIs(t, listErr, ErrBlocked)
-	assert.ErrorIs(t, idsErr, ErrBlocked)
+	assert.ErrorIs(t, searchErr, ErrBlocked)
 	assert.ErrorIs(t, contentErr, ErrBlocked)
 }
 
@@ -242,7 +138,7 @@ func TestWordPress_RobotsDisallowStopsFetches(t *testing.T) {
 		_, _ = w.Write([]byte(`[]`))
 	})
 
-	_, _, err := testWordPressClient(server).ListPosts(context.Background(), wordpressAPIBase(server), time.Time{}, 1)
+	_, _, err := testWordPressClient(server).SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
 
 	assert.ErrorIs(t, err, ErrDisallowed)
 	assert.Equal(t, int32(0), apiCalls.Load())
@@ -262,7 +158,7 @@ func TestWordPress_RobotsIsCachedPerHost(t *testing.T) {
 	client := testWordPressClient(server)
 
 	for page := 1; page <= 3; page++ {
-		_, _, err := client.PostIDs(context.Background(), wordpressAPIBase(server), page)
+		_, _, err := client.SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", page)
 		require.NoError(t, err)
 	}
 
@@ -274,10 +170,11 @@ func TestWordPress_MissingRobotsAllowsEverything(t *testing.T) {
 		_, _ = w.Write([]byte(`[{"id":7}]`))
 	})
 
-	ids, _, err := testWordPressClient(server).PostIDs(context.Background(), wordpressAPIBase(server), 1)
+	hits, _, err := testWordPressClient(server).SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
 
 	require.NoError(t, err)
-	assert.Equal(t, []int64{7}, ids)
+	require.Len(t, hits, 1)
+	assert.Equal(t, int64(7), hits[0].ID)
 }
 
 func TestWordPress_RobotsForbiddenIsBlocked(t *testing.T) {
@@ -285,7 +182,7 @@ func TestWordPress_RobotsForbiddenIsBlocked(t *testing.T) {
 		_, _ = w.Write([]byte(`[]`))
 	})
 
-	_, _, err := testWordPressClient(server).PostIDs(context.Background(), wordpressAPIBase(server), 1)
+	_, _, err := testWordPressClient(server).SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
 
 	assert.ErrorIs(t, err, ErrBlocked)
 }
@@ -304,8 +201,8 @@ func TestWordPress_RobotsServerErrorIsNotCached(t *testing.T) {
 	t.Cleanup(server.Close)
 	client := testWordPressClient(server)
 
-	_, _, firstErr := client.PostIDs(context.Background(), wordpressAPIBase(server), 1)
-	_, _, secondErr := client.PostIDs(context.Background(), wordpressAPIBase(server), 1)
+	_, _, firstErr := client.SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
+	_, _, secondErr := client.SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
 
 	assert.ErrorContains(t, firstErr, "status 503")
 	assert.NoError(t, secondErr)
@@ -319,9 +216,9 @@ func TestWordPress_EveryRequestWaitsForTheHostLimiter(t *testing.T) {
 	limiter, slept := frozenLimiter()
 	client := NewWordPressClient(server.Client(), limiter)
 
-	_, _, err := client.PostIDs(context.Background(), wordpressAPIBase(server), 1)
+	_, _, err := client.SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 1)
 	require.NoError(t, err)
-	_, _, err = client.PostIDs(context.Background(), wordpressAPIBase(server), 2)
+	_, _, err = client.SearchPosts(context.Background(), wordpressAPIBase(server), "madeira", 2)
 	require.NoError(t, err)
 
 	// robots.txt, page 1, page 2
@@ -367,6 +264,209 @@ func TestParseRobots_EmptyDisallowAllowsEverything(t *testing.T) {
 	rules := parseRobots("User-agent: *\nDisallow:\n")
 
 	assert.True(t, rules.allowed("/wp-json/wp/v2/posts"))
+}
+
+const (
+	wpSearchJSON = `[
+  {"id":21,"link":"https://blog.example/madeira-tips/","slug":"madeira-tips","title":{"rendered":"Madeira &amp; Porto Santo"},"date_gmt":"2026-09-30T08:15:00","date":"2026-09-30T09:15:00"},
+  {"id":22,"link":"https://blog.example/old/","slug":"old","title":{"rendered":"Old one"},"date":"2020-01-02T03:04:05"}
+]`
+	wpCommentsPage1JSON = `[{"post":11},{"post":11},{"post":12}]`
+	wpCommentsPage2JSON = `[{"post":12},{"post":13}]`
+)
+
+func TestWordPress_SearchPosts_ReturnsIDsTitlesAndSlugs(t *testing.T) {
+	var got *http.Request
+	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
+		got = r
+		w.Header().Set("X-WP-TotalPages", "2")
+		_, _ = w.Write([]byte(wpSearchJSON))
+	})
+
+	hits, more, err := testWordPressClient(server).SearchPosts(context.Background(), wordpressAPIBase(server), "Madeira", 1)
+
+	require.NoError(t, err)
+	assert.True(t, more)
+	assert.Equal(t, "/wp-json/wp/v2/posts", got.URL.Path)
+	assert.Equal(t, UserAgent, got.Header.Get("User-Agent"))
+	query := got.URL.Query()
+	assert.Equal(t, "Madeira", query.Get("search"))
+	assert.Equal(t, "date", query.Get("orderby"))
+	assert.Equal(t, "desc", query.Get("order"))
+	assert.Equal(t, "100", query.Get("per_page"))
+	assert.Equal(t, "1", query.Get("page"))
+	assert.Equal(t, "id,link,slug,title,date_gmt,date", query.Get("_fields"))
+	require.Len(t, hits, 2)
+	assert.Equal(t, WordPressHit{
+		ID:        21,
+		Link:      "https://blog.example/madeira-tips/",
+		Slug:      "madeira-tips",
+		Title:     "Madeira & Porto Santo",
+		Published: time.Date(2026, 9, 30, 8, 15, 0, 0, time.UTC),
+	}, hits[0])
+	assert.Equal(t, time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC), hits[1].Published)
+}
+
+func TestWordPress_SearchPosts_PastLastPageEndsCleanly(t *testing.T) {
+	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(wpPastLastPageJSON))
+	})
+
+	hits, more, err := testWordPressClient(server).SearchPosts(context.Background(), wordpressAPIBase(server), "x", 3)
+
+	require.NoError(t, err)
+	assert.False(t, more)
+	assert.Empty(t, hits)
+}
+
+func TestWordPress_RecentCommentCounts_TalliesCommentsPerPost(t *testing.T) {
+	var requests []*http.Request
+	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r)
+		w.Header().Set("X-WP-TotalPages", "9")
+		if r.URL.Query().Get("page") == "1" {
+			_, _ = w.Write([]byte(wpCommentsPage1JSON))
+			return
+		}
+		_, _ = w.Write([]byte(wpCommentsPage2JSON))
+	})
+
+	counts, err := testWordPressClient(server).RecentCommentCounts(context.Background(), wordpressAPIBase(server), 2)
+
+	require.NoError(t, err)
+	assert.Equal(t, map[int64]int{11: 2, 12: 2, 13: 1}, counts)
+	require.Len(t, requests, 2, "stops at maxPages although more pages exist")
+	assert.Equal(t, "/wp-json/wp/v2/comments", requests[0].URL.Path)
+	assert.Equal(t, "post", requests[0].URL.Query().Get("_fields"))
+	assert.Equal(t, "100", requests[0].URL.Query().Get("per_page"))
+	assert.Equal(t, UserAgent, requests[0].Header.Get("User-Agent"))
+}
+
+func TestWordPress_RecentCommentCounts_StopsAtTheLastPage(t *testing.T) {
+	var calls atomic.Int32
+	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.Header().Set("X-WP-TotalPages", "1")
+		_, _ = w.Write([]byte(wpCommentsPage1JSON))
+	})
+
+	counts, err := testWordPressClient(server).RecentCommentCounts(context.Background(), wordpressAPIBase(server), 5)
+
+	require.NoError(t, err)
+	assert.Equal(t, map[int64]int{11: 2, 12: 1}, counts)
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+func TestWordPress_RecentCommentCounts_NotFoundMeansNoComments(t *testing.T) {
+	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	counts, err := testWordPressClient(server).RecentCommentCounts(context.Background(), wordpressAPIBase(server), 3)
+
+	require.NoError(t, err)
+	assert.NotNil(t, counts)
+	assert.Empty(t, counts)
+}
+
+func TestWordPress_PostsByID_FetchesOnlyTheGivenIDs(t *testing.T) {
+	var got *http.Request
+	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
+		got = r
+		_, _ = w.Write([]byte(wpPostsJSON))
+	})
+
+	posts, err := testWordPressClient(server).PostsByID(context.Background(), wordpressAPIBase(server), []int64{11, 12})
+
+	require.NoError(t, err)
+	assert.Equal(t, "/wp-json/wp/v2/posts", got.URL.Path)
+	assert.Equal(t, "11,12", got.URL.Query().Get("include"))
+	assert.Equal(t, "id,link,title,modified_gmt,content", got.URL.Query().Get("_fields"))
+	require.Len(t, posts, 2)
+	assert.Equal(t, "Funchal – 3 days", posts[0].Title)
+	assert.Equal(t, "<p>Synthetic body two.</p>", posts[1].Content)
+}
+
+func TestWordPress_PostsByID_BatchesOfAHundred(t *testing.T) {
+	var includes []string
+	server := wordpressServer(t, func(w http.ResponseWriter, r *http.Request) {
+		includes = append(includes, r.URL.Query().Get("include"))
+		_, _ = w.Write([]byte(`[]`))
+	})
+	ids := make([]int64, 250)
+	for i := range ids {
+		ids[i] = int64(i + 1)
+	}
+
+	_, err := testWordPressClient(server).PostsByID(context.Background(), wordpressAPIBase(server), ids)
+
+	require.NoError(t, err)
+	require.Len(t, includes, 3)
+	assert.Len(t, strings.Split(includes[0], ","), 100)
+	assert.Len(t, strings.Split(includes[2], ","), 50)
+}
+
+func TestWordPress_PostsByID_NoIDsMakesNoRequest(t *testing.T) {
+	var calls atomic.Int32
+	server := wordpressServer(t, func(http.ResponseWriter, *http.Request) { calls.Add(1) })
+
+	posts, err := testWordPressClient(server).PostsByID(context.Background(), wordpressAPIBase(server), nil)
+
+	require.NoError(t, err)
+	assert.Empty(t, posts)
+	assert.Equal(t, int32(0), calls.Load())
+}
+
+func TestWordPress_NewReads_RobotsDisallowReturnsErrDisallowed(t *testing.T) {
+	var apiCalls atomic.Int32
+	server := wordpressServerWithRobots(t, http.StatusOK, "User-agent: *\nDisallow: /wp-json/\n", func(w http.ResponseWriter, _ *http.Request) {
+		apiCalls.Add(1)
+		_, _ = w.Write([]byte(`[]`))
+	})
+	for name, call := range newReadCalls(server) {
+		t.Run(name, func(t *testing.T) {
+			assert.ErrorIs(t, call(), ErrDisallowed)
+		})
+	}
+	assert.Equal(t, int32(0), apiCalls.Load())
+}
+
+func TestWordPress_NewReads_403ReturnsErrBlocked(t *testing.T) {
+	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	for name, call := range newReadCalls(server) {
+		t.Run(name, func(t *testing.T) {
+			assert.ErrorIs(t, call(), ErrBlocked)
+		})
+	}
+}
+
+func TestWordPress_NewReads_OtherStatusIsError(t *testing.T) {
+	server := wordpressServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	for name, call := range newReadCalls(server) {
+		t.Run(name, func(t *testing.T) {
+			err := call()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), fmt.Sprint(http.StatusInternalServerError))
+		})
+	}
+}
+
+// newReadCalls runs SearchPosts, RecentCommentCounts and PostsByID against server.
+func newReadCalls(server *httptest.Server) map[string]func() error {
+	client, base, ctx := testWordPressClient(server), wordpressAPIBase(server), context.Background()
+	return map[string]func() error{
+		"SearchPosts": func() error { _, _, err := client.SearchPosts(ctx, base, "madeira", 1); return err },
+		"RecentCommentCounts": func() error {
+			_, err := client.RecentCommentCounts(ctx, base, 1)
+			return err
+		},
+		"PostsByID": func() error { _, err := client.PostsByID(ctx, base, []int64{1}); return err },
+	}
 }
 
 func wordpressServer(t *testing.T, api http.HandlerFunc) *httptest.Server {
