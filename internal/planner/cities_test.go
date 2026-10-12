@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -163,6 +163,48 @@ func TestCities_KyotoUsesNearbyHighlightsInsteadOfASingleStopDay(t *testing.T) {
 	assert.Contains(t, stopIDs(plan), "Q23579173", "the bamboo grove is next to Arashiyama")
 }
 
+func TestCities_EveryDayHasAtLeastTwoStops(t *testing.T) {
+	for _, c := range []city{lisbon, kyoto, tavira} {
+		for days := 1; days <= 5; days++ {
+			t.Run(fmt.Sprintf("%s_%d_days", c.name, days), func(t *testing.T) {
+				plan := cityPlan(t, c, days)
+				require.NotEmpty(t, plan.Days)
+				for i, day := range plan.Days {
+					assert.GreaterOrEqual(t, len(day.Stops), 2, "day %d has too few stops: %v", i+1, placeIDs(day.Stops))
+				}
+			})
+		}
+	}
+}
+
+func TestCities_EveryDayWalksAtMostFifteenKilometres(t *testing.T) {
+	for _, c := range []city{lisbon, kyoto, tavira} {
+		for days := 1; days <= 5; days++ {
+			t.Run(fmt.Sprintf("%s_%d_days", c.name, days), func(t *testing.T) {
+				plan := cityPlan(t, c, days)
+				for i, day := range plan.Days {
+					assert.LessOrEqual(t, day.WalkKM, 15.0, "day %d has a %.1f km walk", i+1, day.WalkKM)
+				}
+			})
+		}
+	}
+}
+
+func TestCities_KyotoArashiyamaDayIncludesTenryuji(t *testing.T) {
+	candidates := cityCandidates(t, kyoto)
+	require.Contains(t, placeIDs(candidates), "Q1759226", "the fixture must offer Tenryū-ji")
+
+	plan := cityPlan(t, kyoto, 3)
+	for _, day := range plan.Days {
+		if !slices.Contains(placeIDs(day.Stops), "Q23579173") {
+			continue
+		}
+		assert.Contains(t, placeIDs(day.Stops), "Q1759226", "Tenryū-ji should join the bamboo grove's Arashiyama day")
+		return
+	}
+	t.Fatal("the Kyoto plan has no Arashiyama bamboo grove day")
+}
+
 func TestCities_KyotoHasNoWards(t *testing.T) {
 	// A ward is a chunk of the city, not a place to visit. Fushimi Inari and Fushimi Castle are,
 	// so nothing here may filter on the name alone.
@@ -186,48 +228,6 @@ func TestCities_KyotoHasNoWards(t *testing.T) {
 		assert.NotContains(t, placeIDs(ranked), id, "%s is a ward of Kyoto, not a place to visit", what)
 		assert.NotContains(t, stopIDs(plan), id, "%s should not be a stop on a Kyoto plan", what)
 	}
-}
-
-func TestCities_KyotoOnlyStrandsAnIsolatedStop(t *testing.T) {
-	// A singleton may not ignore a nearby stop already assigned to another day. The separate
-	// nearby-highlights regression also checks candidates omitted by compact selection.
-	for _, days := range []int{3, 4} {
-		t.Run(fmt.Sprintf("%d_days", days), func(t *testing.T) {
-			plan := cityPlan(t, kyoto, days)
-			require.Len(t, plan.Days, days)
-			require.NotEmpty(t, stopIDs(plan), "an empty plan must not satisfy this test")
-
-			for i, day := range plan.Days {
-				require.NotEmpty(t, day.Stops, "day %d has no stops at all", i+1)
-				if len(day.Stops) >= 2 {
-					continue
-				}
-
-				nearest := nearestStopOnAnotherDayKM(plan, i)
-				assert.Greater(t, nearest, planner.PullReachKM,
-					"day %d strands %s, yet another day has a stop %.1f km away",
-					i+1, day.Stops[0].Name, nearest)
-			}
-		})
-	}
-}
-
-// nearestStopOnAnotherDayKM measures from the lone stop of day i to the closest stop on any
-// other day, which is what the balancing rule reaches for.
-func nearestStopOnAnotherDayKM(plan *planner.Plan, i int) float64 {
-	nearest := math.Inf(1)
-	for j, other := range plan.Days {
-		if j == i {
-			continue
-		}
-		for _, stop := range other.Stops {
-			if d := planner.DistanceKM(plan.Days[i].Stops[0], stop); d < nearest {
-				nearest = d
-			}
-		}
-	}
-
-	return nearest
 }
 
 // cityPlan plans a trip the way the app does, with the real clients over the recorded responses.

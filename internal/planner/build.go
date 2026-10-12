@@ -95,7 +95,7 @@ func Build(ctx context.Context, req Request, places PlaceSource, forecast Foreca
 
 // seedGroups builds the walking days with the included places first: they are clustered into
 // days (close ones together, at most MaxStopsPerDay each), each of those days is filled up to
-// MinStopsPerDay with the nearest ranked places, and any days left over come from the ranked
+// MinStopsPerDay with nearby ranked places, and any days left over come from the ranked
 // places as usual. Included places the days have no room for come back as extras. With nothing
 // included this is exactly GroupDays.
 func seedGroups(include, ranked []Place, days int) (groups []Group, extras []Place) {
@@ -113,6 +113,18 @@ func seedGroups(include, ranked []Place, days int) (groups []Group, extras []Pla
 	}
 	clusters, centers := clusterPlaces(seeds, k)
 	clusters = capClusters(clusters, centers)
+	for i := 0; i < len(clusters); i++ {
+		for len(clusters[i]) > 1 && WalkingLoop(clusters[i]).WalkKM > MaxWalkKM {
+			at := leastFamousStop(clusters[i])
+			moved := clusters[i][at]
+			clusters[i] = append(clusters[i][:at], clusters[i][at+1:]...)
+			if len(clusters) < days {
+				clusters = append(clusters, []Place{moved})
+			} else {
+				extras = append(extras, moved)
+			}
+		}
+	}
 
 	used := make(map[string]bool)
 	for _, p := range seeds {
@@ -124,21 +136,13 @@ func seedGroups(include, ranked []Place, days int) (groups []Group, extras []Pla
 			rest = append(rest, p)
 		}
 	}
-	pool := rest
-	if len(pool) > SunnyPoolSize {
-		pool = pool[:SunnyPoolSize]
-	}
+	fillShortDays(clusters, rest)
 	for _, stops := range clusters {
 		if len(stops) == 0 {
 			continue
 		}
-		for len(stops) < MinStopsPerDay {
-			next, ok := nearestUnused(stops, pool, used)
-			if !ok {
-				break
-			}
-			used[next.ID] = true
-			stops = append(stops, next)
+		for _, stop := range stops {
+			used[stop.ID] = true
 		}
 		groups = append(groups, WalkingLoop(stops))
 	}
@@ -192,20 +196,6 @@ func capClusters(clusters [][]Place, centers []Place) [][]Place {
 		}
 	}
 	return clusters
-}
-
-// nearestUnused is the unused place in the pool closest to the day's stops, within PullReachKM.
-func nearestUnused(stops, pool []Place, used map[string]bool) (Place, bool) {
-	best, bestKM, found := Place{}, PullReachKM, false
-	for _, c := range pool {
-		if used[c.ID] {
-			continue
-		}
-		if km := nearestKM(c, stops); km <= bestKM && (!found || km < bestKM || moreFamous(c, best)) {
-			best, bestKM, found = c, km, true
-		}
-	}
-	return best, found
 }
 
 // droppedSeeds are included places that made it into the groups but not into the final days

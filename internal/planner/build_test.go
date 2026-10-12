@@ -599,6 +599,40 @@ func TestBuild_IncludedPlacesAppearInTheDays(t *testing.T) {
 	}
 }
 
+func TestBuild_FillsAnIncludedDayFromBeyondTheTop20(t *testing.T) {
+	useTestPlaceTypes(t)
+	include := includedPlace("Q901", 38.600, -9.14)
+	var candidates []Place
+	for i := 0; i < SunnyPoolSize; i++ {
+		candidates = append(candidates, buildCandidate(fmt.Sprintf("Q8%02d", i), typeMuseum,
+			38.800+float64(i)*0.001, -9.14, 100-i))
+	}
+	candidates = append(candidates,
+		buildCandidate("Q921", typeMuseum, 38.601, -9.14, 2),
+		buildCandidate("Q922", typeMuseum, 38.602, -9.14, 1))
+
+	plan := buildWithInclude(t, 1, []Place{include}, candidates, 0)
+
+	require.Len(t, plan.Days, 1)
+	assert.ElementsMatch(t, []string{include.ID, "Q921", "Q922"}, ids(plan.Days[0].Stops))
+}
+
+func TestBuild_SplitsIncludedPlacesToKeepDaysWithinFifteenKilometres(t *testing.T) {
+	useTestPlaceTypes(t)
+	include := []Place{includedPlace("Q901", 38.82, -9.14), includedPlace("Q902", 38.70, -9.14)}
+
+	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
+
+	require.Len(t, plan.Days, 2)
+	for _, day := range plan.Days {
+		assert.LessOrEqual(t, day.WalkKM, 15.0)
+	}
+	dayOf := planDayOf(plan)
+	require.Contains(t, dayOf, "Q901")
+	require.Contains(t, dayOf, "Q902")
+	assert.NotEqual(t, dayOf["Q901"], dayOf["Q902"])
+}
+
 func TestBuild_IncludedPlacesThatAreCloseShareADay(t *testing.T) {
 	useTestPlaceTypes(t)
 	include := []Place{includedPlace("Q901", 38.600, -9.14), includedPlace("Q902", 38.601, -9.14), includedPlace("Q903", 38.602, -9.14)}
@@ -686,12 +720,14 @@ func TestBuild_ADayOfIncludedPlacesHoldsAtMostFourStops(t *testing.T) {
 
 	plan := buildWithInclude(t, 2, include, buildCity(), 0, 0)
 
-	ids := planDayOf(plan)
-	for _, p := range include {
-		assert.Contains(t, ids, p.ID)
+	dayOf := planDayOf(plan)
+	for _, p := range include[:5] {
+		assert.Contains(t, dayOf, p.ID)
 	}
 	for i, day := range plan.Days {
 		assert.LessOrEqual(t, len(day.Stops), MaxStopsPerDay, "day %d", i)
+		assert.LessOrEqual(t, day.WalkKM, MaxWalkKM, "day %d", i)
 	}
-	assert.Empty(t, plan.AlsoSuggested)
+	assert.NotContains(t, dayOf, "Q950")
+	assert.Contains(t, ids(plan.AlsoSuggested), "Q950")
 }

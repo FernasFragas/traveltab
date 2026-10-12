@@ -105,6 +105,19 @@ func TestSchedule_TopUpUsesTheNearestUnusedIndoorPlaces(t *testing.T) {
 	assert.ElementsMatch(t, []string{"Q1", "Q8", "Q9"}, stopIDs(days[0].Stops))
 }
 
+func TestSchedule_RainyTopUpKeepsTheWalkingLoopWithinFifteenKilometres(t *testing.T) {
+	stops := []Place{weatherPlace("Q1", Indoor, 0, 0), weatherPlace("Q2", Outdoor, 0, 0.001), weatherPlace("Q3", Outdoor, 0, 0.002)}
+	pool := append(append([]Place(nil), stops...),
+		weatherPlace("Q8", Indoor, 0, 0.004),
+		weatherPlace("Q9", Indoor, 0, 0.10))
+
+	days := Schedule([]Group{weatherGroup(stops...)}, pool, weatherForecast(time.UTC, scheduleStart, rainMM(9)), scheduleStart, scheduleStart)
+
+	require.Len(t, days, 1)
+	assert.LessOrEqual(t, days[0].WalkKM, 15.0)
+	assert.NotContains(t, stopIDs(days[0].Stops), "Q9")
+}
+
 func TestSchedule_NoPlaceAppearsTwice(t *testing.T) {
 	west := []Place{weatherPlace("Q1", Indoor, 35, 135), weatherPlace("Q2", Outdoor, 35.001, 135), weatherPlace("Q3", Outdoor, 35.002, 135)}
 	east := []Place{weatherPlace("Q4", Indoor, 35, 136), weatherPlace("Q5", Outdoor, 35.001, 136), weatherPlace("Q6", Outdoor, 35.002, 136)}

@@ -2,6 +2,7 @@ package planner
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -85,30 +86,28 @@ func TestGroupDays_NeverMixesTwoFarApartAreas(t *testing.T) {
 	}
 }
 
-// TestGroupDays_EveryDayHasThreeToFourStopsUnlessNothingIsInReach states the balancing
-// rule as it stands since 2026-09-20: 3–4 stops is the aim, and a day is allowed to stay
-// short only when no day with a stop to spare has one within PullReachKM. Most days must
-// still hit the target, so a plan of short days everywhere would fail.
+// TestGroupDays_EveryDayHasThreeToFourStopsUnlessNothingIsInReach checks that a
+// day stays short only when no unused ranked place fits its walking loop.
 func TestGroupDays_EveryDayHasThreeToFourStopsUnlessNothingIsInReach(t *testing.T) {
-	groups := GroupDays(lisbonTop20(), 5)
+	ranked := append(lisbonTop20(), dayPlace("Q21", 1, 38.7755, -9.0947))
+	groups := GroupDays(ranked, 5)
 
 	require.Len(t, groups, 5)
 	target := 0
-	for i, g := range groups {
+	for _, g := range groups {
 		assert.NotEmpty(t, g.Stops, "an empty day was kept")
 		assert.LessOrEqual(t, len(g.Stops), MaxStopsPerDay, "day too long: %v", ids(g.Stops))
 		if len(g.Stops) >= MinStopsPerDay {
 			target++
 			continue
 		}
-		for j, other := range groups {
-			if i == j || len(other.Stops) <= MinStopsPerDay {
-				continue // this day has no stop to spare
+		for _, p := range ranked {
+			if slices.Contains(allStopIDs(groups), p.ID) {
+				continue
 			}
-			for _, p := range other.Stops {
-				assert.Greater(t, nearestKM(p, g.Stops), PullReachKM,
-					"day %v stayed short though %s was within reach on %v", ids(g.Stops), p.ID, ids(other.Stops))
-			}
+			assert.True(t, nearestKM(p, g.Stops) > PullReachKM ||
+				WalkingLoop(append(g.Stops, p)).WalkKM > MaxWalkKM,
+				"day %v stayed short though unused %s fits its walking limit", ids(g.Stops), p.ID)
 		}
 	}
 	assert.GreaterOrEqual(t, target, 3, "only %d of 5 days reached %d stops", target, MinStopsPerDay)
@@ -134,7 +133,7 @@ func TestGroupDays_NoPlacesGivesNoDays(t *testing.T) {
 	assert.Empty(t, GroupDays(nil, 3))
 }
 
-func TestGroupDays_UsesOnlyTheTop20(t *testing.T) {
+func TestGroupDays_DoesNotUseFarPlacesBelowTop20(t *testing.T) {
 	pool := lisbonTop20()
 	for i := 0; i < 4; i++ {
 		pool = append(pool, dayPlace(fmt.Sprintf("X%d", i), 10-i, 38.75+float64(i)*0.01, -9.30))
@@ -143,6 +142,144 @@ func TestGroupDays_UsesOnlyTheTop20(t *testing.T) {
 	for _, id := range allStopIDs(GroupDays(pool, 5)) {
 		assert.NotContains(t, id, "X", "a place below the top 20 was used")
 	}
+}
+
+func TestGroupDays_FillsAShortDayFromBeyondTheTop20(t *testing.T) {
+	ranked := lisbonTop20()
+	for i := 0; i < 4; i++ {
+		ranked = append(ranked, dayPlace(fmt.Sprintf("X%d", i), 10-i, 39+float64(i), -10))
+	}
+	ranked = append(ranked, dayPlace("Q25", 1, 38.7755, -9.0947)) // 0.4 km from Q12
+
+	groups := GroupDays(ranked, 5)
+
+	require.Contains(t, allStopIDs(groups), "Q25")
+	for _, g := range groups {
+		if hasPlaceID(g.Stops, "Q12") {
+			assert.GreaterOrEqual(t, len(g.Stops), MinStopsPerDay)
+		}
+	}
+}
+
+func TestGroupDays_TopsUpTwoStopDaysNotOnlySingletons(t *testing.T) {
+	ranked := append(lisbonTop20(), dayPlace("Q21", 1, 38.7755, -9.0947))
+
+	groups := GroupDays(ranked, 5)
+
+	for _, g := range groups {
+		if hasPlaceID(g.Stops, "Q12") {
+			require.Len(t, g.Stops, MinStopsPerDay)
+			assert.Contains(t, ids(g.Stops), "Q21")
+			return
+		}
+	}
+	t.Fatal("Q12 day missing")
+}
+
+func TestGroupDays_FillPrefersFamousPlacesWithinAShortWalk(t *testing.T) {
+	stops := [][]Place{{dayPlace("Q1", 100, 0, 0), dayPlace("Q2", 90, 0, 0.001)}}
+	ranked := []Place{
+		dayPlace("Q3", 80, 0, 0.023), // more famous, 2.5 km away
+		dayPlace("Q4", 70, 0, 0.010), // less famous, 1.0 km away
+	}
+
+	fillShortDays(stops, ranked)
+
+	assert.Equal(t, []string{"Q1", "Q2", "Q4"}, ids(stops[0]))
+}
+
+func TestGroupDays_FillMeasuresFromTheNearestStop(t *testing.T) {
+	stops := [][]Place{{dayPlace("Q1", 100, 0, 0), dayPlace("Q2", 90, 0, 0.026)}}
+	ranked := []Place{dayPlace("Q3", 80, 0, 0.031)} // 0.6 km from Q2, 3.4 km from Q1
+
+	fillShortDays(stops, ranked)
+
+	assert.Equal(t, []string{"Q1", "Q2", "Q3"}, ids(stops[0]))
+}
+
+func TestGroupDays_FillsBeyondThreeKilometresWithinTheDailyLimit(t *testing.T) {
+	stops := [][]Place{{dayPlace("Q1", 100, 0, 0), dayPlace("Q2", 90, 0, 0.001)}}
+	ranked := []Place{
+		dayPlace("Q3", 80, 0, 0.05), // 5.4 km away
+		dayPlace("Q4", 85, 0, 0.15), // 16.6 km away
+	}
+
+	fillShortDays(stops, ranked)
+
+	assert.Equal(t, []string{"Q1", "Q2", "Q3"}, ids(stops[0]))
+}
+
+func TestGroupDays_FillKeepsTheWalkingLoopWithinFifteenKilometres(t *testing.T) {
+	stops := [][]Place{{dayPlace("Q1", 100, 0, 0), dayPlace("Q2", 90, 0, 0.001)}}
+	ranked := []Place{dayPlace("Q3", 80, 0, 0.10)} // 11 km away, 22 km return walk
+
+	fillShortDays(stops, ranked)
+
+	assert.Equal(t, []string{"Q1", "Q2"}, ids(stops[0]))
+}
+
+func TestGroupDays_OneDayKeepsItsWalkWithinFifteenKilometres(t *testing.T) {
+	ranked := []Place{dayPlace("Q1", 100, 0, 0), dayPlace("Q2", 90, 0, 0.10)}
+
+	groups := GroupDays(ranked, 1)
+
+	require.Len(t, groups, 1)
+	assert.LessOrEqual(t, groups[0].WalkKM, 15.0)
+	assert.Contains(t, ids(groups[0].Stops), "Q1")
+}
+
+func TestGroupDays_SwapsALoneStopForAnotherArea(t *testing.T) {
+	ranked := []Place{
+		dayPlace("A1", 100, 0, 0),
+		dayPlace("L1", 99, 0, 1), // isolated, but famous enough to seed a day
+		dayPlace("A2", 90, 0, 0.001),
+		dayPlace("A3", 80, 0, 0.002),
+		dayPlace("A4", 70, 0, 0.003),
+		dayPlace("B1", 60, 0, 0.2),
+		dayPlace("B2", 50, 0, 0.201),
+		dayPlace("B3", 40, 0, 0.202),
+	}
+
+	groups := GroupDays(ranked, 2)
+
+	require.Len(t, groups, 2)
+	assert.NotContains(t, allStopIDs(groups), "L1")
+	assert.Contains(t, allStopIDs(groups), "B1")
+	for _, g := range groups {
+		assert.GreaterOrEqual(t, len(g.Stops), 2)
+	}
+}
+
+func TestGroupDays_DropsALoneDayWhenNoAreaCanFillIt(t *testing.T) {
+	ranked := []Place{
+		dayPlace("A1", 100, 0, 0),
+		dayPlace("L1", 99, 0, 1),
+		dayPlace("A2", 90, 0, 0.001),
+		dayPlace("A3", 80, 0, 0.002),
+		dayPlace("A4", 70, 0, 0.003),
+		dayPlace("A5", 60, 0, 0.004),
+	}
+
+	groups := GroupDays(ranked, 2)
+
+	require.Len(t, groups, 1)
+	assert.NotContains(t, allStopIDs(groups), "L1")
+	assert.Contains(t, allStopIDs(groups), "A1")
+}
+
+func TestGroupDays_KeepsAnIsolatedMostFamousPlace(t *testing.T) {
+	ranked := []Place{
+		dayPlace("L1", 100, 0, 1),
+		dayPlace("A1", 90, 0, 0),
+		dayPlace("A2", 80, 0, 0.001),
+		dayPlace("A3", 70, 0, 0.002),
+		dayPlace("A4", 60, 0, 0.003),
+		dayPlace("A5", 50, 0, 0.004),
+	}
+
+	groups := GroupDays(ranked, 2)
+
+	assert.Contains(t, allStopIDs(groups), "L1")
 }
 
 func TestGroupDays_NoPlaceAppearsTwice(t *testing.T) {
@@ -201,15 +338,14 @@ func TestGroupDays_LongTripsStayWalkable(t *testing.T) {
 
 		require.Len(t, groups, days)
 		for _, g := range groups {
-			assert.Less(t, g.WalkKM, 8.0, "a day of the %d-day plan walks too far: %v", days, ids(g.Stops))
+			assert.LessOrEqual(t, g.WalkKM, 15.0, "a day of the %d-day plan walks too far: %v", days, ids(g.Stops))
 		}
 	}
 }
 
 func TestGroupDays_NoDayIsLeftWithASingleStop(t *testing.T) {
-	// Refusing a far pull must not strand a day on its own: a day card with one stop reads as
-	// broken. A day at MinStopsPerDay may give one up to rescue it, which costs nothing in
-	// walking distance because the stop was within PullReachKM anyway.
+	// Refusing an overlong walk must not strand a day on its own: a day card with one stop
+	// reads as broken. A day at MinStopsPerDay may give one up when the new walk fits.
 	for days := 2; days <= MaxDays; days++ {
 		groups := GroupDays(lisbonTop20(), days)
 
