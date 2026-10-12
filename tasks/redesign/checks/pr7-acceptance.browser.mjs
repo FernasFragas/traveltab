@@ -3,7 +3,7 @@
 // only /plan carries include) and 7g (View on map via map-dayplan.js, no inline handler).
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
 import assert from 'node:assert/strict';
-import { connect, startPreview, sleep } from './lib/browser.mjs';
+import { connect, openPlacePanel, startPreview, sleep } from './lib/browser.mjs';
 
 for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
 const preview = await startPreview({ scenario });
@@ -55,8 +55,8 @@ try {
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.evaluate('(() => { try { localStorage.clear(); } catch {} })()');
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
-    await browser.until("document.querySelectorAll('[data-map-slot=\"list\"] button').length > 0");
-    await browser.evaluate("[...document.querySelectorAll('[data-map-slot=\"list\"] button')].find(b => b.textContent === 'Pico Ruivo').click()");
+    await browser.until("document.querySelectorAll('.map-pin').length > 0");
+    await openPlacePanel(browser, 'Pico Ruivo');
     await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
     await sleep(300);
     const before = requests().length;
@@ -76,10 +76,10 @@ try {
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.evaluate('(() => { try { localStorage.clear(); } catch {} })()');
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
-    await browser.until("document.querySelectorAll('[data-map-slot=\"list\"] button').length >= 5");
-    const names = await browser.evaluate("[...document.querySelectorAll('[data-map-slot=\"list\"] button')].slice(0, 5).map(b => b.textContent)");
+    await browser.until("document.querySelectorAll('.map-pin').length >= 5");
+    const names = ['Madeira', 'Funchal', 'Pico Ruivo', 'Cabo Girão', 'Câmara de Lobos'];
     for (const name of names) {
-      await browser.evaluate(`[...document.querySelectorAll('[data-map-slot="list"] button')].find(b => b.textContent === ${JSON.stringify(name)}).click()`);
+      await openPlacePanel(browser, name);
       await browser.until(`document.querySelector('.map-place-panel h3')?.textContent === ${JSON.stringify(name)} && document.querySelector('.map-place-panel [data-save-qid]')`);
       await sleep(100);
       await browser.evaluate("document.querySelector('.map-place-panel [data-save-qid]').click()");
@@ -118,9 +118,9 @@ try {
   const blocker = await browser.call('Page.addScriptToEvaluateOnNewDocument', { source: `
     Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('blocked', 'SecurityError'); } });` });
   await browser.navigate(`${preview.url}/trip/madeira-pt`);
-  await browser.until("document.querySelectorAll('[data-map-slot=\"list\"] button').length > 0");
+  await browser.until("document.querySelectorAll('.map-pin').length > 0");
   assert.equal(await browser.evaluate('(() => { try { localStorage.length; return false; } catch { return true; } })()'), true, 'storage is blocked');
-  await browser.evaluate("[...document.querySelectorAll('[data-map-slot=\"list\"] button')].find(b => b.textContent === 'Pico Ruivo').click()");
+  await openPlacePanel(browser, 'Pico Ruivo');
   await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
   await sleep(300);
   assert.equal(await browser.evaluate("document.querySelector('.map-place-panel [data-save-qid]').hidden"), true, 'save button hidden');

@@ -212,3 +212,11 @@ export const luminance = ([r, g, b]) => 0.2126 * channel(r) + 0.7152 * channel(g
 export const ratio = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p); return (hi + 0.05) / (lo + 0.05); };
 export const composite = (fg, alpha, bg) => fg.map((c, i) => c * alpha + bg[i] * (1 - alpha));
 export const round = (n, places = 2) => Math.round(n * 10 ** places) / 10 ** places;
+
+// Opens a place's side panel the way a user does: click its pin, then the popup's Details button.
+export const openPlacePanel = async (browser, name) => {
+  const quoted = JSON.stringify(name);
+  await browser.evaluate(`[...document.querySelectorAll('.map-pin')].find(b => b.title === ${quoted}).click()`);
+  await browser.until(`[...document.querySelectorAll('.map-popup')].some(p => p.getAttribute('aria-label') === ${quoted})`);
+  await browser.evaluate(`[...document.querySelectorAll('.map-popup')].find(p => p.getAttribute('aria-label') === ${quoted}).querySelector('.map-popup-details').click()`);
+};

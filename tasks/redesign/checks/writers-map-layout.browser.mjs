@@ -19,7 +19,7 @@ try {
   for (const width of [375, 1440]) {
     await browser.viewport(width, 900);
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
-    await browser.until(`document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}') && document.querySelector('[data-map-slot="list"] button')`);
+    await browser.until(`document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}') && document.querySelector('.map-pin')`);
     browser.errors.length = 0; // Prior page teardown can report after navigation starts.
     const layout = await browser.evaluate(`(() => {
       const shell = document.querySelector('[data-writers-map]');

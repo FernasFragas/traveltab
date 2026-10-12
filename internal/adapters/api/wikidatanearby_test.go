@@ -85,9 +85,45 @@ func TestWikidataNearby_Places_CreditsCommonsImage(t *testing.T) {
 	got, err := NewWikidataNearbyAPI(client).Places(context.Background(), writermap.Area{})
 	require.NoError(t, err)
 	assert.Equal(t, 1, commonsCalls)
-	assert.Equal(t, "https://upload.wikimedia.org/wikipedia/commons/a/aa/Pico_Ruivo.jpg", got.Pins[0].Photo)
+	assert.Equal(t, "Pico Ruivo.jpg", got.Pins[0].Photo, "photo stays the Commons file identifier")
 	assert.Equal(t, "Ana · CC BY-SA 4.0", got.Pins[0].PhotoCredit)
-	assert.Equal(t, "https://commons.wikimedia.org/wiki/File:Pico_Ruivo.jpg", got.Gazetteer[0].PhotoURL)
+	assert.Equal(t, "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Pico_Ruivo.jpg/640px-Pico_Ruivo.jpg", got.Gazetteer[0].PhotoURL)
+}
+
+func TestWikidataNearby_Places_RequestsAThumbnail(t *testing.T) {
+	nearby, err := os.ReadFile("testdata/wikidata_madeira.json")
+	require.NoError(t, err)
+	commons, err := os.ReadFile("testdata/wikidata_commons.json")
+	require.NoError(t, err)
+	var width string
+	client := &http.Client{Transport: nearbyTransport(func(req *http.Request) (*http.Response, error) {
+		if strings.Contains(req.URL.Host, "commons.wikimedia.org") {
+			width = req.URL.Query().Get("iiurlwidth")
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(commons))), Header: make(http.Header)}, nil
+		}
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(nearby))), Header: make(http.Header)}, nil
+	})}
+
+	_, err = NewWikidataNearbyAPI(client).Places(context.Background(), writermap.Area{})
+	require.NoError(t, err)
+	assert.Equal(t, "640", width)
+}
+
+func TestWikidataNearby_Places_FallsBackToTheOriginalWhenNoThumbnail(t *testing.T) {
+	nearby, err := os.ReadFile("testdata/wikidata_madeira.json")
+	require.NoError(t, err)
+	commons := `{"query":{"pages":[{"title":"File:Pico Ruivo.jpg","imageinfo":[{"url":"https://upload.wikimedia.org/wikipedia/commons/a/aa/Pico_Ruivo.jpg","descriptionurl":"https://commons.wikimedia.org/wiki/File:Pico_Ruivo.jpg","extmetadata":{"Artist":{"value":"Ana"},"LicenseShortName":{"value":"CC BY-SA 4.0"}}}]}]}}`
+	client := &http.Client{Transport: nearbyTransport(func(req *http.Request) (*http.Response, error) {
+		body := string(nearby)
+		if strings.Contains(req.URL.Host, "commons.wikimedia.org") {
+			body = commons
+		}
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
+	})}
+
+	got, err := NewWikidataNearbyAPI(client).Places(context.Background(), writermap.Area{})
+	require.NoError(t, err)
+	assert.Equal(t, "https://upload.wikimedia.org/wikipedia/commons/a/aa/Pico_Ruivo.jpg", got.Gazetteer[0].PhotoURL)
 }
 
 func TestWikidataNearby_Places_CommonsUnavailableLeavesPhotoEmpty(t *testing.T) {

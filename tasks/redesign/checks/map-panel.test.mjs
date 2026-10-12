@@ -37,12 +37,90 @@ test('labels only the biggest places', () => {
   assert.ok(!labelled.includes('Seixal'));
 });
 
-test('selects a place when its pin is clicked', () => {
+test('a pin click opens a popup with the name, the writer count and the blog monograms, and does not open the panel', async () => {
+  const app = browser();
+  app.run();
+  const map = app.addLayers();
+  map.markers('writers').find(marker => marker.title === 'Pico Ruivo').onClick();
+  const popup = map.popups.get('pin-popup');
+  assert.deepEqual(popup.lngLat, [-16.9, 32.7]);
+  assert.equal(popup.element.attributes.role, 'dialog');
+  assert.equal(popup.element.attributes['aria-label'], 'Pico Ruivo');
+  assert.deepEqual(app.textOf(popup.element), ['Pico Ruivo', 'Mentioned by 2 writers']);
+  assert.deepEqual(app.selected, []);
+  await app.flush();
+  const monograms = app.find(popup.element, node => node.className.startsWith('map-panel-monogram '.trim()) && node.className !== 'map-panel-monograms map-popup-monograms').map(node => node.textContent);
+  assert.deepEqual(monograms, ['SI', 'VÀ', 'C', '+1']);
+  assert.deepEqual(app.requests.map(request => request[0]), ['/map/madeira-pt/Q1?lat=1&lon=2']);
+});
+
+test('a popup says "1 writer" for one writer and shows the place kind for a notable pin', () => {
+  const app = browser();
+  app.run();
+  const map = app.addLayers();
+  map.markers('writers').find(marker => marker.title === 'Cabo Girão').onClick();
+  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Cabo Girão', 'Mentioned by 1 writer']);
+  map.markers('notable').find(marker => marker.title === 'Funchal').onClick();
+  assert.equal(map.popups.size, 1, 'one popup at a time');
+  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Funchal', 'City']);
+  assert.equal(app.requests.length, 1, 'a notable pin has no writers to fetch');
+});
+
+test('the popup takes focus on its Details button and has no blog text beyond names', () => {
   const app = browser();
   app.run();
   const map = app.addLayers();
   map.markers('notable').find(marker => marker.title === 'Seixal').onClick();
+  const details = app.find(map.popups.get('pin-popup').element, node => node.tagName === 'BUTTON')[0];
+  assert.equal(details.textContent, 'Details');
+  assert.equal(app.focused, details);
+  assert.equal(app.textOf(map.popups.get('pin-popup').element).join(' ').includes('quote'), false);
+});
+
+test('Details opens the place panel and closes the popup', () => {
+  const app = browser();
+  app.run();
+  const map = app.addLayers();
+  map.markers('notable').find(marker => marker.title === 'Seixal').onClick();
+  app.find(map.popups.get('pin-popup').element, node => node.tagName === 'BUTTON')[0].click();
   assert.deepEqual(app.selected, ['Q3']);
+  assert.equal(map.popups.size, 0);
+});
+
+test('Escape closes the popup and returns focus to the pin', () => {
+  const app = browser();
+  app.run();
+  const map = app.addLayers();
+  const marker = map.markers('notable').find(marker => marker.title === 'Seixal');
+  marker.onClick();
+  app.keydown('Enter');
+  assert.equal(map.popups.size, 1, 'other keys leave it open');
+  app.keydown('Escape');
+  assert.equal(map.popups.size, 0);
+  assert.equal(app.focused, marker.element);
+  app.keydown('Escape');
+  assert.equal(app.focused, marker.element, 'Escape with no popup does nothing');
+});
+
+test('a popup the engine closed (click elsewhere) is not closed again and takes no focus', () => {
+  const app = browser();
+  app.run();
+  const map = app.addLayers();
+  const marker = map.markers('notable').find(marker => marker.title === 'Seixal');
+  marker.onClick();
+  app.focused = null;
+  map.closeFromEngine('pin-popup');
+  app.keydown('Escape');
+  assert.equal(app.focused, null);
+});
+
+test('removing the pin layer closes its popup', () => {
+  const app = browser();
+  app.run();
+  const map = app.addLayers();
+  map.markers('notable').find(marker => marker.title === 'Seixal').onClick();
+  app.layers.get('notable').remove(map, app.context);
+  assert.equal(map.popups.size, 0);
 });
 
 test('pins have accessible titles, keyboard focus and a visible focus style', () => {
@@ -110,7 +188,7 @@ test('does nothing without the map core', () => {
 function features() {
   return [
     feature('Q1', 'Pico Ruivo', 2, 45),
-    feature('Q2', 'Funchal', 0, 92),
+    feature('Q2', 'Funchal', 0, 92, 'City'),
     feature('Q3', 'Seixal', 0, 14),
     feature('Q4', 'Cabo Girão', 1, 31)
   ];
@@ -120,11 +198,11 @@ function extraPlaces(count) {
   return Array.from({ length: count }, (_, index) => feature('Q9' + index, 'Place ' + index, 0, 40 + index));
 }
 
-function feature(qid, name, writers, sitelinks) {
+function feature(qid, name, writers, sitelinks, kind) {
   return {
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [-16.9, 32.7] },
-    properties: { qid, name, writer_count: writers, sitelinks, panel_url: '/map/madeira-pt/' + qid + '?lat=1&lon=2' }
+    properties: { qid, name, kind, writer_count: writers, sitelinks, panel_url: '/map/madeira-pt/' + qid + '?lat=1&lon=2' }
   };
 }
 
@@ -138,7 +216,11 @@ function browser(options = {}) {
   const shell = element('div', { slots: { panel } });
   const map = fakeMap();
   const context = { features: options.features || features(), selectPlace: qid => selected.push(qid), shell, draw: map.draw };
+  const focus = { current: null };
+  const writersOf = [['travel.example', 'Salt in our Hair'], ['viagens.example', 'Viagens à Solta'], ['c.example', 'Casa'], ['c.example', 'Casa'], ['d.example', 'Dias']];
   const window = {
+    fetch: url => { requests.push([url]); return Promise.resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(writersOf)) }); },
+    DOMParser: class { parseFromString(text) { return { querySelectorAll: () => JSON.parse(text).map(([host, blog]) => element('a', { dataset: { writerHost: host, blogName: blog } })) }; } },
     L: new Proxy({}, { get() { throw new Error('pin layer must not access Leaflet'); } }),
     htmx: { ajax: (method, url, slot) => { requests.push([method, url, slot]); return Promise.resolve(); } }
   };
@@ -149,11 +231,17 @@ function browser(options = {}) {
     body,
     addEventListener: (type, fn) => listeners.set(type, fn),
     querySelector: selector => selector === '[data-writers-map]' ? shell : null,
-    createElement: tag => element(tag)
+    createElement: tag => element(tag, { focus })
   };
   const app = {
     layers, selected, requests, body, panel, context, monograms: null,
-    run: () => vm.runInNewContext(source, { window, document, ...window }),
+    get focused() { return focus.current; },
+    set focused(node) { focus.current = node; },
+    keydown: key => listeners.get('keydown')({ key }),
+    flush: async () => { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); },
+    find: (node, test) => [node, ...node.children.flatMap(child => app.find(child, test))].filter(test),
+    textOf: node => app.find(node, item => item.textContent && item.tagName !== 'BUTTON' && !item.className.includes('monogram')).map(item => item.textContent),
+    run: () => vm.runInNewContext(source, { window, document, ...window, setTimeout }),
     addLayers() {
       layers.forEach(layer => layer.add(map, context));
       return map;
@@ -174,13 +262,16 @@ function browser(options = {}) {
 
 function fakeMap() {
   const groups = new Map();
+  const popups = new Map();
   const drawn = [];
   return {
-    drawn,
+    drawn, popups,
     markers: id => groups.get(id) || [],
+    closeFromEngine(id) { const popup = popups.get(id); popups.delete(id); popup.options.onClose(); },
     draw: {
       markers(id, items) { drawn.push({ method: 'markers', id }); groups.set(id, items); },
-      clear(id) { drawn.push({ method: 'clear', id }); groups.delete(id); }
+      popup(id, lngLat, element, options) { drawn.push({ method: 'popup', id }); popups.set(id, { lngLat, element, options }); },
+      clear(id) { drawn.push({ method: 'clear', id }); groups.delete(id); popups.delete(id); }
     }
   };
 }
@@ -200,10 +291,15 @@ function element(tag, options = {}) {
     dataset: options.dataset || {},
     style: {},
     title: '',
+    type: '',
     attributes: {},
+    handlers: {},
     textContent: '',
     children: [],
     appendChild(child) { node.children.push(child); return child; },
+    addEventListener(type, fn) { node.handlers = { ...node.handlers, [type]: fn }; },
+    click() { node.handlers.click(); },
+    focus() { if (options.focus) options.focus.current = node; },
     setAttribute(name, value) { node.attributes[name] = value; if (name === 'title') node.title = value; },
     getAttribute(name) { return node.attributes[name]; },
     replaceChildren(...children) { node.children = children; },

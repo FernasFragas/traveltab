@@ -109,6 +109,9 @@ Source of truth for progress. Read [the plan](map-3d-plan.md) and [the spike res
 **Verify:** all map checks pass on both engines at 375 and 1440 px; `make test build`.
 
 ### M7. Docs, CSP note and a real-phone check · *after M6*
+- Dark map (owner decision 2026-10-12): evidence in [docs/tdd/map-3d-dark.tdd.md](../docs/tdd/map-3d-dark.tdd.md)
+- Electroverse-like colours (owner request 2026-10-12): evidence in [docs/tdd/map-electroverse-colours.tdd.md](../docs/tdd/map-electroverse-colours.tdd.md)
+- Labels, road weight, brighter pin colours and the preview flake (owner decisions 2026-10-12): evidence in [docs/tdd/map-labels-colours-flake.tdd.md](../docs/tdd/map-labels-colours-flake.tdd.md)
 - [ ] Done — all but the owner real-phone check, which is pending (instructions in `docs/tdd/map-3d.tdd.md`, **First view and owner device**)
 
 **Owns:** `docs/maintenance.md` (basemap section), `docs/security-review.md` (item 4 note only), `docs/tdd/map-3d.tdd.md` (new)
@@ -120,6 +123,7 @@ Source of truth for progress. Read [the plan](map-3d-plan.md) and [the spike res
 - [x] Add to security item 4 the origins the CSP must allow: OpenFreeMap (style, tiles, glyphs, sprite), Mapterhorn, and `worker-src blob:` for MapLibre.
 - [ ] **Owner (pending):** open the map on a real mid-range phone (Funchal, pitch and terrain on). Record first-render time and whether panning stays smooth. If it's too slow, a follow-up turns terrain off on small screens.
 - [x] Evidence doc per AGENTS.md, plus first-view bytes and requests against the spike numbers.
+- [x] Owner follow-up 2026-10-12: visible, framed pins, a pin popup with Details, and the place-tag list removed. Evidence: [`docs/tdd/map-pins-popup.tdd.md`](../docs/tdd/map-pins-popup.tdd.md).
 
 **Verify:** document review; owner's phone check recorded.
 

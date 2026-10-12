@@ -720,6 +720,22 @@ try {
         const violations = await evaluate("axe.run(document, { resultTypes: ['violations'] }).then(r => r.violations.map(v => v.id + '(' + v.nodes.length + ')'))");
         record(`writers-map-axe-${engine}@${width}`, violations.length === 0, violations.length ? violations.join(', ') : 'axe-core: 0 violations');
       }
+      // A pin opens a named popup; focus moves into it, and Escape closes it and returns to the pin.
+      await evaluate("document.querySelector('.map-pin-writer').click()");
+      await until("document.querySelector('.map-popup .map-popup-details')");
+      const popup = await evaluate(`(() => { const box = document.querySelector('.map-popup'); const details = box.querySelector('.map-popup-details');
+        return { role: box.getAttribute('role'), name: box.getAttribute('aria-label'), text: box.textContent, focused: document.activeElement === details, button: details.textContent.trim() }; })()`);
+      const popupUnnamed = (await axTree()).filter(n => NAMED_ROLES.has(n.role) && n.role !== 'image' && !n.name && n.backend);
+      let popupViolations = [];
+      if (axeSource) {
+        await evaluate(axeSource);
+        popupViolations = await evaluate("axe.run(document, { resultTypes: ['violations'] }).then(r => r.violations.map(v => v.id + '(' + v.nodes.length + ')'))");
+      }
+      await b.key('Escape', 'Escape', 27);
+      await until("document.querySelectorAll('.map-popup').length === 0"); // Leaflet fades it out first
+      const closed = await evaluate(`({ popups: document.querySelectorAll('.map-popup').length, onPin: document.activeElement?.classList.contains('map-pin') })`);
+      const popupOK = popup.role === 'dialog' && popup.name && popup.text.includes(popup.name) && popup.focused && popup.button === 'Details' && !popupUnnamed.length && !popupViolations.length && closed.popups === 0 && closed.onPin;
+      record(`writers-map-popup-${engine}@${width}`, popupOK, popupOK ? `named dialog popup, focus on Details, no unnamed controls${axeSource ? ', axe-core: 0 violations' : ''}, Escape closes and returns focus to the pin` : JSON.stringify({ popup, popupUnnamed: popupUnnamed.slice(0, 5), popupViolations, closed }));
     }
   }
 

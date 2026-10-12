@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Start isolated Chromium/Brave on CDP_PORT, then run this optional live-provider check.
 import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
 import { connect, startPreview } from './lib/browser.mjs';
 
 for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
@@ -26,7 +27,7 @@ for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writ
         await browser.evaluate(`(() => {
           const old = document.querySelector('[data-writers-map]');
           const next = old.cloneNode(false);
-          next.innerHTML = '<div data-map-canvas></div><div data-map-slot="status"></div><div data-map-slot="list"></div>';
+          next.innerHTML = '<div data-map-canvas></div><div data-map-slot="status"></div>';
           delete next.dataset.mapTileUrl;
           delete next.dataset.mapAttribution;
           old.replaceWith(next);
@@ -50,6 +51,21 @@ for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writ
         assert.match(state.credit, /OpenFreeMap|OpenMapTiles|OpenStreetMap/);
         assert.ok(state.creditVisible && state.overflow <= state.viewport, JSON.stringify(state));
         assert.deepEqual(state.errors, []);
+        // The live dark style has no 3D buildings, so the core adds them; Funchal is shot at z12 and z16
+        // into SHOT_DIR when it is set.
+        const dark = JSON.parse(await browser.evaluate(`JSON.stringify((() => {
+          const layers = window.__liveMap.getStyle().layers;
+          return { background: layers.find(l => l.type === 'background')?.paint?.['background-color'],
+            extrusions: layers.filter(l => l.type === 'fill-extrusion').map(l => l.id) };
+        })())`));
+        assert.deepEqual(dark.extrusions, ['buildings-3d'], JSON.stringify(dark));
+        assert.equal(dark.background, '#18263b', JSON.stringify(dark));
+        for (const zoom of [12, 16]) {
+          await browser.evaluate(`window.__liveMap.jumpTo({ center: [-16.9, 32.65], zoom: ${zoom} }) && 0`);
+          await browser.until('window.__liveMap.isStyleLoaded() && window.__liveMap.areTilesLoaded()', 30000);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (process.env.SHOT_DIR) await writeFile(`${process.env.SHOT_DIR}/funchal-dark-z${zoom}-${width}.png`, await browser.shot());
+        }
         const events = browser.events.slice(networkStart);
         const responses = new Map(events.filter(e => e.method === 'Network.responseReceived' &&
           /cdn\.jsdelivr\.net\/npm\/maplibre-gl|tiles\.openfreemap\.org|tiles\.mapterhorn\.com/.test(e.params.response.url))

@@ -147,12 +147,35 @@ The sync runs when `WRITERS_SYNC=1` and the map shows its results when `WRITERS_
 live run (see [post-limit-results.md](../tasks/post-limit-results.md#coverage-l4)) indexed 100
 posts. The summary pass (`WRITERS_AI=1`) is separate and not covered by this section.
 
+After deploying the panel photo cache fix, visit each destination whose map must be ready to
+serve so its current-version base places and map result are rebuilt. The monthly writers sync
+refreshes only destinations already present under the current cache version, and an already-current
+sync is not forced by restarting with `WRITERS_SYNC=1`. Check that each cold map request completes
+before relying on it; a local Lisbon recompute exceeded 35 seconds.
+
 ### Basemap sources (tasks 3e and M1–M7)
 
 The default 3D map lazy-loads **MapLibre GL JS 5.24.0** (UMD JavaScript and CSS from jsDelivr).
-Its vector basemap is the [OpenFreeMap Liberty style](https://tiles.openfreemap.org/styles/liberty),
-which loads its tiles, glyphs and sprite from OpenFreeMap. MapLibre shows the style attribution,
-“OpenFreeMap © OpenMapTiles Data from OpenStreetMap”. The terrain source is
+Its vector basemap is the always-dark [OpenFreeMap dark style](https://tiles.openfreemap.org/styles/dark)
+(owner decision 2026-10-12; no OS or theme switching), which loads its tiles, glyphs and sprite from OpenFreeMap. MapLibre shows the style attribution,
+“OpenFreeMap © OpenMapTiles Data from OpenStreetMap” (unchanged). That style has no 3D buildings, so
+the core adds one `fill-extrusion` layer (`buildings-3d`) on every `style.load` from the style's
+OpenMapTiles `building` layer (`render_height`, from zoom 14, `#2c3044` to `#46414d`, opacity
+0.85) below the first label layer after the buildings. It adds nothing if the style already has a
+`fill-extrusion` layer, such as a custom `data-map-style-url`. On every `style.load` of the default
+style (not a custom `data-map-style-url`) the core also recolours the OpenFreeMap layers from the
+`palette` table in `writers-map.js` (land `#18263b`, water `#000e29`, parks `#203838`, roads
+`#404860` to `#5a6274`, labels `#e0e0e0`), a navy palette sampled by eye-dropper from the Electroverse
+map; colours only, none of their style, tiles or fonts. The same table also sets road weight and
+label size (paint and layout properties, default style only): minor roads, and secondary and
+tertiary roads (which share the primary layers, so they thin by `class`), are thinner and dimmer
+between z10 and z13; primaries, trunks and motorways keep their weight; town and neighbourhood
+labels are 11 px. A layer id the style lacks is skipped, so an OpenFreeMap layer rename just
+leaves that layer in the stock dark colours. The preview fixture style
+(`cmd/design-preview/mapstyle.go`) carries the same colours and the same minor-road weight; it has
+no glyphs and so no label layers to mirror. With terrain on, MapLibre can leave labels unplaced
+after a bare `jumpTo` at pitch 0 until the next camera change or `map.resize()`; screenshot scripts
+that jump the camera themselves should call `resize()` after the jump. The terrain source is
 `https://tiles.mapterhorn.com/{z}/{x}/{y}.webp`, 512-pixel Terrarium-encoded DEM tiles. Its on-map
 credit is “© Mapterhorn”; its source data includes Madeira IGP (CC BY 4.0) and Copernicus GLO-30.
 Neither provider needs an application key. Both are external dependencies without an application
@@ -166,7 +189,7 @@ tile error; it caps zoom at 18. The raster fallback is also subject to the OSM t
 
 If OpenFreeMap becomes unavailable long term, self-host a compatible OpenMapTiles vector archive
 as PMTiles on static storage that supports HTTPS, CORS and byte-range requests. Add the PMTiles
-protocol to the MapLibre loader, point a locally hosted copy of the Liberty style at the archive,
+protocol to the MapLibre loader, point a locally hosted copy of the dark style at the archive,
 and serve its glyphs and sprite from an allowed origin. Then set `data-map-style-url` to that style,
 keep the OpenStreetMap/OpenMapTiles attribution, update the CSP origins and test the 375 px and
 1440 px views. `data-map-style-url` alone cannot read a PMTiles archive with the current loader;

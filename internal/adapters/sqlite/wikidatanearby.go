@@ -17,7 +17,11 @@ var (
 )
 
 // basePlaceKeyFormat encodes the whole area, so CachedDestinations can read areas back from keys.
-const basePlaceKeyFormat = "wikidata:v1:%q:%q:%g:%g:%g"
+// v2: v1 rows stored a Commons page as the photo URL and the image URL as the photo.
+const (
+	basePlaceCacheVersion = "v2"
+	basePlaceKeyFormat    = "wikidata:" + basePlaceCacheVersion + ":%q:%q:%g:%g:%g"
+)
 
 // cachedBasePlaces stores both the visible pins and the unfiltered matching gazetteer in one row.
 // Entries stay until Refresh replaces them. flights coordinates queries for each destination.
@@ -102,7 +106,7 @@ func (c *cachedBasePlaces) fetch(ctx context.Context, dest writermap.Area, key s
 // CachedDestinations lists every destination with cached base places, read back from the cache
 // keys. Names and countries come back lowercased, as stored; Refresh maps them to the same row.
 func (s *Store) CachedDestinations(ctx context.Context) ([]writermap.Area, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT key FROM source_cache WHERE key LIKE 'wikidata:v1:%';`)
+	rows, err := s.db.QueryContext(ctx, `SELECT key FROM source_cache WHERE key LIKE 'wikidata:v2:%';`)
 	if err != nil {
 		return nil, fmt.Errorf("list cached destinations: %w", err)
 	}

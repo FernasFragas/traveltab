@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"image/png"
 	"io"
 	"math"
@@ -285,4 +286,108 @@ func mvtLayers(t *testing.T, tile []byte) map[string]int {
 		layers[name] = features
 	}
 	return layers
+}
+
+// As the owner, I want the map always dark, so the preview fixture style has a near-black land
+// background and dark water, roads and buildings like the live OpenFreeMap dark style.
+func TestPreview_MapStyleIsDark(t *testing.T) {
+	var style struct {
+		Layers []struct {
+			ID    string         `json:"id"`
+			Paint map[string]any `json:"paint"`
+		} `json:"layers"`
+	}
+	if err := json.Unmarshal(fixtureStyle("http://example.test"), &style); err != nil {
+		t.Fatal(err)
+	}
+	hexLuma := func(hex string) float64 {
+		var r, g, b int
+		if _, err := fmt.Sscanf(hex, "#%02x%02x%02x", &r, &g, &b); err != nil {
+			t.Fatalf("not a hex colour: %q", hex)
+		}
+		return (0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)) / 255
+	}
+	limits := map[string]struct {
+		key string
+		max float64
+	}{
+		"land": {"background-color", 0.2}, "water": {"fill-color", 0.12},
+		"road-secondary": {"line-color", 0.4}, "road-primary": {"line-color", 0.5},
+		"building-3d": {"fill-extrusion-color", 0.35},
+	}
+	for _, layer := range style.Layers {
+		limit, ok := limits[layer.ID]
+		if !ok {
+			continue
+		}
+		colour, _ := layer.Paint[limit.key].(string)
+		if luma := hexLuma(colour); luma > limit.max {
+			t.Errorf("%s colour %s has luminance %.2f, want at most %.2f", layer.ID, colour, luma, limit.max)
+		}
+		delete(limits, layer.ID)
+	}
+	if len(limits) != 0 {
+		t.Errorf("style lacks layers %v", limits)
+	}
+}
+
+// As the owner, I want the preview map to share the Electroverse-like palette the live default
+// style gets, so that what the browser checks see matches production.
+func TestPreview_MapStyleUsesElectroversePalette(t *testing.T) {
+	var style struct {
+		Layers []struct {
+			ID    string         `json:"id"`
+			Paint map[string]any `json:"paint"`
+		} `json:"layers"`
+	}
+	if err := json.Unmarshal(fixtureStyle("http://example.test"), &style); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string][2]string{
+		"land":           {"background-color", "#18263b"},
+		"water":          {"fill-color", "#000e29"},
+		"road-secondary": {"line-color", "#404860"},
+		"road-primary":   {"line-color", "#4c576c"},
+		"building-3d":    {"fill-extrusion-color", "#2c3044"},
+	}
+	for _, layer := range style.Layers {
+		if expected, ok := want[layer.ID]; ok {
+			if got := layer.Paint[expected[0]]; got != expected[1] {
+				t.Errorf("%s %s = %v, want %s", layer.ID, expected[0], got, expected[1])
+			}
+			delete(want, layer.ID)
+		}
+	}
+	if len(want) != 0 {
+		t.Errorf("style lacks layers %v", want)
+	}
+}
+
+// As the owner, I want the preview's minor road to be as thin and dim at z10 to z13 as the live
+// style's, so that checks see the same road weight. The fixture has no glyphs, so it has no label layers
+// to mirror the place label changes.
+func TestPreview_MapStyleThinsMinorRoads(t *testing.T) {
+	var style struct {
+		Layers []struct {
+			ID    string         `json:"id"`
+			Paint map[string]any `json:"paint"`
+		} `json:"layers"`
+	}
+	if err := json.Unmarshal(fixtureStyle("http://example.test"), &style); err != nil {
+		t.Fatal(err)
+	}
+	wantWidth := `["interpolate",["exponential",1.55],["zoom"],10,0.4,13,1.2,20,20]`
+	wantOpacity := `["interpolate",["linear"],["zoom"],10,0.35,14,0.9]`
+	for _, layer := range style.Layers {
+		if layer.ID != "road-secondary" {
+			continue
+		}
+		width, _ := json.Marshal(layer.Paint["line-width"])
+		opacity, _ := json.Marshal(layer.Paint["line-opacity"])
+		if string(width) != wantWidth || string(opacity) != wantOpacity {
+			t.Errorf("road-secondary width %s opacity %s, want %s and %s", width, opacity, wantWidth, wantOpacity)
+		}
+		return
+	}
+	t.Error("style lacks road-secondary")
 }

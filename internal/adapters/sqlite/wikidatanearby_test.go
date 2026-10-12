@@ -84,6 +84,22 @@ func TestWikidataNearbyCache_CachesPinsAndGazetteerWithoutExpiry(t *testing.T) {
 	assert.Equal(t, 1, fake.count())
 }
 
+func TestWikidataNearbyCache_IgnoresRowsFromBeforeThePhotoURLFix(t *testing.T) {
+	store, source, fake := basePlaceCacheForTest(t)
+	stale := writermap.BasePlaces{Pins: []writermap.Place{{QID: "Q1", PhotoURL: "https://commons.wikimedia.org/wiki/File:Pico_Ruivo.jpg"}}}
+	fresh := writermap.BasePlaces{Pins: []writermap.Place{{QID: "Q1", PhotoURL: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Pico_Ruivo.jpg/640px-Pico_Ruivo.jpg"}}}
+	fake.set(stale, nil)
+	basePlaces(t, source, madeiraArea)
+	_, err := store.db.Exec(`UPDATE source_cache SET key = replace(key, 'wikidata:v2:', 'wikidata:v1:') WHERE key LIKE 'wikidata:v2:%'`)
+	require.NoError(t, err)
+	fake.set(fresh, nil)
+
+	assert.Equal(t, fresh, basePlaces(t, source, madeiraArea), "a v1 row is not served; the source is asked again")
+	areas, err := store.CachedDestinations(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, areas, 1, "only the new row is listed for the monthly sync")
+}
+
 func TestWikidataNearbyCache_RefreshOverwritesTheRow(t *testing.T) {
 	_, source, fake := basePlaceCacheForTest(t)
 	first := writermap.BasePlaces{Pins: []writermap.Place{{QID: "Q1"}}, Gazetteer: []writermap.Place{{QID: "Q1"}}}

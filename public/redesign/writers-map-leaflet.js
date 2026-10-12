@@ -67,7 +67,7 @@
         var positions = { 'top-left': 'topleft', 'top-right': 'topright', 'bottom-left': 'bottomleft', 'bottom-right': 'bottomright' };
 
         function group(id) {
-            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null });
+            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null, popup: null });
             return groups.get(id);
         }
 
@@ -86,12 +86,19 @@
             entry.control = null;
         }
 
+        function clearPopup(entry) {
+            var popup = entry.popup;
+            entry.popup = null; // the remove handler ignores a popup the layer replaced or cleared
+            if (popup) map.removeLayer(popup);
+        }
+
         function clear(id) {
             var entry = groups.get(id);
             if (!entry) return;
             clearMarkers(entry);
             clearLine(entry);
             clearControl(entry);
+            clearPopup(entry);
             groups.delete(id);
         }
 
@@ -129,10 +136,32 @@
                     if (window.L.DomEvent) window.L.DomEvent.disableClickPropagation(element);
                     entry.control = control.addTo(map);
                 },
+                popup: function (id, lngLat, element, options) {
+                    var entry = group(id);
+                    clearPopup(entry);
+                    // A click on a pin also reaches the map, so Leaflet's own closeOnClick would close the
+                    // popup the pin just opened.
+                    var popup = window.L.popup({ closeButton: false, autoClose: false, closeOnClick: false, offset: [0, -18],
+                        className: 'travelmap-popup', maxWidth: 260, autoPanPaddingTopLeft: [56, 8], autoPanPaddingBottomRight: [8, 8] }).setLatLng([lngLat[1], lngLat[0]]).setContent(element);
+                    var closeOnMapClick = function (event) {
+                        var target = event && event.originalEvent && event.originalEvent.target;
+                        if (!target || !target.closest || !target.closest('.leaflet-marker-icon')) map.removeLayer(popup);
+                    };
+                    map.on('click', closeOnMapClick);
+                    entry.popup = popup;
+                    popup.on('remove', function () {
+                        map.off('click', closeOnMapClick);
+                        if (entry.popup !== popup) return;
+                        entry.popup = null;
+                        if (options && options.onClose) options.onClose();
+                    });
+                    popup.openOn(map);
+                },
                 clear: clear,
                 fit: function (bounds, options) {
                     var padding = options && options.padding || 0;
-                    map.fitBounds([[bounds[0][1], bounds[0][0]], [bounds[1][1], bounds[1][0]]], { padding: [padding, padding] });
+                    map.fitBounds([[bounds[0][1], bounds[0][0]], [bounds[1][1], bounds[1][0]]], { padding: [padding, padding], maxZoom: options && options.maxZoom,
+                        animate: options && options.animate });
                 },
                 flyTo: function (lngLat, zoom) {
                     map.flyTo([lngLat[1], lngLat[0]], zoom === undefined ? map.getZoom() : zoom);

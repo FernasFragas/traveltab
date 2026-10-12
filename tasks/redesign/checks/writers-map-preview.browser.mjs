@@ -14,23 +14,27 @@ try {
     console.error = (...args) => { window.__previewErrors.push(args.map(String).join(' ')); originalError(...args); };
     window.addEventListener('error', event => window.__previewErrors.push(event.message));
     window.addEventListener('unhandledrejection', event => window.__previewErrors.push(String(event.reason)));
+    // Places answer late on purpose, so every wait below is proven to wait for the places and not to pass by luck.
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => /geo\\+json/.test(JSON.stringify(init?.headers || {}))
+      ? new Promise(resolve => setTimeout(resolve, 400)).then(() => originalFetch(input, init)) : originalFetch(input, init);
   ` });
   for (const width of [375, 1440]) {
     await browser.viewport(width, 900);
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
-    await browser.until(`document.querySelector('[data-map-slot="list"] button') && document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}')`);
+    await browser.until(`document.querySelector('.map-pin') && document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}')`);
     if (engine === 'leaflet') await browser.until("document.querySelector('.leaflet-tile-loaded') !== null");
     browser.errors.length = 0; // Prior page teardown can report after the next navigation starts.
     const madeira = await browser.evaluate(`(() => {
       const shell = document.querySelector('[data-writers-map]');
-      const list = shell.querySelector('[data-map-slot="list"] button');
+      const pin = shell.querySelector('.map-pin');
       window.__mapCanvas = shell.querySelector('[data-map-canvas]');
-      list.focus();
+      pin.focus();
       const card = shell.getBoundingClientRect();
       const canvas = window.__mapCanvas.getBoundingClientRect();
       const panel = shell.querySelector('[data-map-slot="panel"]').getBoundingClientRect();
       const info = shell.querySelector('.writers-map-info');
-      return { destination: shell.dataset.mapDestination, text: list.textContent, focused: document.activeElement === list,
+      return { destination: shell.dataset.mapDestination, text: pin.title, focused: document.activeElement === pin, listSlot: shell.querySelector('[data-map-slot="list"]') !== null,
         tileURL: shell.dataset.mapTileUrl, styleURL: shell.dataset.mapStyleUrl,
         width: Math.round(window.__mapCanvas.getBoundingClientRect().width),
         height: Math.round(window.__mapCanvas.getBoundingClientRect().height), overflow: document.documentElement.scrollWidth,
@@ -41,7 +45,7 @@ try {
         emptyPanel: shell.querySelector('[data-map-slot="panel"]')?.textContent.trim() };
     })()`);
     assert.equal(madeira.destination, 'madeira-pt');
-    assert.ok(madeira.text.length > 0 && madeira.focused, JSON.stringify(madeira));
+    assert.ok(madeira.text.length > 0 && madeira.focused && !madeira.listSlot, JSON.stringify(madeira));
     assert.match(madeira[engine === 'maplibre' ? 'styleURL' : 'tileURL'], engine === 'maplibre'
       ? /^http:\/\/127\.0\.0\.1:\d+\/fixture-map\/style\.json$/
       : /^http:\/\/127\.0\.0\.1:\d+\/fixture-tiles\/%7bz%7d\/%7bx%7d\/%7by%7d\.png$/i);
@@ -60,31 +64,33 @@ try {
     }
     await browser.tab(true);
     await browser.tab();
-    assert.equal(await browser.evaluate("document.activeElement === document.querySelector('[data-map-slot=\"list\"] button')"), true);
+    assert.equal(await browser.evaluate("document.activeElement === document.querySelector('.map-pin')"), true);
 
-    for (const [query, slug, status] of [
-      ['Porto', 'porto-pt', ''], ['Coimbra', 'coimbra-pt', 'Some map sources are unavailable.']
+    // The status is already '' before the places arrive, so a swap with no status message is done only once its pins are drawn.
+    for (const [query, slug, status, loaded] of [
+      ['Porto', 'porto-pt', '', "document.querySelector('.map-pin') !== null"],
+      ['Coimbra', 'coimbra-pt', 'Some map sources are unavailable.', 'true']
     ]) {
       await browser.evaluate(`(() => { document.querySelector('#city_name').value = ${JSON.stringify(query)}; document.querySelector('#destination-search').requestSubmit(); })()`);
       await browser.until(`document.querySelector('[data-writers-map]')?.dataset.mapDestination === ${JSON.stringify(slug)}`);
-      await browser.until(`document.querySelector('[data-map-slot="status"]')?.textContent === ${JSON.stringify(status)}`);
+      await browser.until(`document.querySelector('[data-map-slot="status"]')?.textContent === ${JSON.stringify(status)} && ${loaded}`);
       const state = await browser.evaluate(`(() => ({ maps: document.querySelectorAll('[data-map-canvas]').length,
         sameCanvas: document.querySelector('[data-map-canvas]') === window.__mapCanvas,
-        list: [...document.querySelectorAll('[data-map-slot="list"] button')].map(b => b.textContent),
+        list: [...document.querySelectorAll('.map-pin')].map(b => b.title),
         overflow: document.documentElement.scrollWidth }))()`);
       assert.equal(state.maps, 1, JSON.stringify(state));
       assert.ok(state.sameCanvas && state.overflow <= width, JSON.stringify(state));
       if (slug === 'porto-pt') {
         assert.deepEqual(state.list, ['Clérigos Tower']);
-        await browser.evaluate("document.querySelector('[data-map-slot=\"list\"] button').focus()");
+        await browser.evaluate("document.querySelector('.map-pin').focus()");
         await browser.tab(true);
         await browser.tab();
-        assert.equal(await browser.evaluate("document.activeElement === document.querySelector('[data-map-slot=\"list\"] button')"), true);
+        assert.equal(await browser.evaluate("document.activeElement === document.querySelector('.map-pin')"), true);
       }
     }
     assert.deepEqual(browser.errors, []);
     assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
-    console.log(`PASS ${engine} ${width}px: writer data, base-only and unavailable swaps, one map, keyboard list, local fixtures`);
+    console.log(`PASS ${engine} ${width}px: writer data, base-only and unavailable swaps, one map, focusable pins, no place list, local fixtures`);
   }
 } finally {
   if (browser) await browser.close();

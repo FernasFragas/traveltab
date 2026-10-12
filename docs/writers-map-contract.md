@@ -5,7 +5,8 @@ change was approved by the owner on 2026-10-10 (see **Rules for Agents** in
 [the plan](../tasks/plan.md)). The PR 7 change (itineraries in the GeoJSON, layer names) was
 approved by the owner on 2026-10-11. The map-3d change (task M0: map engines, the drawing API and
 the fallback, in **Browser extension API** and **Template hooks**) was approved by the owner on
-2026-10-11. The Go types and ports exist; the HTTP routes, plan-stop distance,
+2026-10-11. Removing the place-tag list and adding the pin popup call (`popup`) was approved by the
+owner 2026-10-12. The Go types and ports exist; the HTTP routes, plan-stop distance,
 browser API and template hooks below are planned and not yet served.
 
 This document is the integration boundary for the writers' map. Go models live in
@@ -149,8 +150,9 @@ never duplicate.
 | `markers(id, items)` | Shows HTML markers. Each item is `{ lngLat: [lon, lat], element, title, onClick, z }`. `element` is a DOM node the layer builds and styles; `title` is its accessible name; `z` orders overlapping markers (higher on top). |
 | `line(id, coords, style)` | Shows a line through `[[lon, lat], …]`. `style` is `{ color, width, dash }` (`dash` is an array or omitted). |
 | `control(id, element, position)` | Places a control element in a map corner (`"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"`). |
-| `clear(id)` | Removes everything drawn under `id` (markers, line and control). Clearing an unknown `id` does nothing. |
-| `fit(bounds, options)` | Fits `[[west, south], [east, north]]`, with `options.padding` in pixels. |
+| `popup(id, lngLat, element, { onClose })` | Shows one popup anchored at `[lon, lat]`, holding the `element` the layer builds. `onClose` runs only when the engine closes it (a click on the bare map); replacing or clearing it does not call `onClose`. A click on a pin never closes it, so a pin can open its own popup. |
+| `clear(id)` | Removes everything drawn under `id` (markers, line, control and popup). Clearing an unknown `id` does nothing. |
+| `fit(bounds, options)` | Fits `[[west, south], [east, north]]`, with `options.padding` in pixels, `options.maxZoom` and `options.animate` (`false` jumps). |
 | `flyTo(lngLat, zoom)` | Moves the camera to `[lon, lat]`; `zoom` is optional. |
 
 - **Markers and controls survive style reloads.** The core redraws lines after a style reload, so
@@ -158,7 +160,11 @@ never duplicate.
 - **Remove contract:** a layer's `remove` must `clear` every `id` it drew. `add` after `remove` must
   give the same result as the first `add`.
 - **Accessibility:** marker elements must be focusable buttons or links with a visible focus style;
-  `title` sets the accessible name. The `list` slot stays the keyboard alternative to the map.
+  `title` sets the accessible name. Pins are focusable buttons in a logical tab order, Enter opens
+  the pin's popup, and the popup's Details button opens the panel. The popup element has
+  `role="dialog"` and an accessible name; Escape closes it and returns focus to the pin.
+- **First view:** once the places load, the core fits the map to the writers' pins (all places when
+  none has a writer), so the pins are on screen.
 
 ### Events
 
@@ -180,10 +186,9 @@ Templates provide one element for each map slot:
 <div data-map-slot="layers"></div>
 <div data-map-slot="saved"></div>
 <div data-map-slot="status"></div>
-<div data-map-slot="list"></div>
 ```
 
-The `list` slot is the keyboard-accessible alternative to interacting with map markers. Save
+The place-tag `list` slot was removed (approved 2026-10-12): the pins are the way in. Save
 buttons use `data-save-qid` and may be handled entirely in the browser.
 
 The map shell (`data-writers-map`) carries its configuration as data attributes. The server
@@ -194,7 +199,7 @@ fills them, and the browser never builds URLs:
 | `data-map-url` | GeoJSON URL, coordinates included (required) |
 | `data-map-lat`, `data-map-lon` | Destination centre (required) |
 | `data-map-destination` | Destination slug |
-| `data-map-style-url` | MapLibre style URL; default the OpenFreeMap Liberty style |
+| `data-map-style-url` | MapLibre style URL; default the OpenFreeMap dark style, `https://tiles.openfreemap.org/styles/dark` (changed from Liberty with owner approval 2026-10-12) |
 | `data-map-terrain-url` | Terrain (raster-dem) tile URL template; default Mapterhorn; empty turns terrain off |
 | `data-map-tile-url`, `data-map-attribution` | Fallback raster tiles and their credit; default EOX imagery |
 | `data-map-engine` | `leaflet` forces the fallback (tests and the design preview only) |

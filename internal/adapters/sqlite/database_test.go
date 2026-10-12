@@ -47,6 +47,45 @@ func TestOpen_CreatesTablesAndReopensExistingDatabase(t *testing.T) {
 	assert.Nil(t, store)
 }
 
+func TestOpen_RemovesLegacyPhotoCacheRows(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "legacy-cache.db")
+	old, err := sql.Open("sqlite3", path)
+	require.NoError(t, err)
+	_, err = old.Exec(`CREATE TABLE source_cache (key TEXT PRIMARY KEY, fetched_at INTEGER, data BLOB)`)
+	require.NoError(t, err)
+	for _, key := range []string{
+		"wikidata:v1:lisbon", "wikidata:v1:funchal", "writermap:v1:lisbon",
+		"writermap:v1:funchal", "forecast:lisbon", "places:lisbon", "destphoto:v1:lisbon",
+		"wikidata:v2:lisbon", "writermap:v2:lisbon",
+	} {
+		_, err = old.Exec(`INSERT INTO source_cache (key, fetched_at, data) VALUES (?, 42, ?)`, key, []byte(key))
+		require.NoError(t, err)
+	}
+	require.NoError(t, old.Close())
+
+	want := []string{"destphoto:v1:lisbon", "forecast:lisbon", "places:lisbon", "wikidata:v2:lisbon", "writermap:v2:lisbon"}
+	for i := 0; i < 2; i++ {
+		store, err := Open(path)
+		require.NoError(t, err)
+		rows, err := store.db.Query(`SELECT key, fetched_at, data FROM source_cache ORDER BY key`)
+		require.NoError(t, err)
+		var got []string
+		for rows.Next() {
+			var key string
+			var fetchedAt int64
+			var data []byte
+			require.NoError(t, rows.Scan(&key, &fetchedAt, &data))
+			assert.Equal(t, int64(42), fetchedAt)
+			assert.Equal(t, []byte(key), data)
+			got = append(got, key)
+		}
+		require.NoError(t, rows.Err())
+		require.NoError(t, rows.Close())
+		assert.Equal(t, want, got)
+		require.NoError(t, store.Close())
+	}
+}
+
 func TestOpen_StoresHaveIndependentConnections(t *testing.T) {
 	first, err := Open(filepath.Join(t.TempDir(), "first.db"))
 	require.NoError(t, err)

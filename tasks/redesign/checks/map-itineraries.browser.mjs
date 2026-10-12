@@ -34,14 +34,14 @@ try {
         const chip = "[...document.querySelectorAll('[data-map-slot=\"layers\"] button')].find(b => b.textContent.includes('itineraries'))";
         const lineCount = engine === 'maplibre'
           ? "Number(Boolean(window.__itineraryMap?.getLayer('draw-line-itineraries')))"
-          : "[...document.querySelectorAll('.leaflet-overlay-pane path')].filter(p => p.getAttribute('stroke') === '#7b3fb8').length";
+          : "[...document.querySelectorAll('.leaflet-overlay-pane path')].filter(p => p.getAttribute('stroke') === '#b794f6').length";
         const first = await count('.itinerary-pin');
         const look = await browser.evaluate(`({ colour: getComputedStyle(document.querySelector('.itinerary-pin')).backgroundColor,
           numbers: [...document.querySelectorAll('.itinerary-pin')].map(p => p.textContent).join(','),
           buttons: [...document.querySelectorAll('.itinerary-pin')].every(p => p.tagName === 'BUTTON' && p.title),
           lines: ${lineCount}, chip: ${chip}.hidden === false && getComputedStyle(${chip}).display !== 'none',
           overflow: document.documentElement.scrollWidth })`);
-        assert.equal(look.colour, 'rgb(123, 63, 184)', JSON.stringify(look));
+        assert.equal(look.colour, 'rgb(142, 91, 214)', JSON.stringify(look));
         assert.equal(look.numbers, Array.from({ length: first }, (_, i) => i + 1).join(','));
         assert.ok(look.buttons, JSON.stringify(look));
         assert.equal(look.lines, 1, JSON.stringify(look));
