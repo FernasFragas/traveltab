@@ -252,6 +252,60 @@ func TestSyncJob_SuddenEmptySearchKeepsRowsWarnsAndRetries(t *testing.T) {
 	assert.Len(t, index.postsFor(blogHost), 50)
 }
 
+func TestSyncJob_HitsThatNameNoPlaceKeepRowsWarnAndRetry(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(150)...)
+	wp.addBlog(otherAPI, bodyOnlyPost(1), bodyOnlyPost(2), bodyOnlyPost(3)) // hits, but no title or slug names a place
+	index := newFakeIndex()
+	seedRows(t, index, otherHost, 20)
+	require.NoError(t, index.SaveSyncState(context.Background(), writermap.SyncState{Host: otherHost, Status: writermap.StatusActive, LastFull: crawlTime}))
+	job := newTestJob(index, wp, monthlyTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	var lines []string
+	job.Logf = func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Len(t, index.postsFor(otherHost), 20, "the rows are kept")
+	assert.Len(t, index.postsFor(blogHost), 80, "and count inside the cap")
+	assert.Equal(t, crawlTime, index.state(otherHost).LastFull, "not finished, so the next run retries")
+	log := strings.Join(lines, "\n")
+	assert.Contains(t, log, "writers sync "+otherHost+": warning")
+	assert.Contains(t, log, "no destination posts matched")
+}
+
+func TestSyncJob_OverCapAfterAFailedBlogTrimsTheLowestRankedOfTheUpdatedBlogs(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(5)...)
+	wp.blog(blogAPI).fetchErr = errors.New("status 502")
+	wp.addBlog(otherAPI, testPosts(150)...)
+	index := newFakeIndex()
+	seedRows(t, index, blogHost, 30)
+	var lines []string
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+	job.Logf = func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+
+	require.ErrorContains(t, job.Run(context.Background()), "status 502")
+
+	assert.Len(t, index.postsFor(blogHost), 30, "the failed blog keeps all its rows")
+	assert.Len(t, index.postsFor(otherHost), 70, "the updated blog gives up the overshoot")
+	assert.Equal(t, int64(81), index.postIDs(otherHost)[0], "its lowest-ranked (oldest) picks went")
+	assert.Contains(t, strings.Join(lines, "\n"), "trimmed 27")
+}
+
+func TestSyncJob_UnderTheCapTrimsNothing(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(40)...)
+	index := newFakeIndex()
+	var lines []string
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.Logf = func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.Len(t, index.postsFor(blogHost), 40)
+	assert.NotContains(t, strings.Join(lines, "\n"), "trimmed")
+}
+
 func TestSyncJob_BlogThatNeverHadPostsAndFindsNoneIsJustSkipped(t *testing.T) {
 	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(150)...)

@@ -33,6 +33,57 @@ func Select(blogs []BlogCandidates, places []string, limit int) []Pick {
 	return picks
 }
 
+// CountDestinationPosts is how many distinct hits of the blog name a known place in their title
+// or URL slug: the candidates Select would rank.
+func CountDestinationPosts(blog BlogCandidates, places []string) int {
+	return len(rankDestinationPosts(blog, newPlaceMatcher(places)))
+}
+
+// Trim returns the n lowest-ranked of the given picks, lowest first. Rank is the one Select uses
+// inside a blog (more recent comments, then newest), applied across blogs. Picks of a blog that
+// is not in blogs rank lowest of all, and fewer than n come back when there are fewer picks.
+func Trim(blogs []BlogCandidates, places []string, picks []Pick, n int) []Pick {
+	if n <= 0 {
+		return nil
+	}
+	known := newPlaceMatcher(places)
+	type entry struct {
+		pick     Pick
+		hit      SearchHit
+		comments int
+	}
+	hits := make(map[Pick]entry)
+	for _, blog := range blogs {
+		for _, hit := range rankDestinationPosts(blog, known) {
+			pick := Pick{Host: blog.Host, PostID: hit.ID}
+			hits[pick] = entry{pick: pick, hit: hit, comments: blog.Comments[hit.ID]}
+		}
+	}
+	entries := make([]entry, len(picks))
+	for i, pick := range picks {
+		entries[i] = hits[pick]
+		entries[i].pick = pick
+	}
+	sort.SliceStable(entries, func(i, j int) bool {
+		a, b := entries[i], entries[j]
+		if a.comments != b.comments {
+			return a.comments < b.comments
+		}
+		if !a.hit.Published.Equal(b.hit.Published) {
+			return a.hit.Published.Before(b.hit.Published)
+		}
+		if a.pick.PostID != b.pick.PostID {
+			return a.pick.PostID < b.pick.PostID
+		}
+		return a.pick.Host < b.pick.Host
+	})
+	dropped := make([]Pick, 0, min(n, len(entries)))
+	for _, e := range entries[:min(n, len(entries))] {
+		dropped = append(dropped, e.pick)
+	}
+	return dropped
+}
+
 // BlogCandidates is one blog's search hits and recent-comment counts, by post ID. A blog with
 // no readable comments has a nil Comments map.
 type BlogCandidates struct {

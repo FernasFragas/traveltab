@@ -15,19 +15,23 @@ test('draws writer pins orange with their count, above blue notable pins', () =>
   const app = browser();
   app.run();
   const map = app.addLayers();
-  const writers = map.markers.filter(marker => marker.options.icon.className.includes('map-pin-writer'));
-  const notable = map.markers.filter(marker => marker.options.icon.className.includes('map-pin-notable'));
-  assert.deepEqual(writers.map(marker => marker.options.title), ['Pico Ruivo', 'Cabo Girão']);
-  assert.equal(writers[0].options.icon.html, '<span>2</span>');
-  assert.deepEqual(notable.map(marker => marker.options.title), ['Funchal', 'Seixal']);
-  assert.ok(writers.every(marker => marker.options.zIndexOffset > notable[0].options.zIndexOffset));
+  const writers = map.markers('writers');
+  const notable = map.markers('notable');
+  assert.deepEqual(writers.map(marker => marker.title), ['Pico Ruivo', 'Cabo Girão']);
+  assert.equal(writers[0].element.children[0].textContent, '2');
+  assert.ok(writers.every(marker => marker.element.className.includes('map-pin-writer')));
+  assert.deepEqual(notable.map(marker => marker.title), ['Funchal', 'Seixal']);
+  assert.ok(notable.every(marker => marker.element.className.includes('map-pin-notable')));
+  assert.ok(writers.every(marker => marker.z > notable[0].z));
+  assert.ok(map.drawn.every(call => call.method === 'markers'));
 });
 
 test('labels only the biggest places', () => {
   const app = browser({ features: [...features(), ...extraPlaces(6)] });
   app.run();
   const map = app.addLayers();
-  const labelled = map.markers.filter(marker => marker.tooltip).map(marker => marker.tooltip.text);
+  const labelled = [...map.markers('notable'), ...map.markers('writers')]
+    .flatMap(marker => marker.element.children.filter(child => child.className === 'map-pin-label').map(child => child.textContent));
   assert.equal(labelled.length, 5);
   assert.ok(labelled.includes('Funchal'));
   assert.ok(!labelled.includes('Seixal'));
@@ -37,8 +41,19 @@ test('selects a place when its pin is clicked', () => {
   const app = browser();
   app.run();
   const map = app.addLayers();
-  map.markers.find(marker => marker.options.title === 'Seixal').emit('click');
+  map.markers('notable').find(marker => marker.title === 'Seixal').onClick();
   assert.deepEqual(app.selected, ['Q3']);
+});
+
+test('pins have accessible titles, keyboard focus and a visible focus style', () => {
+  const app = browser();
+  app.run();
+  const marker = app.addLayers().markers('writers')[0];
+  assert.equal(marker.element.tagName, 'BUTTON');
+  assert.equal(marker.element.type, 'button');
+  assert.equal(marker.element.title, marker.title);
+  assert.equal(marker.element.getAttribute('aria-label'), marker.title);
+  assert.match(readFileSync(new URL('../../../public/redesign/map-panel.css', import.meta.url), 'utf8'), /\.map-pin:focus-visible/);
 });
 
 test('removing a layer takes its pins off the map and adding it again leaves one copy', () => {
@@ -46,9 +61,11 @@ test('removing a layer takes its pins off the map and adding it again leaves one
   app.run();
   const map = app.addLayers();
   app.layers.get('writers').remove(map, app.context);
-  assert.equal(map.groups.length, 1);
+  assert.equal(map.markers('writers').length, 0);
+  assert.equal(map.markers('notable').length, 2);
   app.layers.get('writers').add(map, app.context);
-  assert.equal(map.groups.length, 2);
+  assert.equal(map.markers('writers').length, 2);
+  assert.deepEqual(map.drawn.slice(-2).map(call => call.method), ['clear', 'markers']);
 });
 
 test('loads the selected place into the panel slot', () => {
@@ -119,9 +136,10 @@ function browser(options = {}) {
   const body = target();
   const panel = element('div');
   const shell = element('div', { slots: { panel } });
-  const context = { features: options.features || features(), selectPlace: qid => selected.push(qid), shell };
+  const map = fakeMap();
+  const context = { features: options.features || features(), selectPlace: qid => selected.push(qid), shell, draw: map.draw };
   const window = {
-    L: leaflet(),
+    L: new Proxy({}, { get() { throw new Error('pin layer must not access Leaflet'); } }),
     htmx: { ajax: (method, url, slot) => { requests.push([method, url, slot]); return Promise.resolve(); } }
   };
   if (options.core !== false) {
@@ -137,7 +155,6 @@ function browser(options = {}) {
     layers, selected, requests, body, panel, context, monograms: null,
     run: () => vm.runInNewContext(source, { window, document, ...window }),
     addLayers() {
-      const map = fakeMap();
       layers.forEach(layer => layer.add(map, context));
       return map;
     },
@@ -155,30 +172,17 @@ function browser(options = {}) {
   return app;
 }
 
-function leaflet() {
+function fakeMap() {
+  const groups = new Map();
+  const drawn = [];
   return {
-    divIcon: icon => icon,
-    layerGroup: () => {
-      const group = { markers: [], addLayer(marker) { group.markers.push(marker); }, addTo(map) { map.add(group); return group; } };
-      return group;
-    },
-    marker: (latlng, options) => {
-      const marker = target();
-      Object.assign(marker, { latlng, options, bindTooltip(text, tooltipOptions) { marker.tooltip = { text, options: tooltipOptions }; return marker; } });
-      marker.on = (type, fn) => { marker.addEventListener(type, fn); return marker; };
-      return marker;
+    drawn,
+    markers: id => groups.get(id) || [],
+    draw: {
+      markers(id, items) { drawn.push({ method: 'markers', id }); groups.set(id, items); },
+      clear(id) { drawn.push({ method: 'clear', id }); groups.delete(id); }
     }
   };
-}
-
-function fakeMap() {
-  const map = {
-    groups: [],
-    get markers() { return map.groups.flatMap(group => group.markers); },
-    add(group) { map.groups.push(group); },
-    removeLayer(group) { map.groups = map.groups.filter(item => item !== group); }
-  };
-  return map;
 }
 
 function target() {
@@ -196,9 +200,12 @@ function element(tag, options = {}) {
     dataset: options.dataset || {},
     style: {},
     title: '',
+    attributes: {},
     textContent: '',
     children: [],
     appendChild(child) { node.children.push(child); return child; },
+    setAttribute(name, value) { node.attributes[name] = value; if (name === 'title') node.title = value; },
+    getAttribute(name) { return node.attributes[name]; },
     replaceChildren(...children) { node.children = children; },
     closest: selector => selector === '[data-map-slot="panel"]' ? options.closestOf || null :
       selector === '.map-panel-close' && node.className === 'map-panel-close' ? node : null,

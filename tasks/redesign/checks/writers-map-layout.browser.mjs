@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { connect, startPreview } from './lib/browser.mjs';
 
-const preview = await startPreview({ scenario: 'writers-map' });
+for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
+const preview = await startPreview({ scenario });
 let browser;
 try {
   browser = await connect();
@@ -18,7 +19,7 @@ try {
   for (const width of [375, 1440]) {
     await browser.viewport(width, 900);
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
-    await browser.until("document.querySelector('.leaflet-container') && document.querySelector('[data-map-slot=\"list\"] button')");
+    await browser.until(`document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}') && document.querySelector('[data-map-slot="list"] button')`);
     browser.errors.length = 0; // Prior page teardown can report after navigation starts.
     const layout = await browser.evaluate(`(() => {
       const shell = document.querySelector('[data-writers-map]');
@@ -39,8 +40,8 @@ try {
         statusHidden: shell.querySelector('[data-map-slot="status"]').hidden,
         statusText: shell.querySelector('[data-map-slot="status"]').textContent.trim(),
         overflow: document.documentElement.scrollWidth,
-        zoom: !!shell.querySelector('.leaflet-control-zoom'),
-        scale: !!shell.querySelector('.leaflet-control-scale')
+        zoom: !!shell.querySelector('.leaflet-control-zoom, .maplibregl-ctrl-group'),
+        scale: !!shell.querySelector('.leaflet-control-scale, .maplibregl-ctrl-scale')
       };
     })()`);
     assert.equal(layout.title, "Writers' Map");
@@ -108,9 +109,10 @@ try {
     } else {
       assert.ok(swapped.panelY > swapped.canvasY, JSON.stringify(swapped));
     }
-    console.log(`PASS ${width}px: writers' map card layout`);
+    console.log(`PASS ${engine} ${width}px: writers' map card layout`);
   }
 } finally {
   if (browser) await browser.close();
   preview.stop();
+}
 }

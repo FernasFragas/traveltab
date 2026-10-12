@@ -4,7 +4,8 @@
 import assert from 'node:assert/strict';
 import { connect, startPreview } from './lib/browser.mjs';
 
-const preview = await startPreview({ scenario: 'writers-map' });
+for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
+const preview = await startPreview({ scenario });
 let browser;
 try {
   browser = await connect();
@@ -92,9 +93,10 @@ try {
     const overflow = await browser.evaluate('document.documentElement.scrollWidth');
     assert.ok(overflow <= width, `overflow ${overflow}`);
     assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
-    console.log(`PASS ${width}px`, JSON.stringify({ chips, writers, notable, saved, planURL, before, dayOne, overflow }));
+    console.log(`PASS ${engine} ${width}px`, JSON.stringify({ chips, writers, notable, saved, planURL, before, dayOne, overflow }));
   }
 } finally {
   await browser?.close?.();
   preview.stop();
+}
 }

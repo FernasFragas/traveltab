@@ -159,3 +159,48 @@ Per-blog counts, per-status request counts and the method difference against PR 
 - The live run used a scratch copy of the repo (a different port and a request counter). The shipped code was not run as is because port 8080 was in use by another server.
 - Only the cached destinations of this run (Funchal, Madeira) and the override areas were search terms. The coverage of other destinations is not measured.
 - `make lint` could not run: see the final run below.
+
+## Follow-up 2 (owner decisions 9 and 10)
+
+**Source task:** `tasks/post-limit-todo.md`, L3 follow-ups (decisions 9 and 10 in `tasks/post-limit-plan.md`). Files: `internal/writermap/sync.go`, `selection.go` and their tests.
+
+### User journeys
+
+- As the owner, I want a blog whose search hits name no known place to keep its rows and be retried, so that an odd response does not wipe its pins.
+- As the owner, I want the index trimmed to exactly 100 when a mid-run failure leaves it over, so that the cap is a hard cap.
+
+### Design choices
+
+- **Decision 9:** the guard now checks `CountDestinationPosts(blog, known) == 0` (hits that pass the title/URL filter), not `len(blog.Hits) == 0`. Same handling as before: rows kept and held inside the cap, state not saved. Warning: `writers sync <host>: warning: no destination posts matched, keeping N indexed posts, retrying next run`.
+- **Decision 10:** after the store loop, `trimOverflow` sums the indexed rows of all active and held blogs. If over `MaxIndexedPosts`, `Trim` ranks the picks of the blogs updated in this run (fewest recent comments, then oldest, across blogs) and the lowest are deleted until the total is 100. Failed, blocked and guard-held blogs are never trimmed. One log line: `writers sync: trimmed N posts to stay within 100`.
+- Ranking across blogs compares raw comment counts; blogs with no readable comments rank by date only.
+
+### RED
+
+`go test ./internal/writermap/ -run 'HitsThatName|OverCapAfter|UnderTheCap'` failed for the intended reasons:
+- `"map[]" should have 20 item(s), but has 0` ("the rows are kept") and the other blog did not get 80 (decision 9).
+- `expected: 81 actual: 54` ("its lowest-ranked (oldest) picks went") and `does not contain "trimmed 27"` (decision 10; the failed blog's 5 candidates leave 97 picks for the other blog, so 27 are trimmed).
+- `selection_test.go`: `undefined: writermap.CountDestinationPosts`, `undefined: writermap.Trim`.
+- `TestSyncJob_UnderTheCapTrimsNothing` passed at once (pins today's behaviour).
+
+### GREEN
+
+The same command passed; `go test -race -cover ./internal/writermap/` gave `coverage: 94.5% of statements`.
+
+| What is guaranteed | Test name | Type | Result |
+| --- | --- | --- | --- |
+| 20 indexed rows, hits name no place: rows kept, warning names the host and "no destination posts matched", state not advanced, other blog gets 80 | `TestSyncJob_HitsThatNameNoPlaceKeepRowsWarnAndRetry` | integration | PASS |
+| A fetch error on a blog with 30 old rows, new picks for the other: total 100, failed blog's 30 untouched, lowest-ranked of the updated blog dropped, "trimmed 27" logged | `TestSyncJob_OverCapAfterAFailedBlogTrimsTheLowestRankedOfTheUpdatedBlogs` | integration | PASS |
+| At or under the cap nothing is trimmed or logged | `TestSyncJob_UnderTheCapTrimsNothing` | integration | PASS |
+| Distinct place-naming hits are counted once | `TestCountDestinationPosts_CountsEachPlaceNamingPostOnce` | unit | PASS |
+| `Trim` drops the globally lowest-ranked picks, only among the given picks | `TestTrim_DropsTheGloballyLowestRankedPicks` | unit | PASS |
+| `Trim` with 0 returns nothing; with more than there are returns all | `TestTrim_NothingToDropOrMoreThanThereIs` | unit | PASS |
+
+### Final run
+
+`go vet ./...` and `gofmt -l internal cmd` clean; `make test build` passed. `make lint` not run (known golangci-lint go1.26/go1.27.2 mismatch). No live network calls.
+
+### Known gaps
+
+- The "not covered" note in the decision 6/7 section above is now fixed: hits that name no place keep the rows.
+- Cross-blog trim order compares raw comment counts, which are not comparable between blogs of different size. Accepted for a rare edge case.

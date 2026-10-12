@@ -17,6 +17,7 @@ func newPreviewServer(mapOrigin string, slow bool, scenario string, liveTiles bo
 	server, _, cleanup := newPreviewServerWithPhotos(mapOrigin, slow, scenario)
 	if liveTiles && scenario == "writers-map" {
 		server.SetWriterMapTiles("", "")
+		server.SetWriterMapBasemap("", "", "")
 	}
 	return server, cleanup
 }
@@ -34,9 +35,14 @@ func newPreviewServerWithPhotos(mapOrigin string, slow bool, scenario string) (*
 	photos := &fixturePhotos{origin: mapOrigin, scenario: scenario}
 	server.SetDestinationPhotoSource(photos)
 	server.SetCityGuideSource(newFixtureGuides(scenario))
-	if scenario == "writers-map" {
+	if scenario == "writers-map" || scenario == "writers-map-leaflet" {
 		server.SetWriterMapSource(newWriterMapPreviewSource(), true)
 		server.SetWriterMapTiles(mapOrigin+"fixture-tiles/{z}/{x}/{y}.png", "Local fixture tiles")
+		engine := ""
+		if scenario == "writers-map-leaflet" {
+			engine = "leaflet" // forces the Leaflet fallback so checks can run on both engines
+		}
+		server.SetWriterMapBasemap(mapOrigin+"fixture-map/style.json", mapOrigin+"fixture-map/terrain/{z}/{x}/{y}.png", engine)
 	}
 	return server, photos, func() {}
 }

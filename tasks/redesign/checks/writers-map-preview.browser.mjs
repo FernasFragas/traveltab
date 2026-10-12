@@ -3,7 +3,8 @@
 import assert from 'node:assert/strict';
 import { connect, startPreview } from './lib/browser.mjs';
 
-const preview = await startPreview({ scenario: 'writers-map' });
+for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
+const preview = await startPreview({ scenario });
 let browser;
 try {
   browser = await connect();
@@ -17,8 +18,8 @@ try {
   for (const width of [375, 1440]) {
     await browser.viewport(width, 900);
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
-    await browser.until("document.querySelector('[data-map-slot=\"list\"] button') && document.querySelector('.leaflet-container')");
-    await browser.until("document.querySelector('.leaflet-tile-loaded') !== null");
+    await browser.until(`document.querySelector('[data-map-slot="list"] button') && document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}')`);
+    if (engine === 'leaflet') await browser.until("document.querySelector('.leaflet-tile-loaded') !== null");
     browser.errors.length = 0; // Prior page teardown can report after the next navigation starts.
     const madeira = await browser.evaluate(`(() => {
       const shell = document.querySelector('[data-writers-map]');
@@ -30,7 +31,8 @@ try {
       const panel = shell.querySelector('[data-map-slot="panel"]').getBoundingClientRect();
       const info = shell.querySelector('.writers-map-info');
       return { destination: shell.dataset.mapDestination, text: list.textContent, focused: document.activeElement === list,
-        tileURL: shell.dataset.mapTileUrl, width: Math.round(window.__mapCanvas.getBoundingClientRect().width),
+        tileURL: shell.dataset.mapTileUrl, styleURL: shell.dataset.mapStyleUrl,
+        width: Math.round(window.__mapCanvas.getBoundingClientRect().width),
         height: Math.round(window.__mapCanvas.getBoundingClientRect().height), overflow: document.documentElement.scrollWidth,
         card: { x: card.x, width: card.width }, canvas: { x: canvas.x, y: canvas.y, right: canvas.right, bottom: canvas.bottom, width: canvas.width, height: canvas.height },
         panel: { x: panel.x, y: panel.y, width: panel.width, height: panel.height },
@@ -40,7 +42,9 @@ try {
     })()`);
     assert.equal(madeira.destination, 'madeira-pt');
     assert.ok(madeira.text.length > 0 && madeira.focused, JSON.stringify(madeira));
-    assert.match(madeira.tileURL, /^http:\/\/127\.0\.0\.1:\d+\/fixture-tiles\/%7bz%7d\/%7bx%7d\/%7by%7d\.png$/i);
+    assert.match(madeira[engine === 'maplibre' ? 'styleURL' : 'tileURL'], engine === 'maplibre'
+      ? /^http:\/\/127\.0\.0\.1:\d+\/fixture-map\/style\.json$/
+      : /^http:\/\/127\.0\.0\.1:\d+\/fixture-tiles\/%7bz%7d\/%7bx%7d\/%7by%7d\.png$/i);
     assert.ok(madeira.width > 0 && madeira.width <= width && madeira.height >= 320, JSON.stringify(madeira));
     assert.ok(madeira.overflow <= width, JSON.stringify(madeira));
     assert.equal(madeira.info.label, 'About map layers');
@@ -64,7 +68,7 @@ try {
       await browser.evaluate(`(() => { document.querySelector('#city_name').value = ${JSON.stringify(query)}; document.querySelector('#destination-search').requestSubmit(); })()`);
       await browser.until(`document.querySelector('[data-writers-map]')?.dataset.mapDestination === ${JSON.stringify(slug)}`);
       await browser.until(`document.querySelector('[data-map-slot="status"]')?.textContent === ${JSON.stringify(status)}`);
-      const state = await browser.evaluate(`(() => ({ maps: document.querySelectorAll('.leaflet-container').length,
+      const state = await browser.evaluate(`(() => ({ maps: document.querySelectorAll('[data-map-canvas]').length,
         sameCanvas: document.querySelector('[data-map-canvas]') === window.__mapCanvas,
         list: [...document.querySelectorAll('[data-map-slot="list"] button')].map(b => b.textContent),
         overflow: document.documentElement.scrollWidth }))()`);
@@ -80,9 +84,10 @@ try {
     }
     assert.deepEqual(browser.errors, []);
     assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
-    console.log(`PASS ${width}px: writer data, base-only and unavailable swaps, one map, keyboard list, local tiles`);
+    console.log(`PASS ${engine} ${width}px: writer data, base-only and unavailable swaps, one map, keyboard list, local fixtures`);
   }
 } finally {
   if (browser) await browser.close();
   preview.stop();
+}
 }

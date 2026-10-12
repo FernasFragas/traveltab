@@ -18,6 +18,10 @@
 - **After L3** (2026-10-11):
   6. **Blocked blog:** its indexed posts stay and **count inside the 100** (hard cap holds; pins survive a temporary 403). Permanent removal stays the `removed` takedown.
   7. **Sudden empty search:** a blog that had indexed posts but now returns **0 candidates** keeps its rows and logs a warning; retried next run.
+- **After L4** (2026-10-11):
+  8. **International blogs with 0 posts:** accepted. Slots follow cached destinations, so those blogs appear once their cities are cached.
+  9. **Empty guard:** decision 7 triggers on **0 destination candidates** (after the title/URL filter), not 0 search hits.
+  10. **Overshoot after a mid-run failure:** after the run, if the total is over 100, **trim** the lowest-ranked rows of the blogs that did update until it's 100.
 
 ## The hard part: "popular" has no free, standard signal
 **The WordPress REST API exposes no view counts.** `orderby` supports date, modified, title, relevance and similar, but not popularity. Jetpack stats need the site owner's login. **L1 is a spike** to choose a signal from free public data:

@@ -129,6 +129,8 @@
 
 @media (max-width: 600px) {
     .writers-map-body > [data-map-canvas] { height: 340px; min-height: 340px; }
-    .writers-map-card .leaflet-bottom.leaflet-left { top: 0; right: 0; bottom: auto; left: auto; }
-    .writers-map-card .leaflet-control-scale { margin: 10px 10px 0 0; }
+    .writers-map-card .leaflet-bottom.leaflet-left,
+    .writers-map-card .maplibregl-ctrl-bottom-left { top: 0; right: 0; bottom: auto; left: auto; }
+    .writers-map-card .leaflet-control-scale,
+    .writers-map-card .maplibregl-ctrl-scale { margin: 10px 10px 0 0; }
 }

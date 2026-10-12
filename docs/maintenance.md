@@ -147,11 +147,37 @@ The sync runs when `WRITERS_SYNC=1` and the map shows its results when `WRITERS_
 live run (see [post-limit-results.md](../tasks/post-limit-results.md#coverage-l4)) indexed 100
 posts. The summary pass (`WRITERS_AI=1`) is separate and not covered by this section.
 
-### Basemap source (task 3e)
+### Basemap sources (tasks 3e and M1–M7)
+
+The default 3D map lazy-loads **MapLibre GL JS 5.24.0** (UMD JavaScript and CSS from jsDelivr).
+Its vector basemap is the [OpenFreeMap Liberty style](https://tiles.openfreemap.org/styles/liberty),
+which loads its tiles, glyphs and sprite from OpenFreeMap. MapLibre shows the style attribution,
+“OpenFreeMap © OpenMapTiles Data from OpenStreetMap”. The terrain source is
+`https://tiles.mapterhorn.com/{z}/{x}/{y}.webp`, 512-pixel Terrarium-encoded DEM tiles. Its on-map
+credit is “© Mapterhorn”; its source data includes Madeira IGP (CC BY 4.0) and Copernicus GLO-30.
+Neither provider needs an application key. Both are external dependencies without an application
+SLA; review their terms and attribution before changing the style or terrain host. The map shell's
+`data-map-style-url` and `data-map-terrain-url` select local fixtures or replacement hosts.
+
+If WebGL is unavailable, or the MapLibre style, tiles or terrain fail, the card switches to its
+Leaflet 1.9.4 raster fallback. An explicit `data-map-engine="leaflet"` forces that engine for the
+preview. The fallback uses EOX imagery and switches to OpenStreetMap standard tiles on an image
+tile error; it caps zoom at 18. The raster fallback is also subject to the OSM tile policy below.
+
+If OpenFreeMap becomes unavailable long term, self-host a compatible OpenMapTiles vector archive
+as PMTiles on static storage that supports HTTPS, CORS and byte-range requests. Add the PMTiles
+protocol to the MapLibre loader, point a locally hosted copy of the Liberty style at the archive,
+and serve its glyphs and sprite from an allowed origin. Then set `data-map-style-url` to that style,
+keep the OpenStreetMap/OpenMapTiles attribution, update the CSP origins and test the 375 px and
+1440 px views. `data-map-style-url` alone cannot read a PMTiles archive with the current loader;
+the protocol integration is a code change. Terrain can be replaced independently through
+`data-map-terrain-url` with compatible 512-pixel Terrarium tiles.
+
+#### Leaflet raster fallback (task 3e)
 
 The owner accepted this source and its older-image tradeoff on 2026-10-11.
 
-The default is EOX's **2016 EOxCloudless Sentinel-2** WMTS layer, `s2cloudless_3857`:
+The fallback uses EOX's **2016 EOxCloudless Sentinel-2** WMTS layer, `s2cloudless_3857`:
 `https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg`.
 EOX [licenses this year under CC BY 4.0](https://cloudless.eox.at/license-non-commercial),
 which permits commercial use with credit. Its required visible map credit is
@@ -171,7 +197,7 @@ The choice was checked on 2026-10-11 against these alternatives:
 | [EOX 2018–2025](https://cloudless.eox.at/license-non-commercial) | Free direct WMTS for noncommercial use under CC BY-NC-SA 4.0; commercial use requires a separate licence. Same 4096-pixel request limit; no numeric tile quota published. | Excluded because this site's commercial status need not be assumed. |
 | EOX 2016 | CC BY 4.0, direct WMTS without a key or fee, with the exact EOX credit above; same request limit. | Selected despite older, lower-detail imagery. |
 
-The map shell's `data-map-tile-url` and `data-map-attribution` override the default together for
+The map shell's `data-map-tile-url` and `data-map-attribution` override the fallback together for
 fixtures or a later provider. An explicit OSM URL gets the OSM credit if no credit is supplied.
 If a tile fails, the browser switches to
 [OpenStreetMap standard tiles](https://operations.osmfoundation.org/policies/tiles/) and their own
@@ -180,7 +206,7 @@ normal cache headers, and must not prefetch large areas. On 2026-10-11, EOX's li
 listed `s2cloudless_3857` with the `GoogleMapsCompatible` matrix, and individual Funchal tiles at
 zoom 12 and 14 returned 256×256 JPEG imagery. The automated preview retains local fixture tiles;
 the optional `tasks/redesign/checks/writers-map-imagery-live.mjs` browser check verifies the live
-default and its on-map credit.
+3D and raster sources and their on-map credit.
 
 The writers' map reads its allowlist from the embedded `writerdata/sources.json` file and reviewed
 matching policy from `writerdata/overrides.json`. Source status is `active`, `blocked` or `removed`;
@@ -232,14 +258,12 @@ flags off until the corresponding feature has been reviewed and is ready to laun
 
 ## Next up
 
-In priority order. Updated 2026-10-08. Done work (redesign, destination photos, sitemap storage,
+In priority order. Updated 2026-10-11. Done work (redesign, destination photos, sitemap storage,
 city guides, slug helpers, city autocomplete) is recorded in the [changelog](../CHANGELOG.md).
 
-1. **Writers' map.** Follow [tasks/todo.md](../tasks/todo.md). PR 1 is done and the
-   [contract](writers-map-contract.md) is approved; next are the base layer (PR 4) and the map
-   shell (PR 3), with the matcher (6a) and passage cutter (9a) alongside.
-   PR 5 (writers index) waits on the 55-place coverage check in
-   [the spike results](../tasks/writers-map-results.md).
+1. **Writers' map.** Progress lives in the task files, not here: [tasks/todo.md](../tasks/todo.md)
+   (PRs 1–9), [post-limit-todo.md](../tasks/post-limit-todo.md) (100-post index) and
+   [map-3d-todo.md](../tasks/map-3d-todo.md) (MapLibre 3D map).
 2. **Close the verification gaps.** Live checks of the map embed, Wikimedia photos, YouTube
    playback and the Booking landing page in a normal browser (see the
    [external checks](../tasks/artifacts/redesign/final-verification/external-results.md)), plus

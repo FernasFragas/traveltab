@@ -130,6 +130,43 @@ func TestSelect_MoreBlogsThanTheCapKeepsTheCapAndTheBiggestBlogs(t *testing.T) {
 	assert.Len(t, ids(picks, "b4"), 1)
 }
 
+func TestCountDestinationPosts_CountsEachPlaceNamingPostOnce(t *testing.T) {
+	hit := writermap.SearchHit{ID: 1, Title: "Madeira", Slug: "madeira"}
+	blog := writermap.BlogCandidates{Host: "a", Hits: []writermap.SearchHit{
+		hit, hit,
+		{ID: 2, Title: "Packing list", Slug: "packing-list"},
+	}}
+
+	assert.Equal(t, 1, writermap.CountDestinationPosts(blog, selectionPlaces))
+	assert.Equal(t, 0, writermap.CountDestinationPosts(writermap.BlogCandidates{Host: "b", Hits: blog.Hits[2:]}, selectionPlaces))
+}
+
+func TestTrim_DropsTheGloballyLowestRankedPicks(t *testing.T) {
+	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	hit := func(id int64, hours int) writermap.SearchHit {
+		return writermap.SearchHit{ID: id, Title: "Madeira", Published: base.Add(time.Duration(hours) * time.Hour)}
+	}
+	blogs := []writermap.BlogCandidates{
+		{Host: "a", Hits: []writermap.SearchHit{hit(1, 1), hit(2, 2)}, Comments: map[int64]int{1: 9}},
+		{Host: "b", Hits: []writermap.SearchHit{hit(1, 3), hit(2, 4)}, Comments: map[int64]int{1: 3}},
+		{Host: "c", Hits: []writermap.SearchHit{hit(1, 0)}}, // not among the picks: untouched
+	}
+	picks := []writermap.Pick{{Host: "a", PostID: 1}, {Host: "a", PostID: 2}, {Host: "b", PostID: 1}, {Host: "b", PostID: 2}}
+
+	dropped := writermap.Trim(blogs, selectionPlaces, picks, 3)
+
+	assert.Equal(t, []writermap.Pick{{Host: "a", PostID: 2}, {Host: "b", PostID: 2}, {Host: "b", PostID: 1}}, dropped,
+		"no comments first (oldest before newest), then fewer comments")
+}
+
+func TestTrim_NothingToDropOrMoreThanThereIs(t *testing.T) {
+	blogs := []writermap.BlogCandidates{blogOf("a", 2)}
+	picks := []writermap.Pick{{Host: "a", PostID: 1}, {Host: "a", PostID: 2}}
+
+	assert.Empty(t, writermap.Trim(blogs, selectionPlaces, picks, 0))
+	assert.Len(t, writermap.Trim(blogs, selectionPlaces, picks, 5), 2)
+}
+
 // blogOf returns a blog with n destination hits.
 func blogOf(host string, n int) writermap.BlogCandidates {
 	blog := writermap.BlogCandidates{Host: host}

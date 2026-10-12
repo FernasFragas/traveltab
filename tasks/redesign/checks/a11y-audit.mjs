@@ -41,6 +41,7 @@ const fallbackPreview = await startPreview({ scenario: 'fallback' });
 const wideVideos = await startPreview({ scenario: 'videos-10' });
 const wideStays = await startPreview({ scenario: 'stays-6' });
 const uncertain = await startPreview({ scenario: 'forecast-uncertain' });
+const mapPreviews = [];
 const b = await connect();
 const { evaluate, until, call } = b;
 
@@ -699,6 +700,29 @@ try {
     problems.forEach(p => findings.push({ area: 'text-spacing', detail: p }));
   }
 
+  if (want('map')) for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
+    const mapPreview = await startPreview({ scenario });
+    mapPreviews.push(mapPreview);
+    for (const [width, height] of WIDTHS) {
+      await b.viewport(width, height);
+      await b.navigate(`${mapPreview.url}/trip/madeira-pt`);
+      await evaluate("document.querySelector('[data-map-canvas]')?.scrollIntoView({ block: 'center', behavior: 'instant' })");
+      await until(`document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}') && document.querySelector('.map-pin')`);
+      const tree = await axTree();
+      const unnamed = tree.filter(n => NAMED_ROLES.has(n.role) && n.role !== 'image' && !n.name && n.backend);
+      const state = await evaluate(`(() => ({ chips: [...document.querySelectorAll('[data-map-slot="layers"] button')].map(b => ({ name: b.textContent.trim(), pressed: b.getAttribute('aria-pressed') })),
+        pins: [...document.querySelectorAll('.map-pin')].map(p => ({ name: p.getAttribute('aria-label') || p.getAttribute('title') || p.textContent.trim(), focusable: p.tabIndex >= 0 })),
+        overflow: document.documentElement.scrollWidth }))()`);
+      const ok = !unnamed.length && state.chips.every(c => c.name && c.pressed !== null) && state.pins.length > 0 && state.pins.every(p => p.name && p.focusable) && state.overflow <= width;
+      record(`writers-map-${engine}@${width}`, ok, ok ? `${state.chips.length} named toggle chips, ${state.pins.length} named focusable pins, no unnamed controls or overflow` : JSON.stringify({ unnamed: unnamed.slice(0, 5), state }));
+      if (axeSource) {
+        await evaluate(axeSource);
+        const violations = await evaluate("axe.run(document, { resultTypes: ['violations'] }).then(r => r.violations.map(v => v.id + '(' + v.nodes.length + ')'))");
+        record(`writers-map-axe-${engine}@${width}`, violations.length === 0, violations.length ? violations.join(', ') : 'axe-core: 0 violations');
+      }
+    }
+  }
+
   assert.deepEqual(b.errors, [], 'Unexpected JavaScript exceptions');
   pass('js-exceptions', 'no uncaught JavaScript exceptions during the audit');
 } finally {
@@ -706,7 +730,7 @@ try {
     contrastLowest: [...allPairs].sort((p, q) => p.ratio / p.required - q.ratio / q.required).slice(0, 40), pairCount: allPairs.length, states: [...new Set(allPairs.map(p => p.label))], axResults, focusResults, errors: b.errors }, null, 2));
   await writeFile(new URL('contrast-pairs.json', output), JSON.stringify(allPairs, null, 1));
   await b.close();
-  for (const p of [preview, fallbackPreview, wideVideos, wideStays, uncertain]) p.stop();
+  for (const p of [preview, fallbackPreview, wideVideos, wideStays, uncertain, ...mapPreviews]) p.stop();
 }
 const failed = results.filter(r => r.status === 'fail');
 console.log(`\n${results.length - failed.length} passed, ${failed.length} failed`);

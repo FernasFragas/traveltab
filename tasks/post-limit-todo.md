@@ -91,6 +91,8 @@ Source of truth for progress. Read [the plan](post-limit-plan.md) first.
 ### L3 follow-ups (owner decisions 6 and 7) and cleanup
 - [x] RED/GREEN: a blocked blog's rows stay and count inside the 100 (30 held rows, active blogs get 70).
 - [x] RED/GREEN: a blog with indexed posts and a sudden empty search keeps its rows (inside the cap), logs a warning with the host, is not finished and is retried.
+- [x] RED/GREEN (decision 9): the keep-rows guard triggers on 0 destination candidates after the title/URL filter, not 0 raw hits (20 rows kept, other blog gets 80).
+- [x] RED/GREEN (decision 10): after a run over 100 (a failed blog kept old rows), trim the lowest-ranked rows of the updated blogs to exactly 100; log the count.
 - [x] Removed the unused `ListPosts`/`PostIDs` client methods and their tests; coverage stays at or above 80%.
 
 **Done when:** a full sync indexes ≤100 posts, chosen by the agreed signal, re-picked monthly with drop-outs purged, and the owner has seen the coverage trade-off.

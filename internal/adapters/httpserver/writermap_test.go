@@ -159,6 +159,49 @@ func TestWriterMap_TripPageUsesTheFlaggedShell(t *testing.T) {
 	assert.NotContains(t, body, "Map by Waze")
 }
 
+// As the owner, I want the server to set the 3D basemap only when asked, so production keeps
+// the browser defaults.
+func TestWriterMap_ShellOmitsBasemapAttributesByDefault(t *testing.T) {
+	body := mapShellBody(t, "Defaultcity", func(*Server) {})
+	for _, attr := range []string{"data-map-style-url", "data-map-terrain-url", "data-map-engine"} {
+		assert.NotContains(t, body, attr)
+	}
+}
+
+func TestWriterMap_ShellCarriesBasemapAttributesWhenSet(t *testing.T) {
+	body := mapShellBody(t, "Setcity", func(s *Server) {
+		s.SetWriterMapBasemap("http://x/style.json", "http://x/{z}/{x}/{y}.png", "leaflet")
+	})
+	assert.Contains(t, body, `data-map-style-url="http://x/style.json"`)
+	// html/template escapes braces in URL attributes, as it does for data-map-tile-url; the
+	// browser core restores them.
+	assert.Contains(t, body, `data-map-terrain-url="http://x/%7bz%7d/%7bx%7d/%7by%7d.png"`)
+	assert.Contains(t, body, `data-map-engine="leaflet"`)
+}
+
+func TestWriterMap_ShellCanTurnTerrainOff(t *testing.T) {
+	body := mapShellBody(t, "Offcity", func(s *Server) { s.SetWriterMapTerrainOff() })
+	assert.Contains(t, body, `data-map-terrain-url=""`)
+	assert.NotContains(t, body, "data-map-style-url")
+	assert.NotContains(t, body, "data-map-engine")
+}
+
+func mapShellBody(t *testing.T, city string, configure func(*Server)) string {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	server, weather, videos := createTestServer(ctrl)
+	server.SetWriterMapSource(writermaptest.NewMadeiraSource(), true)
+	configure(server)
+	info := createTestGeneralWeatherInfoFor(city)
+	info.Country = "PT"
+	info.Lat, info.Lon = 32.65, -16.91
+	weather.EXPECT().GenerateReport(gomock.Any(), strings.ToLower(city)+", pt").Return(info, nil)
+	videos.EXPECT().GenerateReport(gomock.Any(), "Turistic places in "+city+", PT").Return(createTestVideosStream(), nil)
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/"+strings.ToLower(city)+"-pt", nil))
+	require.Equal(t, 200, status)
+	return body
+}
+
 // As a traveler, I want writers' routes on the map, so the browser receives each itinerary with
 // its post link and days of stops, and never the post's internal reference.
 func TestWriterMap_GeoJSONCarriesItineraries(t *testing.T) {

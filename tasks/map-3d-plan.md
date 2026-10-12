@@ -1,6 +1,6 @@
 # Writers' map in 3D (MapLibre)
 
-**Status:** planned 2026-10-11, not started. Tasks: [map-3d-todo.md](map-3d-todo.md). Spike: [map-3d-results.md](map-3d-results.md).
+**Status:** M1 and M2 complete 2026-10-11; remaining work is tracked in [map-3d-todo.md](map-3d-todo.md). Spike: [map-3d-results.md](map-3d-results.md).
 
 **Goal:** replace the Leaflet satellite map with a **3D vector map**: tilted camera, terrain and extruded buildings, like [Electroverse](https://electroverse.com/map/38.7221,-9.2516,12.3/). It must be **sharp at every zoom with no grey tiles**, built from **free sources only**.
 
