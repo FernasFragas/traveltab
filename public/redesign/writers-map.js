@@ -8,11 +8,46 @@
     // contract's named slots. Engines: MapLibre here, Leaflet in writers-map-leaflet.js.
     var maplibreCSS = 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css';
     var maplibreJS = 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js';
-    var defaultStyle = 'https://tiles.openfreemap.org/styles/liberty';
+    var defaultStyle = 'https://tiles.openfreemap.org/styles/dark';
     var defaultTerrain = 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp';
+    var buildingLow = '#2c3044';
+    var buildingHigh = '#46414d';
+    // Colours sampled from the Electroverse map (Lisbon), applied over OpenFreeMap dark layer ids, plus
+    // the road weight and label size that go with them. Layer ids a style lacks are skipped. Only the
+    // default style is changed. Minor roads are thin and dim at z10 to z13, so towns do not drown in lines.
+    var minorRoadWidth = ['interpolate', ['exponential', 1.55], ['zoom'], 10, 0.4, 13, 1.2, 20, 20];
+    var minorRoadOpacity = ['interpolate', ['linear'], ['zoom'], 10, 0.35, 14, 0.9];
+    // Primary and trunk roads keep their weight; secondary and tertiary share their layers, so they thin by class.
+    function byClass(main, other) { return ['match', ['get', 'class'], ['primary', 'trunk'], main, other]; }
+    var majorRoadWidth = ['interpolate', ['exponential', 1.3], ['zoom'], 10, byClass(2, 0.7), 13, byClass(3.6, 1.4), 20, 20];
+    var majorCasingWidth = ['interpolate', ['exponential', 1.3], ['zoom'], 10, byClass(3, 1.2), 13, byClass(4.8, 2), 20, 23];
+    var majorRoadOpacity = ['interpolate', ['linear'], ['zoom'], 10, byClass(1, 0.4), 14, 1];
+    var majorSubtleWidth = ['interpolate', ['linear'], ['zoom'], 6, 0, 8, byClass(1.5, 0.5)];
+    var palette = [
+        [['background', 'landcover_ice_shelf', 'landcover_glacier', 'landuse_residential', 'road_area_pier', 'road_pier'], { 'background-color': '#18263b', 'fill-color': '#18263b', 'line-color': '#18263b' }],
+        [['water', 'waterway'], { 'fill-color': '#000e29', 'line-color': '#000e29' }],
+        [['landcover_wood', 'landuse_park'], { 'fill-color': '#203838', 'fill-pattern': null }],
+        [['building'], { 'fill-color': '#2c3044', 'fill-outline-color': '#232b3d' }],
+        [['highway_path', 'railway_transit', 'railway_minor', 'railway', 'aeroway-taxiway'], { 'line-color': '#2c3550' }],
+        [['highway_minor', 'highway_major_subtle', 'highway_motorway_subtle'], { 'line-color': '#404860' }],
+        [['highway_minor'], { 'line-width': minorRoadWidth, 'line-opacity': minorRoadOpacity }],
+        [['highway_major_inner'], { 'line-width': majorRoadWidth, 'line-opacity': majorRoadOpacity }],
+        [['highway_major_casing'], { 'line-width': majorCasingWidth, 'line-opacity': majorRoadOpacity }],
+        [['highway_major_subtle'], { 'line-width': majorSubtleWidth }],
+        [['highway_major_inner'], { 'line-color': '#4c576c' }],
+        [['highway_motorway_inner', 'aeroway-runway'], { 'line-color': '#5a6274' }],
+        [['highway_major_casing', 'highway_motorway_casing', 'aeroway-runway-casing'], { 'line-color': '#101c2e' }],
+        [['highway_name_other', 'highway_name_motorway'], { 'text-color': '#9aa3b5', 'text-halo-color': '#18263b' }],
+        [['water_name'], { 'text-color': '#6f7f9c', 'text-halo-color': '#000e29' }],
+        [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city', 'place_city_large', 'place_state',
+            'place_country_other', 'place_country_minor', 'place_country_major'], { 'text-color': '#e0e0e0', 'text-halo-color': '#101820' }],
+        [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city'], { 'text-size': 11 }]
+    ];
     var camera = { zoom: 12.3, pitch: 55, bearing: -20 };
     var loadTimeout = 20000;
     var tileFailureLimit = 3;
+    var framePadding = 48;
+    var tiltedFramePadding = 88; // perspective stretches the near edge of the 3D view
     var layers = new Map();
     var engine = null;
     var canvas = null;
@@ -176,7 +211,7 @@
     function unavailable(currentRequest) {
         context = { destination: shell.dataset.mapDestination || shell.dataset.mapUrl,
             features: [], shell: shell, selectPlace: selectPlace };
-        showStatus(shell, 'Map unavailable. Browse places below.');
+        showStatus(shell, 'Map unavailable.');
         loadPlaces(currentRequest);
     }
 
@@ -219,7 +254,7 @@
                 var settled = false;
                 var failedTiles = {};
                 var timer = setTimeout(function () { fail(new Error('Map style timed out')); }, loadTimeout);
-                map.on('style.load', function () { addTerrain(); drawing.restoreLines(); });
+                map.on('style.load', function () { addTerrain(); addPalette(); addBuildings(); drawing.restoreLines(); });
                 map.on('sourcedata', function (event) {
                     if (event && event.sourceId && event.tile) failedTiles[event.sourceId] = 0;
                 });
@@ -251,6 +286,49 @@
                     map.setTerrain({ source: 'terrain-dem', exaggeration: 1 });
                 }
 
+                // The default style only: each layer takes the properties of its own type (a fill
+                // gets fill-color, a line line-color, ...), so one row can cover several types.
+                // Label size is a layout property, everything else here is paint.
+                function addPalette() {
+                    if (root.dataset.mapStyleUrl) return;
+                    var types = {};
+                    (map.getStyle().layers || []).forEach(function (layer) { types[layer.id] = layer.type; });
+                    var prefixes = { background: 'background-', fill: 'fill-', line: 'line-', symbol: 'text-' };
+                    var layoutProperties = ['text-size'];
+                    palette.forEach(function (row) {
+                        row[0].forEach(function (id) {
+                            var type = types[id];
+                            if (!type) return;
+                            Object.keys(row[1]).forEach(function (property) {
+                                if (property.indexOf(prefixes[type]) !== 0) return;
+                                if (layoutProperties.indexOf(property) !== -1) map.setLayoutProperty(id, property, row[1][property]);
+                                else map.setPaintProperty(id, property, row[1][property]);
+                            });
+                        });
+                    });
+                }
+
+                // The dark style has no 3D buildings, so draw them from its vector source. A style
+                // that already extrudes buildings, or this layer from an earlier style.load, is kept.
+                function addBuildings() {
+                    var style = map.getStyle();
+                    var layers = style.layers || [];
+                    if (layers.some(function (layer) { return layer.type === 'fill-extrusion'; })) return;
+                    var sources = style.sources || {};
+                    var name = sources.openmaptiles ? 'openmaptiles' : Object.keys(sources).filter(function (id) { return sources[id].type === 'vector'; })[0];
+                    if (!name) return;
+                    var below;
+                    var start = layers.findIndex(function (layer) { return layer['source-layer'] === 'building'; });
+                    layers.slice(Math.max(start, 0)).some(function (layer) { if (layer.type === 'symbol') { below = layer.id; return true; } });
+                    map.addLayer({ id: 'buildings-3d', type: 'fill-extrusion', source: name, 'source-layer': 'building', minzoom: 14,
+                        paint: {
+                            'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 0], 0, buildingLow, 80, buildingHigh],
+                            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 0],
+                            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+                            'fill-extrusion-opacity': 0.85
+                        } }, below);
+                }
+
                 function fail(error) {
                     if (settled) return;
                     settled = true;
@@ -273,19 +351,25 @@
             context.engine = created.name;
             context.draw = created.draw;
             addLayers();
+            frameMap(context.features);
             document.dispatchEvent(new CustomEvent('travelmap:ready', {
                 detail: { map: created.map, destination: context.destination, engine: created.name }
             }));
-        }).catch(function () { showStatus(shell, 'Map unavailable. Browse places below.'); });
+        }).catch(function () { showStatus(shell, 'Map unavailable.'); });
     }
 
     function newMaplibreDrawing(map) {
         var groups = new Map();
         function group(id) {
-            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null });
+            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null, popup: null });
             return groups.get(id);
         }
         function clearMarkers(entry) { entry.markers.forEach(function (marker) { marker.remove(); }); entry.markers = []; }
+        function clearPopup(entry) {
+            var popup = entry.popup;
+            entry.popup = null; // the close handler ignores a popup the layer replaced or cleared
+            if (popup) popup.remove();
+        }
         function clearLine(entry, id) {
             if (map.getLayer('draw-line-' + id)) map.removeLayer('draw-line-' + id);
             if (map.getSource('draw-line-' + id)) map.removeSource('draw-line-' + id);
@@ -298,6 +382,7 @@
             clearMarkers(entry);
             clearLine(entry, id);
             clearControl(entry);
+            clearPopup(entry);
             groups.delete(id);
         }
         function drawLine(id, entry) {
@@ -306,7 +391,7 @@
                 map.addSource('draw-line-' + id, { type: 'geojson', data: {
                     type: 'Feature', geometry: { type: 'LineString', coordinates: entry.line.coords }
                 } });
-                var paint = { 'line-color': entry.line.style.color || '#a64027', 'line-width': entry.line.style.width || 3 };
+                var paint = { 'line-color': entry.line.style.color || '#ff8a65', 'line-width': entry.line.style.width || 3 };
                 if (entry.line.style.dash) paint['line-dasharray'] = entry.line.style.dash;
                 map.addLayer({ id: 'draw-line-' + id, type: 'line', source: 'draw-line-' + id, paint: paint });
             } catch (error) {
@@ -328,7 +413,7 @@
                         }
                         if (item.onClick) item.element.addEventListener('click', item.onClick);
                         item.element.style.zIndex = String(item.z || 0);
-                        entry.markers.push(new window.maplibregl.Marker({ element: item.element })
+                        entry.markers.push(new window.maplibregl.Marker({ element: item.element, opacityWhenCovered: '1' })
                             .setLngLat(item.lngLat).addTo(map));
                     });
                 },
@@ -344,8 +429,32 @@
                     entry.control = { onAdd: function () { return element; }, onRemove: function () { element.remove(); } };
                     map.addControl(entry.control, position || 'top-right');
                 },
+                popup: function (id, lngLat, element, options) {
+                    var entry = group(id);
+                    clearPopup(entry);
+                    var popup = new window.maplibregl.Popup({ closeButton: false, closeOnClick: false, closeOnMove: false,
+                        offset: 18, className: 'travelmap-popup', maxWidth: '260px' }).setDOMContent(element).setLngLat(lngLat);
+                    // A click on a pin also reaches the map, so MapLibre's own closeOnClick would close the popup
+                    // the pin just opened.
+                    var closeOnMapClick = function (event) {
+                        var target = event.originalEvent && event.originalEvent.target;
+                        if (!target || !target.closest || !target.closest('.maplibregl-marker')) popup.remove();
+                    };
+                    map.on('click', closeOnMapClick);
+                    entry.popup = popup;
+                    popup.on('close', function () {
+                        map.off('click', closeOnMapClick);
+                        if (entry.popup !== popup) return;
+                        entry.popup = null;
+                        if (options && options.onClose) options.onClose();
+                    });
+                    popup.addTo(map);
+                },
                 clear: clear,
-                fit: function (bounds, options) { map.fitBounds(bounds, { padding: options && options.padding || 0 }); },
+                fit: function (bounds, options) {
+                    map.fitBounds(bounds, { padding: options && options.padding || 0, maxZoom: options && options.maxZoom,
+                        animate: options && options.animate });
+                },
                 flyTo: function (lngLat, zoom) { map.flyTo({ center: lngLat, zoom: zoom }); }
             }
         };
@@ -359,41 +468,29 @@
             if (currentRequest !== requestNumber) return;
             if (engine && context.features.length) removeLayers();
             context.features = Array.isArray(data.features) ? data.features : [];
-            renderList(shell, context.features);
-            if (engine) addLayers();
-            showStatus(shell, !engine ? 'Map unavailable. Browse places below.' :
+            if (engine) { addLayers(); frameMap(context.features); }
+            showStatus(shell, !engine ? 'Map unavailable.' :
                 data.complete === false ? 'Some map sources are unavailable.' : '');
         }).catch(function () {
             if (currentRequest !== requestNumber) return;
-            renderList(shell, []);
             if (engine) addLayers();
             showStatus(shell, engine ? 'Places are unavailable. The map is still available.' : 'Map and places are unavailable.');
         });
     }
 
-    function renderList(root, features) {
-        var slot = root.querySelector('[data-map-slot="list"]');
-        if (!slot) return;
-        slot.replaceChildren();
-        if (!features.length) {
-            var empty = document.createElement('p');
-            empty.textContent = 'No places to list yet.';
-            slot.appendChild(empty);
-            return;
-        }
-        var list = document.createElement('ul');
-        list.setAttribute('aria-label', 'Places on the map');
-        features.forEach(function (feature) {
-            if (!feature.properties || !feature.properties.qid) return;
-            var item = document.createElement('li');
-            var button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = feature.properties.name || feature.properties.qid;
-            button.addEventListener('click', function () { selectPlace(feature.properties.qid); });
-            item.appendChild(button);
-            list.appendChild(item);
+    // Madeira is wider than the zoom-12 view, so frame the writers' pins (all places when no pin
+    // has a writer) instead of leaving them off screen.
+    function frameMap(features) {
+        var points = features.filter(function (feature) {
+            return feature.geometry && Array.isArray(feature.geometry.coordinates);
         });
-        slot.appendChild(list);
+        var written = points.filter(function (feature) { return feature.properties && feature.properties.writer_count > 0; });
+        points = (written.length ? written : points).map(function (feature) { return feature.geometry.coordinates; });
+        if (!points.length) return;
+        var lons = points.map(function (point) { return point[0]; });
+        var lats = points.map(function (point) { return point[1]; });
+        engine.draw.fit([[Math.min.apply(null, lons), Math.min.apply(null, lats)], [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
+            { padding: engine.name === 'maplibre' ? tiltedFramePadding : framePadding, maxZoom: camera.zoom, animate: false });
     }
 
     function showStatus(root, message) {

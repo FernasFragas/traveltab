@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../../../public/redesign/map-itineraries.js', import.meta.url), 'utf8');
+const stylesheet = readFileSync(new URL('../../../public/redesign/map-itineraries.css', import.meta.url), 'utf8');
 const features = [['Q1', 'Tower', 38.1, -9.1], ['Q2', 'Museum', 38.2, -9.2], ['Q3', 'Park', 38.3, -9.3]].map(([qid, name, lat, lon]) =>
   ({ geometry: { coordinates: [lon, lat] }, properties: { qid, name } }));
 const routeA = { writer_host: 'a.example', post_url: 'https://a.example/trip/', post_title: 'Trip A', days: [{ qids: ['Q1', 'Q2'] }, { qids: ['Q3'] }] };
@@ -23,8 +24,13 @@ test('draws numbered buttons and one styled route through context.draw', async (
   assert.equal(app.pins()[0].element.className, 'itinerary-pin');
   assert.equal(app.pins()[0].title, 'Stop 1: Tower');
   assert.deepEqual(JSON.parse(JSON.stringify(app.line().coords)), [[-9.1, 38.1], [-9.2, 38.2], [-9.3, 38.3]]);
-  assert.deepEqual(JSON.parse(JSON.stringify(app.line().style)), { color: '#7b3fb8', width: 3, dash: [6, 6] });
+  assert.deepEqual(JSON.parse(JSON.stringify(app.line().style)), { color: '#b794f6', width: 3, dash: [6, 6] });
   assert.deepEqual(app.calls().filter(c => c !== 'clear'), ['line', 'markers']);
+});
+
+test('the itineraries legend dot matches the route line colour', () => {
+  const css = readFileSync(new URL('../../../public/redesign/writers-map-layout.css', import.meta.url), 'utf8');
+  assert.match(css, /\.writers-map-layer-itineraries \{ --layer-color: #b794f6; \}/);
 });
 
 test('a pin opens route details and a safe post link; switching closes them', async () => {
@@ -138,3 +144,12 @@ function element(tagName) {
     change() { listeners.get('change')?.({ target: this }); },
     text() { return this.textContent + this.children.map(child => child.text()).join(''); } };
 }
+
+test('numbered pins use the brighter purple, and the white numbers stay readable on it', () => {
+  const fill = /\.itinerary-pin \{[^}]*background: (#[0-9a-f]{6});/.exec(stylesheet)[1];
+  assert.equal(fill, '#8e5bd6');
+  const luminance = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+    .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+  assert.ok(1.05 / (luminance(fill) + 0.05) >= 4.5, 'white numbers need 4.5:1');
+});

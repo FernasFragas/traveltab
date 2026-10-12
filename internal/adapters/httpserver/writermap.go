@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"weatherservice/internal/application"
 	"weatherservice/internal/writermap"
 
@@ -93,16 +94,21 @@ func (s *Server) writerMapGeoJSON(ctx *fiber.Ctx) error {
 		if names == nil {
 			names = []string{}
 		}
+		properties := mapProperties{
+			QID: place.QID, Name: name, Names: names, Kind: place.Kind,
+			Description: place.Description, Sitelinks: place.Sitelinks,
+			WriterCount: result.WriterCounts[place.QID],
+			PanelURL:    "/map/" + url.PathEscape(ctx.Params("dest")) + "/" + url.PathEscape(place.QID) + query,
+		}
+		if validPlacePhotoURL(place.PhotoURL) {
+			properties.Photo = place.Photo
+			properties.PhotoURL = place.PhotoURL
+			properties.PhotoCredit = place.PhotoCredit
+		}
 		features = append(features, mapFeature{
-			Type:     "Feature",
-			Geometry: mapGeometry{Type: "Point", Coordinates: [2]float64{place.Lon, place.Lat}},
-			Properties: mapProperties{
-				QID: place.QID, Name: name, Names: names, Kind: place.Kind,
-				Description: place.Description, Photo: place.Photo, PhotoCredit: place.PhotoCredit,
-				PhotoURL: place.PhotoURL, Sitelinks: place.Sitelinks,
-				WriterCount: result.WriterCounts[place.QID],
-				PanelURL:    "/map/" + url.PathEscape(ctx.Params("dest")) + "/" + url.PathEscape(place.QID) + query,
-			},
+			Type:       "Feature",
+			Geometry:   mapGeometry{Type: "Point", Coordinates: [2]float64{place.Lon, place.Lat}},
+			Properties: properties,
 		})
 	}
 	return ctx.JSON(mapCollection{
@@ -132,8 +138,14 @@ func (s *Server) writerMapPlace(ctx *fiber.Ctx) error {
 	if len(place.Names) > 0 {
 		name = place.Names[0]
 	}
+	visiblePlace := *place
+	if !validPlacePhotoURL(place.PhotoURL) {
+		visiblePlace.Photo = ""
+		visiblePlace.PhotoURL = ""
+		visiblePlace.PhotoCredit = ""
+	}
 	return ctx.Render("place_panel", fiber.Map{
-		"Place": place, "Name": name, "Summary": summary,
+		"Place": &visiblePlace, "Name": name, "Summary": summary,
 		"WriterCount": result.WriterCounts[qid], "Mentions": result.Mentions[qid],
 	})
 }
@@ -161,6 +173,15 @@ func mapCoordinates(lat, lon float64) string {
 	return fmt.Sprintf("?lat=%s&lon=%s", strconv.FormatFloat(lat, 'f', -1, 64), strconv.FormatFloat(lon, 'f', -1, 64))
 }
 
+func validPlacePhotoURL(raw string) bool {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil {
+		return false
+	}
+	host := strings.ToLower(parsed.Hostname())
+	return host == "upload.wikimedia.org" || host == "thumb.wikimedia.org"
+}
+
 type mapCollection struct {
 	Type        string         `json:"type"`
 	Complete    bool           `json:"complete"`
@@ -185,9 +206,9 @@ type mapProperties struct {
 	Names       []string `json:"names"`
 	Kind        string   `json:"kind"`
 	Description string   `json:"description"`
-	Photo       string   `json:"photo"`
-	PhotoCredit string   `json:"photo_credit"`
-	PhotoURL    string   `json:"photo_url"`
+	Photo       string   `json:"photo,omitempty"`
+	PhotoCredit string   `json:"photo_credit,omitempty"`
+	PhotoURL    string   `json:"photo_url,omitempty"`
 	Sitelinks   int      `json:"sitelinks"`
 	WriterCount int      `json:"writer_count"`
 	PanelURL    string   `json:"panel_url"`

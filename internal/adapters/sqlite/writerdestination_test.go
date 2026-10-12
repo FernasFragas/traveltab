@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"weatherservice/internal/writermap"
 
@@ -59,4 +60,29 @@ func TestWriterDestination_UpsertsInPlaceAndListsAreas(t *testing.T) {
 	cached, err := store.CachedDestinations(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, cached)
+}
+
+func TestWriterDestination_IgnoresLegacyCommonsPage(t *testing.T) {
+	ctx := context.Background()
+	store := writerIndexTestStore(t)
+	area := writermap.Area{Name: "Lisbon", Country: "PT", Lat: 38.7, Lon: -9.1}
+	legacyKey := `writermap:v1:"lisbon":"pt":38.7:-9.1:0`
+	legacy := writermap.DestinationResult{Places: []writermap.Place{{QID: "Q1", PhotoURL: "https://commons.wikimedia.org/wiki/File:Palace.jpg"}}}
+	store.writerDestinations().store(legacyKey, legacy)
+	_, _, seeded := store.writerDestinations().load(legacyKey)
+	require.True(t, seeded)
+
+	_, ok, err := store.WriterDestination(ctx, area)
+	require.NoError(t, err)
+	assert.False(t, ok)
+
+	areas, err := store.WriterDestinations(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, areas)
+}
+
+func TestWriterDestination_KeyUsesBasePlaceVersion(t *testing.T) {
+	area := writermap.Area{Name: "Lisbon", Country: "PT", Lat: 38.7, Lon: -9.1}
+
+	assert.Equal(t, strings.Replace(basePlaceKey(area), "wikidata:", "writermap:", 1), writerDestinationKey(area))
 }

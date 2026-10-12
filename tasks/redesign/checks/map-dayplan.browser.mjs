@@ -40,7 +40,7 @@ try {
           controls: document.querySelectorAll('.plan-day-toggle').length,
           focusable: [...document.querySelectorAll('.plan-pin')].every(pin => pin.tagName === 'BUTTON' && pin.getAttribute('aria-label')) })`);
         assert.ok(layout.overflow <= width, JSON.stringify(layout));
-        assert.equal(layout.green, 'rgb(46, 125, 50)');
+        assert.equal(layout.green, 'rgb(67, 160, 71)');
         assert.deepEqual(layout.toggle.slice(0, 2), ['All', 'Day 1']);
         assert.equal(layout.controls, 1);
         assert.ok(layout.focusable);

@@ -44,6 +44,9 @@ func (s *Store) initialize() error {
 	if err := createSourceCacheTable(s.db); err != nil {
 		return err
 	}
+	if _, err := s.db.Exec(`DELETE FROM source_cache WHERE key LIKE 'wikidata:v1%' OR key LIKE 'writermap:v1%'`); err != nil {
+		return fmt.Errorf("error removing legacy photo cache rows: %w", err)
+	}
 	if err := createSitemapSlugsTable(s.db); err != nil {
 		return err
 	}

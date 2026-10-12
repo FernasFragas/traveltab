@@ -33,7 +33,7 @@ test('uses drawing API for green, numbered, focusable pins and a day control', (
   assert.deepEqual(JSON.parse(JSON.stringify(app.pins().map(pin => pin.lngLat))), [[-9.21, 38.69], [-9.11, 38.72], [-9.1, 38.7]]);
   assert.deepEqual(Array.from(app.pins(), pin => pin.element.textContent), ['1', '2', '1']);
   assert.ok(app.pins().every(pin => pin.element.tagName === 'BUTTON' && pin.element.className === 'plan-pin'));
-  assert.ok(app.pins().every(pin => pin.element.style.background === '#2e7d32'));
+  assert.ok(app.pins().every(pin => pin.element.style.background === '#43a047'));
   assert.match(app.pins()[0].title, /Day 1: Tower/);
   assert.deepEqual(Array.from(app.control().buttons(), button => button.textContent), ['All', 'Day 1', 'Day 2']);
   assert.equal(app.control().position, 'top-right');

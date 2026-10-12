@@ -84,7 +84,7 @@
                 pin.style.cssText = 'display:flex;align-items:center;justify-content:center;width:26px;height:26px;' +
                     'border-radius:50%;color:#fff;border:2px solid #fff;font:600 13px/1 sans-serif;' +
                     'box-shadow:0 1px 4px rgba(0,0,0,.4);cursor:pointer';
-                pin.style.background = '#2e7d32';
+                pin.style.background = '#43a047';
                 pins.push({
                     lngLat: [stop.lon, stop.lat],
                     element: pin,

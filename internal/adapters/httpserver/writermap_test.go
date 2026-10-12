@@ -127,9 +127,10 @@ func TestWriterMap_PageFlagStates(t *testing.T) {
 		status, body := doRequest(t, server, httptest.NewRequest("GET", "/process-form/?city_name="+city, nil))
 		require.Equal(t, 200, status)
 		if enabled {
-			for _, slot := range []string{"panel", "layers", "saved", "status", "list"} {
+			for _, slot := range []string{"panel", "layers", "saved", "status"} {
 				assert.Contains(t, body, `data-map-slot="`+slot+`"`)
 			}
+			assert.NotContains(t, body, `data-map-slot="list"`, "the place-tag list was removed")
 			assert.Contains(t, body, `data-writers-map`)
 			assert.Contains(t, body, `hx-trigger="load"`)
 			assert.Contains(t, body, "/map/mapflagon-pt.geojson?lat=38.7223&amp;lon=-9.1393")

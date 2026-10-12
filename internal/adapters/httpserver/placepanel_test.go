@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -77,7 +78,7 @@ func TestPlacePanel_BaseOnlyDestinationSaysNoWriterMentions(t *testing.T) {
 	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{
 		Places: []writermap.Place{{
 			QID: "Q1", Names: []string{"Torre de Belém"}, Kind: "tower", Area: "Lisbon",
-			Description: "A fortified tower.", PhotoURL: "https://example.org/belem.jpg",
+			Description: "A fortified tower.", PhotoURL: "https://upload.wikimedia.org/photos/belem.jpg",
 			PhotoCredit: "Photo: A. Person, CC BY-SA 4.0",
 		}},
 	}}
@@ -86,11 +87,83 @@ func TestPlacePanel_BaseOnlyDestinationSaysNoWriterMentions(t *testing.T) {
 
 	assert.Contains(t, body, "No writer mentions here yet")
 	assert.Contains(t, body, "A fortified tower.")
-	assert.Contains(t, body, `src="https://example.org/belem.jpg"`)
+	assert.Contains(t, body, `src="https://upload.wikimedia.org/photos/belem.jpg"`)
 	assert.Contains(t, body, "Photo: A. Person, CC BY-SA 4.0")
 	assert.Contains(t, body, `data-save-qid="Q1"`)
 	assert.NotContains(t, body, "Mentioned by")
 	assert.NotContains(t, body, "map-panel-writers")
+}
+
+func TestPlacePanel_PhotoSrcIsAnImageURLNotACommonsPage(t *testing.T) {
+	thumb := "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Pico_Ruivo.jpg/640px-Pico_Ruivo.jpg"
+	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{
+		Places: []writermap.Place{{QID: "Q1", Names: []string{"Cabo Espichel Lighthouse"}, Photo: "Pico Ruivo.jpg", PhotoURL: thumb, PhotoCredit: "Ana · CC BY-SA 4.0"}},
+	}}
+
+	body := placePanel(t, source, "Q1")
+
+	assert.Contains(t, body, `<img src="`+thumb+`"`)
+	assert.NotContains(t, body, "commons.wikimedia.org/wiki/File:")
+}
+
+// As a traveler, I want a stale Commons page URL to leave the photo out of the panel and map,
+// so that I do not see a broken image or its orphaned credit.
+func TestPlacePanel_InvalidPhotoURLHasNoPhotoOrCredit(t *testing.T) {
+	page := "https://commons.wikimedia.org/wiki/File:Palace.jpg"
+	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{
+		Places: []writermap.Place{{
+			QID: "Q1", Names: []string{"Palace"}, Lat: 32.65, Lon: -16.91,
+			Photo: "Palace.jpg", PhotoURL: page, PhotoCredit: "Diego Delso · CC BY-SA 4.0",
+		}},
+	}}
+
+	body := placePanel(t, source, "Q1")
+	assert.NotContains(t, body, "<img")
+	assert.NotContains(t, body, "Diego Delso")
+
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(source, true)
+	status, geoJSON := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+	require.Equal(t, 200, status)
+	var collection struct {
+		Features []struct {
+			Properties map[string]any `json:"properties"`
+		} `json:"features"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(geoJSON), &collection))
+	require.Len(t, collection.Features, 1)
+	for _, field := range []string{"photo", "photo_url", "photo_credit"} {
+		assert.NotContains(t, collection.Features[0].Properties, field)
+	}
+}
+
+func TestPlacePanel_ThumbWikimediaPhotoAppearsInPanelAndGeoJSON(t *testing.T) {
+	thumb := "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/aa/Palace.jpg/640px-Palace.jpg"
+	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{
+		Places: []writermap.Place{{
+			QID: "Q1", Names: []string{"Palace"}, Lat: 32.65, Lon: -16.91,
+			Photo: "Palace.jpg", PhotoURL: thumb, PhotoCredit: "Diego Delso · CC BY-SA 4.0",
+		}},
+	}}
+
+	body := placePanel(t, source, "Q1")
+	assert.Contains(t, body, `<img src="`+thumb+`"`)
+	assert.Contains(t, body, "Diego Delso · CC BY-SA 4.0")
+
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(source, true)
+	status, geoJSON := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+	require.Equal(t, 200, status)
+	var collection struct {
+		Features []struct {
+			Properties map[string]any `json:"properties"`
+		} `json:"features"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(geoJSON), &collection))
+	require.Len(t, collection.Features, 1)
+	assert.Equal(t, "Palace.jpg", collection.Features[0].Properties["photo"])
+	assert.Equal(t, thumb, collection.Features[0].Properties["photo_url"])
+	assert.Equal(t, "Diego Delso · CC BY-SA 4.0", collection.Features[0].Properties["photo_credit"])
 }
 
 func placePanel(t *testing.T, source *writermaptest.FakeSource, qid string) string {

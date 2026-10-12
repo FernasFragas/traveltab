@@ -16,7 +16,10 @@ var (
 )
 
 // writerDestinationKeyFormat encodes the whole area, so WriterDestinations can read areas back.
-const writerDestinationKeyFormat = "writermap:v1:%q:%q:%g:%g:%g"
+const (
+	writerDestinationKeyPrefix = "writermap:" + basePlaceCacheVersion + ":"
+	writerDestinationKeyFormat = writerDestinationKeyPrefix + "%q:%q:%g:%g:%g"
+)
 
 // WriterMatchRows returns indexed occurrences of the folded phrases, each with its post's day
 // sections, which the matcher needs for day context and itineraries.
@@ -67,7 +70,7 @@ func (s *Store) SaveWriterDestination(_ context.Context, dest writermap.Area, re
 // WriterDestinations lists every stored destination, read back from the keys. Names and
 // countries come back lowercased, as stored; they map to the same rows.
 func (s *Store) WriterDestinations(ctx context.Context) ([]writermap.Area, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT key FROM source_cache WHERE key LIKE 'writermap:v1:%';`)
+	rows, err := s.db.QueryContext(ctx, `SELECT key FROM source_cache WHERE key LIKE ?;`, writerDestinationKeyPrefix+"%")
 	if err != nil {
 		return nil, fmt.Errorf("list writer destinations: %w", err)
 	}

@@ -20,6 +20,8 @@ const (
 	wikidataNearbyURL    = "https://query.wikidata.org/sparql"
 	wikidataNearbyRadius = 40
 	wikidataNearbyLimit  = 200
+	// nearbyPhotoWidth is the thumbnail width for the place panel, which shows a small photo.
+	nearbyPhotoWidth = 640
 )
 
 // WikidataNearbyAPI finds nearby entities once, then selects base pins from that gazetteer.
@@ -254,7 +256,7 @@ func (a *WikidataNearbyAPI) addPhotoCredits(ctx context.Context, places []writer
 			} `json:"query"`
 			mediaWikiError
 		}
-		params := url.Values{"action": {"query"}, "titles": {strings.Join(titles[start:end], "|")}, "prop": {"imageinfo"}, "iiprop": {"url|extmetadata"}, "iiextmetadatafilter": {"Artist|LicenseShortName|NonFree|Restrictions"}, "format": {"json"}, "formatversion": {"2"}}
+		params := url.Values{"action": {"query"}, "titles": {strings.Join(titles[start:end], "|")}, "prop": {"imageinfo"}, "iiprop": {"url|extmetadata"}, "iiurlwidth": {fmt.Sprint(nearbyPhotoWidth)}, "iiextmetadatafilter": {"Artist|LicenseShortName|NonFree|Restrictions"}, "format": {"json"}, "formatversion": {"2"}}
 		if err := NewWikimediaAPI(a.client).get(ctx, commonsAPIURL, params, &response); err != nil {
 			return fmt.Errorf("wikidata nearby photo credit: %w", err)
 		}
@@ -269,21 +271,25 @@ func (a *WikidataNearbyAPI) addPhotoCredits(ctx context.Context, places []writer
 			info := page.ImageInfo[0]
 			artist := nearbyMetadata(info.Ext, "Artist")
 			license := nearbyMetadata(info.Ext, "LicenseShortName")
-			photo, photoOK := safeURL(info.URL, "upload.wikimedia.org", "thumb.wikimedia.org")
-			pageURL, pageOK := safeURL(info.Description, "commons.wikimedia.org")
-			if !photoOK || !pageOK || artist == "" || license == "" || strings.EqualFold(nearbyMetadata(info.Ext, "NonFree"), "true") || nearbyMetadata(info.Ext, "Restrictions") != "" {
+			// The thumbnail is absent when the original is narrower than the request.
+			imageURL := info.ThumbURL
+			if imageURL == "" {
+				imageURL = info.URL
+			}
+			photoURL, photoOK := safeURL(imageURL, "upload.wikimedia.org", "thumb.wikimedia.org")
+			if _, pageOK := safeURL(info.Description, "commons.wikimedia.org"); !photoOK || !pageOK || artist == "" || license == "" || strings.EqualFold(nearbyMetadata(info.Ext, "NonFree"), "true") || nearbyMetadata(info.Ext, "Restrictions") != "" {
 				continue
 			}
 			for _, i := range files[file] {
-				places[i].Photo = photo
 				places[i].PhotoCredit = artist + " · " + license
-				places[i].PhotoURL = pageURL
+				places[i].PhotoURL = photoURL
 			}
 		}
 	}
 	for i := range places {
-		if places[i].PhotoCredit == "" {
+		if places[i].PhotoURL == "" {
 			places[i].Photo = ""
+			places[i].PhotoCredit = ""
 		}
 	}
 	return nil

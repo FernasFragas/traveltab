@@ -16,7 +16,6 @@
         <div data-map-slot="panel"><p>Pick a place on the map</p></div>
     </div>
     <div data-map-slot="saved"></div>
-    <div data-map-slot="list"></div>
     <div hx-get="{{ .WriterMap.URL }}" hx-trigger="load" hx-swap="none" hidden></div>
     <div class="map-footer">
         {{ with .Presentation.MapURL }}<a class="map-action" href="{{ . }}" target="_blank" rel="noopener noreferrer">View larger map <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{{ end }}

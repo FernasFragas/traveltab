@@ -2,7 +2,7 @@
 // PR 7 together: 7f chips toggle the 7a and 7b layers; 7d saves from 7a's real panel and the plan request carries them.
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
 import assert from 'node:assert/strict';
-import { connect, startPreview } from './lib/browser.mjs';
+import { connect, openPlacePanel, startPreview } from './lib/browser.mjs';
 
 for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
 const preview = await startPreview({ scenario });
@@ -46,7 +46,7 @@ try {
     assert.equal(await count('.map-pin-notable'), notable);
 
     // 7d saves from 7a's real panel.
-    await browser.evaluate("[...document.querySelectorAll('[data-map-slot=\"list\"] button')].find(b => b.textContent === 'Pico Ruivo').click()");
+    await openPlacePanel(browser, 'Pico Ruivo');
     await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
     await browser.evaluate("document.querySelector('.map-place-panel [data-save-qid]').click()");
     const saved = await browser.evaluate("({ button: document.querySelector('.map-place-panel [data-save-qid]').textContent.trim(), line: document.querySelector('[data-map-slot=\"saved\"]').textContent.trim() })");
@@ -56,7 +56,7 @@ try {
     // Reload keeps the save; reopening the panel shows it as saved.
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.until("document.querySelectorAll('.map-pin').length > 0");
-    await browser.evaluate("[...document.querySelectorAll('[data-map-slot=\"list\"] button')].find(b => b.textContent === 'Pico Ruivo').click()");
+    await openPlacePanel(browser, 'Pico Ruivo');
     await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
     await browser.until("document.querySelector('.map-place-panel [data-save-qid]').textContent.trim() === 'Saved'");
 
@@ -84,7 +84,7 @@ try {
     const before = await count('.plan-pin');
     await browser.evaluate("document.querySelectorAll('.plan-day-toggle button')[1].click()");
     const dayOne = await count('.plan-pin');
-    await browser.evaluate("[...document.querySelectorAll('[data-map-slot=\"list\"] button')].find(b => b.textContent === 'Funchal').click()");
+    await openPlacePanel(browser, 'Funchal');
     await browser.until("document.querySelector('.map-place-panel h3')?.textContent === 'Funchal'");
     assert.equal(await count('.plan-pin'), dayOne, 'day survives panel swap');
     assert.ok(dayOne < before);
