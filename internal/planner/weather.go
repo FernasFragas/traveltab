@@ -75,7 +75,7 @@ type dayPlan struct {
 }
 
 // topUpRainyDays trades a rainy day's least famous outdoor stops for the nearest unused indoor
-// places, until the day has MinStopsPerDay of them or the pool runs out. No place is used twice.
+// places, until the day has MinStopsPerDay of them or none fits the walk. No place is used twice.
 func topUpRainyDays(days []Day, pool []Place) {
 	used := make(map[string]bool)
 	for i := range days {
@@ -89,17 +89,20 @@ func topUpRainyDays(days []Day, pool []Place) {
 		}
 		changed := false
 		for shelteredCount(days[i].Stops) < MinStopsPerDay {
-			next, found := nearestSheltered(days[i].Stops, pool, used)
+			out, replace := leastFamousOutdoor(days[i].Stops)
+			if !replace && len(days[i].Stops) >= MinStopsPerDay {
+				break
+			}
+			stops := days[i].Stops
+			if replace {
+				stops = append(append([]Place(nil), stops[:out]...), stops[out+1:]...)
+			}
+			next, found := nearestSheltered(stops, pool, used)
 			if !found {
 				break
 			}
-			if out, ok := leastFamousOutdoor(days[i].Stops); ok {
-				days[i].Stops = append(days[i].Stops[:out], days[i].Stops[out+1:]...)
-			} else if len(days[i].Stops) >= MinStopsPerDay {
-				break
-			}
 			used[placeKey(next)] = true
-			days[i].Stops = append(days[i].Stops, next)
+			days[i].Stops = append(stops, next)
 			changed = true
 		}
 		if changed {
@@ -109,11 +112,14 @@ func topUpRainyDays(days []Day, pool []Place) {
 	}
 }
 
-// nearestSheltered picks the unused indoor or mixed place closest to the day's stops.
+// nearestSheltered picks the closest unused indoor or mixed place that fits the walk.
 func nearestSheltered(stops, pool []Place, used map[string]bool) (Place, bool) {
 	best, bestKM, found := Place{}, 0.0, false
 	for _, c := range pool {
 		if used[placeKey(c)] || !sheltered(c) {
+			continue
+		}
+		if WalkingLoop(append(stops, c)).WalkKM > MaxWalkKM {
 			continue
 		}
 		km := nearestStopKM(c, stops)

@@ -10,16 +10,18 @@ const (
 	kmeansRounds = 50
 	// compactRadiusKM is how far apart two stops can sit and still feel like the same walk.
 	compactRadiusKM = 1.5
-	// PullReachKM is how far a short day may reach for a stop from another day. Beyond it
-	// the day keeps the stops it has: two stops together beat three stops across town.
-	PullReachKM = 3.0
+	// balanceReachKM keeps the initial day clusters in nearby areas.
+	balanceReachKM = 3.0
+	// MaxWalkKM is the longest walking loop planned for a day, including the return.
+	MaxWalkKM = 15.0
+	// PullReachKM is how far a short day may reach for another stop.
+	PullReachKM = MaxWalkKM
 )
 
-// GroupDays splits the most famous ranked places into one walking day each. It takes
-// the top SunnyPoolSize places, keeps the ones that are both famous and close together,
-// clusters them by location, aims every day at MinStopsPerDay to MaxStopsPerDay stops —
-// a day keeps 2 stops rather than reach past PullReachKM for a third — and puts each day
-// in walking order.
+// GroupDays splits the most famous ranked places into walking days. It clusters
+// the top SunnyPoolSize places, then fills short days from all ranked places within
+// walking reach. It aims for MinStopsPerDay to MaxStopsPerDay stops per day, with
+// a walking loop no longer than MaxWalkKM.
 func GroupDays(ranked []Place, days int) []Group {
 	pool := ranked
 	if len(pool) > SunnyPoolSize {
@@ -31,7 +33,9 @@ func GroupDays(ranked []Place, days int) []Group {
 	k := dayCount(len(pool), days)
 	clusters, centers := clusterPlaces(selectCompact(pool, k*MaxStopsPerDay), k)
 	clusters = balanceClusters(clusters, centers)
-	fillSingletons(clusters, pool)
+	trimOverlongClusters(clusters)
+	fillShortDays(clusters, ranked)
+	replaceLoneDays(clusters, ranked)
 	groups := make([]Group, 0, len(clusters))
 	for _, stops := range clusters {
 		if len(stops) > 0 {
@@ -44,10 +48,19 @@ func GroupDays(ranked []Place, days int) []Group {
 	return groups
 }
 
-// fillSingletons gives an isolated day a nearby highlight that compact selection left out.
-// It stays inside the sunny top-20 pool and the same reach limit as balancing. A truly
-// isolated place remains alone rather than adding a long cross-city walk.
-func fillSingletons(clusters [][]Place, pool []Place) {
+// trimOverlongClusters drops the least famous stops until each initial day is walkable.
+func trimOverlongClusters(clusters [][]Place) {
+	for i, stops := range clusters {
+		for len(stops) > 1 && WalkingLoop(stops).WalkKM > MaxWalkKM {
+			at := leastFamousStop(stops)
+			stops = append(stops[:at], stops[at+1:]...)
+		}
+		clusters[i] = stops
+	}
+}
+
+// fillShortDays adds nearby ranked places to every day below the target.
+func fillShortDays(clusters [][]Place, ranked []Place) {
 	used := make(map[string]bool)
 	for _, stops := range clusters {
 		for _, stop := range stops {
@@ -55,25 +68,79 @@ func fillSingletons(clusters [][]Place, pool []Place) {
 		}
 	}
 	for i, stops := range clusters {
-		if len(stops) != 1 {
-			continue
-		}
-		best := -1
-		distance := PullReachKM
-		for j, candidate := range pool {
-			if used[candidate.ID] {
-				continue
-			}
-			d := DistanceKM(stops[0], candidate)
-			if d <= distance && (best < 0 || d < distance || moreFamous(candidate, pool[best])) {
-				best, distance = j, d
-			}
-		}
-		if best >= 0 {
-			clusters[i] = append(clusters[i], pool[best])
-			used[pool[best].ID] = true
+		clusters[i] = fillCluster(stops, ranked, used, MinStopsPerDay)
+	}
+}
+
+// replaceLoneDays rebuilds a single-stop day around another unused area. The
+// most famous place remains even when it has no companion, as does a one-place town.
+func replaceLoneDays(clusters [][]Place, ranked []Place) {
+	used := make(map[string]bool)
+	for _, stops := range clusters {
+		for _, stop := range stops {
+			used[stop.ID] = true
 		}
 	}
+	mostFamous := ranked[mostFamousLeft(ranked, make([]bool, len(ranked)))].ID
+	for i, stops := range clusters {
+		if len(stops) != 1 || hasPlaceID(stops, mostFamous) {
+			continue
+		}
+		tried := make([]bool, len(ranked))
+		for j, p := range ranked {
+			tried[j] = used[p.ID]
+		}
+		clusters[i] = nil
+		for seed := mostFamousLeft(ranked, tried); seed >= 0; seed = mostFamousLeft(ranked, tried) {
+			tried[seed] = true
+			attemptUsed := make(map[string]bool, len(used)+1)
+			for id := range used {
+				attemptUsed[id] = true
+			}
+			attemptUsed[ranked[seed].ID] = true
+			area := fillCluster([]Place{ranked[seed]}, ranked, attemptUsed, MaxStopsPerDay)
+			if len(area) < 2 {
+				continue
+			}
+			clusters[i] = area
+			for _, p := range area {
+				used[p.ID] = true
+			}
+			break
+		}
+	}
+}
+
+// fillCluster prefers the most famous place within a compact walk, then widens
+// to PullReachKM. Each new stop extends the walk for the next search.
+func fillCluster(stops, ranked []Place, used map[string]bool, target int) []Place {
+	for len(stops) > 0 && len(stops) < target {
+		best := -1
+		near := -1
+		for i, p := range ranked {
+			if used[p.ID] {
+				continue
+			}
+			if WalkingLoop(append(stops, p)).WalkKM > MaxWalkKM {
+				continue
+			}
+			d := nearestKM(p, stops)
+			if d <= compactRadiusKM && (near < 0 || moreFamous(p, ranked[near])) {
+				near = i
+			} else if d <= PullReachKM && (best < 0 || moreFamous(p, ranked[best])) {
+				best = i
+			}
+		}
+		if near >= 0 {
+			best = near
+		}
+		if best < 0 {
+			break
+		}
+		stops = append(stops, ranked[best])
+		used[ranked[best].ID] = true
+	}
+	return stops
 }
 
 // dayCount is how many days a pool of this size can fill: never more than asked, never
@@ -241,7 +308,7 @@ func recenter(clusters [][]Place, centers []Place) []Place {
 
 // balanceClusters aims every day at MinStopsPerDay to MaxStopsPerDay stops. Short days
 // pull the nearest stop from a day that can spare one, as long as it is within
-// PullReachKM; a day with nothing that close keeps the stops it has. Days that are still
+// balanceReachKM; a day with nothing that close keeps the stops it has. Days that are still
 // too long drop their lowest-ranked stops.
 func balanceClusters(clusters [][]Place, centers []Place) [][]Place {
 	for moved := true; moved; {
@@ -261,7 +328,7 @@ func balanceClusters(clusters [][]Place, centers []Place) [][]Place {
 }
 
 // pullNearest moves the stop closest to cluster i out of whichever other cluster has one
-// to spare, as long as it sits within PullReachKM of cluster i's centre. It reports false
+// to spare, as long as it sits within balanceReachKM of cluster i's centre. It reports false
 // when no cluster can give up a stop that close.
 //
 // A cluster left on its own may also take from a cluster sitting at exactly MinStopsPerDay,
@@ -279,7 +346,8 @@ func pullNearest(clusters [][]Place, centers []Place, i int) bool {
 			continue
 		}
 		for s, p := range clusters[j] {
-			if d := DistanceKM(p, centers[i]); d <= PullReachKM && d < distance {
+			if d := DistanceKM(p, centers[i]); d <= balanceReachKM && d < distance &&
+				WalkingLoop(append(clusters[i], p)).WalkKM <= MaxWalkKM {
 				from, at, distance = j, s, d
 			}
 		}
@@ -299,6 +367,16 @@ func hasPlaceID(places []Place, id string) bool {
 		}
 	}
 	return false
+}
+
+func leastFamousStop(places []Place) int {
+	worst := 0
+	for i := 1; i < len(places); i++ {
+		if moreFamous(places[worst], places[i]) {
+			worst = i
+		}
+	}
+	return worst
 }
 
 // nearestKM is the distance from p to the closest of the given places.
