@@ -220,6 +220,7 @@ YOUTUBE_NEW=your-youtube-data-api-key
 | `DB_PATH`            | Optional. Where the SQLite file lives. Defaults to `weatherservice.db` in the working directory |
 | `STATS_TOKEN`        | Optional. Enables `/stats` for requests with a matching `?token=`          |
 | `WRITERS_MAP`, `WRITERS_SYNC`, `WRITERS_AI` | Writers' map flags, off unless set to `1`. `WRITERS_SYNC` starts the capped monthly crawl; `WRITERS_MAP` serves the map and panels. `WRITERS_AI` is reserved for the later summary job. Enable the first two only after the PR 8 release review. |
+| `WRITERS_RESYNC_BEFORE` | Optional date (`2026-10-13`) or RFC 3339 time. A writers source whose last sync is older runs again at startup instead of waiting for the monthly window. Set in `fly.toml`; use a time before the deploy. |
 | `LLM_GATEWAY_URL`, `LLM_GATEWAY_KEY` | Optional. LLM Gateway for the planned writers' map summaries. Loaded, not yet used |
 | `ENV`                | Set to `production` to skip loading `.env` and read only real environment variables |
 

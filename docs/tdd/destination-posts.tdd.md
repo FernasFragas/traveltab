@@ -149,28 +149,39 @@ Index: 135 posts (75 + 19 + 41), 2.0 MB. The log contains no post text.
 
 Lisbon wasn't loaded in T5: its Wikidata load takes several minutes. Its top-up search was measured in T1 (37 picks).
 
-## Follow-up: re-pick at the first startup after the deploy
+## Follow-up: re-pick at the first startup after a deploy (configurable)
 
-Owner decision (2026-10-13), replacing "next monthly run": a source whose last run is before `perDestinationSince` (2026-10-13 20:00 UTC, just before this change was written) is due at once, so the deploy re-picks without a manual step. The test clock (`crawlTime`) moved from 11 to 14 October so the existing tests run after the cutoff.
+Owner decision (2026-10-13), replacing "next monthly run": the switch happens at the first startup after the deploy, controlled by one setting so the next change needs one line. A first version hard-coded the cutoff in `sync.go`; it was undone at the owner's request.
 
-`go test ./internal/writermap/ -count=1`
+- `WRITERS_RESYNC_BEFORE` (`internal/config/flags.go`): a date (`2026-10-13`, midnight UTC) or an RFC 3339 time. Unset is off; an invalid value is logged and off.
+- `SyncJob.ResyncBefore`: a source whose `last_full` is older is due at once, outside the monthly window.
+- `fly.toml` `[env]`: `WRITERS_RESYNC_BEFORE = "2026-10-13T20:00:00Z"`, before any run of the new code, so the forced run happens once.
+
+`go test ./internal/config/ ./internal/writermap/ -count=1`
 
 RED:
 ```
---- FAIL: TestSyncJob_RunBeforePerDestinationPicksIsDueAtOnce (0.00s)
-        	Messages:   	the shared-cap picks are re-picked at once
-        	Messages:   	only once: the new run is after the change
-FAIL
+internal/config/flags_test.go:73:23: flags.WritersResyncBefore undefined (type FeatureFlags has no field or method WritersResyncBefore)
+FAIL	weatherservice/internal/config [build failed]
+internal/writermap/sync_test.go:427:6: job.ResyncBefore undefined (type *writermap.SyncJob has no field or method ResyncBefore)
+FAIL	weatherservice/internal/writermap [build failed]
 ```
-GREEN, `go test ./internal/writermap/ -count=1 -race` → `ok  	weatherservice/internal/writermap	1.725s`. `make test lint build` → exit 0, `0 issues.`; coverage 94.5%.
+GREEN, `go test ./internal/config/ ./internal/writermap/ -count=1 -race`:
+```
+ok  	weatherservice/internal/config	1.492s
+ok  	weatherservice/internal/writermap	1.720s
+```
+`make test lint build` → exit 0, `0 issues.`; coverage: config 100.0%, writermap 94.5%.
 
 | What is guaranteed | Test | Level | Result |
 |---|---|---|---|
-| A run from before the change is due at once, outside the window | `TestSyncJob_RunBeforePerDestinationPicksIsDueAtOnce` | unit | PASS |
-| It re-runs only once | same test, second `Run` | unit | PASS |
-| Runs after the change still wait for the monthly window | `TestSyncJob_RunWaitsForNewMonthAndOffPeak` | unit | PASS |
+| Unset is off | `TestLoadFeatureFlags_WritersFlagsDefaultOff` | unit | PASS |
+| A date or an RFC 3339 time is read as UTC | `TestLoadFeatureFlags_ReadsWritersResyncBefore` | unit | PASS |
+| An invalid value is off and logged | `TestLoadFeatureFlags_InvalidWritersResyncBeforeIsOffAndLogged` | unit | PASS |
+| A run older than the setting is due at once, and only once | `TestSyncJob_RunBeforeResyncBeforeIsDueAtOnce` | unit | PASS |
+| Without the setting, runs still wait for the monthly window | `TestSyncJob_RunWaitsForNewMonthAndOffPeak` | unit | PASS |
 
-**Not run at runtime:** starting the app on a copy of `launch-check.db` (last runs 11 October) failed to bind port 8080, which the owner's app was using. The rule is covered by the unit test above.
+**Not run at runtime:** port 8080 was in use by the owner's app.
 
 ## Known gaps
 

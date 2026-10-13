@@ -107,13 +107,15 @@ func wireBaseLayer(server *httpserver.Server, basePlaces application.BasePlaceSo
 // destination cached for the first time is queued for a top-up, which indexes its posts and
 // recomputes its result without waiting for the monthly run.
 func wireWriterSync(storage *sqlite.Store, basePlaces application.BasePlaceSource, sources []writermap.Source, overrides writermap.Overrides, writerSource *writermap.MapSource) {
-	if !config.LoadFeatureFlags().WritersSync {
+	flags := config.LoadFeatureFlags()
+	if !flags.WritersSync {
 		return
 	}
 	client := api.NewWordPressClient(nil, api.NewHostLimiter())
 	job := writermap.NewSyncJob(sources, writerIndexStore{storage}, wordPressPosts{client})
 	job.BlockedErrors = []error{api.ErrBlocked, api.ErrDisallowed}
 	job.Areas = overrides.Areas
+	job.ResyncBefore = flags.WritersResyncBefore
 	job.Destinations, job.Refresher = storage, basePlaces.(application.BasePlaceRefresher)
 	job.PlaceNames = func(ctx context.Context) ([]string, error) {
 		return cachedPlaceNames(ctx, storage, basePlaces, overrides)
