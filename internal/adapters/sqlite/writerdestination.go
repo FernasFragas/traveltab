@@ -17,7 +17,7 @@ var (
 
 // writerDestinationKeyFormat encodes the whole area, so WriterDestinations can read areas back.
 const (
-	writerDestinationKeyPrefix = "writermap:" + basePlaceCacheVersion + ":"
+	writerDestinationKeyPrefix = "writermap:" + basePlaceCacheVersion + ":m2:"
 	writerDestinationKeyFormat = writerDestinationKeyPrefix + "%q:%q:%g:%g:%g"
 )
 

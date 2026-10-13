@@ -97,11 +97,11 @@ func TestMatchDestination_ContextTypesRankingAndCounts(t *testing.T) {
 
 func TestMatchDestination_DayContextAndStoplist(t *testing.T) {
 	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"Monte"}}, {QID: "Q2", Names: []string{"Praia"}}}}
-	post := IndexedPost{Host: "writer.test", PostID: 1, Extracted: ExtractedPost{Days: []DaySection{{Number: 1, Start: 10, End: 100}, {Number: 2, Start: 100, End: 200}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Extracted: ExtractedPost{Days: []DaySection{{Number: 1, Start: 10, End: 1000}, {Number: 2, Start: 1000, End: 2000}}}}
 	rows := []MatchRow{
 		{Post: post, Phrase: NamePhrase{Folded: "madeira", OriginalCase: true, Start: 15, End: 22}},
 		{Post: post, Phrase: NamePhrase{Folded: "monte", OriginalCase: true, Start: 30, End: 35}},
-		{Post: post, Phrase: NamePhrase{Folded: "monte", OriginalCase: true, Start: 120, End: 125}},
+		{Post: post, Phrase: NamePhrase{Folded: "monte", OriginalCase: true, Start: 1520, End: 1525}},
 		{Post: post, Phrase: NamePhrase{Folded: "praia", OriginalCase: true, Start: 40, End: 45}},
 	}
 
@@ -110,6 +110,114 @@ func TestMatchDestination_DayContextAndStoplist(t *testing.T) {
 	require.Len(t, got.Mentions["Q1"], 1)
 	assert.Equal(t, []Position{{Start: 30, End: 35}}, got.Mentions["Q1"][0].Positions)
 	assert.Empty(t, got.Mentions["Q2"])
+}
+
+func TestMatchDestination_SaoVicenteIgnoresPassingLisbon(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "18 Things to do in Madeira, Portugal"}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 50, End: 56}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 2000, End: 2011}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	assert.Empty(t, got.Mentions["Q1"])
+}
+
+func TestMatchDestination_TitleContextKeepsDistantPlace(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "Lisbon guide"}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 0, End: 6}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 2000, End: 2011}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	require.Len(t, got.Mentions["Q1"], 1)
+}
+
+func TestMatchDestination_TitleBoundaryUsesRenderedRunes(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "Madeira &amp; Funchal"}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 19, End: 25}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 2000, End: 2011}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	assert.Empty(t, got.Mentions["Q1"])
+}
+
+func TestMatchDestination_NearbyContextUsesRuneDistanceBothWays(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "A guide"}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 30, End: 36}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 336, End: 347}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 500, End: 511}},
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 811, End: 817}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 2000, End: 2011}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	require.Len(t, got.Mentions["Q1"], 1)
+	assert.Equal(t, []Position{{Start: 336, End: 347}, {Start: 500, End: 511}}, got.Mentions["Q1"][0].Positions)
+}
+
+func TestMatchDestination_ContextJustBeyondWindowDoesNotCount(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "A guide"}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 30, End: 36}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 1037, End: 1048}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	assert.Empty(t, got.Mentions["Q1"])
+}
+
+func TestMatchDestination_ContextInsidePlaceCounts(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"Lisbon Cathedral"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "A guide"}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 1200, End: 1206}},
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon cathedral", OriginalCase: true, Start: 1200, End: 1215}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	require.Len(t, got.Mentions["Q1"], 1)
+}
+
+func TestMatchDestination_DayContextDoesNotUseIntroduction(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "A guide", Extracted: ExtractedPost{Days: []DaySection{{Number: 1, Start: 100, End: 2000}}}}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 20, End: 26}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 1500, End: 1511}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	assert.Empty(t, got.Mentions["Q1"])
+}
+
+func TestMatchDestination_SameDayContextKeepsDistantPlace(t *testing.T) {
+	base := BasePlaces{Gazetteer: []Place{{QID: "Q1", Names: []string{"São Vicente"}}}}
+	post := IndexedPost{Host: "writer.test", PostID: 1, Title: "A guide", Extracted: ExtractedPost{Days: []DaySection{{Number: 1, Start: 100, End: 2000}}}}
+	rows := []MatchRow{
+		{Post: post, Phrase: NamePhrase{Folded: "lisbon", OriginalCase: true, Start: 120, End: 126}},
+		{Post: post, Phrase: NamePhrase{Folded: "sao vicente", OriginalCase: true, Start: 1500, End: 1511}},
+	}
+
+	got := MatchDestination(base, rows, []string{"Lisbon"}, nil, MatchOverrides{})
+
+	require.Len(t, got.Mentions["Q1"], 1)
 }
 
 func TestMatchLookupPhrases_UsesAliasesAndDestinationContext(t *testing.T) {

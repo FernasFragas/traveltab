@@ -99,11 +99,13 @@ func wireBaseLayer(server *httpserver.Server, basePlaces application.BasePlaceSo
 	}
 }
 
-// wireWriterSync starts the writers index sync in the background. Each run picks at most 100
-// destination posts. The search terms are the override areas and the cached destinations; the
-// known place names add the matcher's names for those destinations' base places. The monthly run
-// also refreshes every cached destination's base places, then recomputes the stored writers' map
-// results; the summary step (PR 9) runs after the recompute.
+// wireWriterSync starts the writers index sync in the background. Each run picks up to 100
+// destination posts per destination. The search terms are the override areas and the cached
+// destinations; the known place names add the matcher's names for those destinations' base
+// places. The monthly run also refreshes every cached destination's base places, then recomputes
+// the stored writers' map results; the summary step (PR 9) runs after the recompute. A
+// destination cached for the first time is queued for a top-up, which indexes its posts and
+// recomputes its result without waiting for the monthly run.
 func wireWriterSync(storage *sqlite.Store, basePlaces application.BasePlaceSource, sources []writermap.Source, overrides writermap.Overrides, writerSource *writermap.MapSource) {
 	if !config.LoadFeatureFlags().WritersSync {
 		return
@@ -117,6 +119,11 @@ func wireWriterSync(storage *sqlite.Store, basePlaces application.BasePlaceSourc
 		return cachedPlaceNames(ctx, storage, basePlaces, overrides)
 	}
 	job.SummaryStep = writerSource.Recompute
+	job.RecomputeDestination = writerSource.RecomputeDestination
+	if notifier, ok := basePlaces.(interface{ OnNewDestination(func(writermap.Area)) }); ok {
+		notifier.OnNewDestination(job.QueueTopUp)
+	}
+	go job.WorkTopUps(context.Background())
 	go job.Schedule(context.Background())
 }
 

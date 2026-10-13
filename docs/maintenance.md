@@ -250,26 +250,50 @@ log or commit post text, excerpts or fetched response bodies. The optional month
 gated by `WRITERS_AI=1`; it sends mention passages to the configured LLM Gateway and keeps only the
 English summary, source post references, model and generation time.
 
-**The 100-post cap** (`writermap.MaxIndexedPosts`). The index holds at most 100 posts in total, across
-all blogs. Every run picks the set again from scratch; there is no cursor crawl or deleted-posts
-sweep any more. How the posts are picked:
+**Post limits.** Each destination gets up to **100 posts** (`writermap.PostsPerDestination`), and the
+index holds their union, at most **5,000 posts** in total (`writermap.MaxIndexedPosts`, about 11–15 KB
+per post, so roughly 55–75 MB). Every monthly run picks the set again from scratch; there is no
+cursor crawl or deleted-posts sweep any more. How the posts are picked:
 1. Search terms are the destination names: the override areas (`writerdata/overrides.json`) plus
    every destination the app has cached (a city page or map visit caches it). One `search=` request
    (first page, newest first) per term per blog.
 2. A search hit is a **destination post** only if its title or URL slug names a known place (the
    matcher's names for the cached destinations, accent- and case-insensitive). Hits that only mention
    a place in the body are dropped.
-3. Each blog's share of the 100 is proportional to its destination posts (largest remainder, at least
-   one for any blog that has one, never more than it has).
+3. For each destination, each blog's share of its 100 is proportional to the blog's destination posts
+   for that destination's search (largest remainder, at least one for any blog that has one, never
+   more than it has). A post picked for two destinations is stored once.
 4. Within a blog, posts are ranked by how many of the blog's newest 1,000 comments they have
    (up to 10 pages), then the newest first. A blog without readable comments (404) takes its newest.
-5. Only the chosen posts are fetched (`include=`) and indexed. Indexed posts that were not chosen
-   are deleted, so a post that drops out of the top is purged on the next monthly run.
+5. If the union is over 5,000, the lowest-ranked posts across all destinations (fewest comments,
+   then oldest) are dropped.
+6. Only the chosen posts are fetched (`include=`) and indexed. Indexed posts that no destination
+   chose are deleted, so a post that drops out of the top is purged on the next monthly run.
+
+**Top-ups for new destinations.** When a destination's base places are cached for the first time
+(a refresh doesn't count), it is queued for a **top-up**, so its writer pins don't wait for the
+next monthly run:
+- It searches every active blog for the destination's name (one request per blog), ranks the hits
+  with the last monthly run's comment counts (newest first after a restart, until the next run),
+  and fetches and indexes only the picks not indexed yet. It then recomputes that destination's
+  stored map result, so its pins show on the **next** visit or reload. Other destinations pick up
+  the new posts at the next monthly recompute.
+- Top-ups run one at a time, never alongside a monthly run (they share its lock; a monthly run that
+  finds a top-up running retries a minute later). Each destination is topped up once per process.
+- At most **20 top-ups start per UTC day** (`writermap.TopUpsPerDay`); the rest wait for the next
+  day, so browsing many cities can't set off many blog crawls.
+- If a top-up takes the index over 5,000, the lowest-ranked posts of the active blogs, whatever
+  their destination, are deleted, and `writers top-up: trimmed N posts to stay within 5000 (<host> n, ...)`
+  is logged. Those destinations' stored results keep listing the posts until the monthly recompute.
+- Log lines: `writers top-up <destination>: indexed N posts, trimmed M`; a blog whose search fails
+  is skipped with `writers top-up <destination> <host>: skipped, ...`.
+- Measured 2026-10-13: a top-up makes about 11 searches plus one fetch per blog with picks, takes
+  about 15–30 s, and found 18–37 posts for Toronto, New York, Tokyo and Lisbon.
 
 **Blocked and empty blogs.** A blog that is blocked (allowlist or 403) keeps its already-indexed
-posts, and they count inside the 100: the other blogs share what is left, so the total never exceeds
-the cap. A blog that has indexed posts but whose search suddenly returns nothing (no error) keeps its
-rows too, counts inside the cap, logs `writers sync <host>: warning: search returned no posts ...`, and is not
+posts, and they count inside the 5,000: the other blogs share what is left, so the total never
+exceeds the ceiling. A blog that has indexed posts but whose search suddenly returns nothing (no error) keeps its
+rows too, counts inside the ceiling, logs `writers sync <host>: warning: search returned no posts ...`, and is not
 marked finished, so the next run retries it. A blog that never had posts and finds none is just
 skipped. To remove a blog's rows for good, use the takedown below.
 

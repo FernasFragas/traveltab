@@ -68,8 +68,8 @@ func TestSyncJob_IndexesOnlyTheSelectedPosts(t *testing.T) {
 
 	require.NoError(t, job.Run(context.Background()))
 
-	assert.Len(t, index.postsFor(blogHost), writermap.MaxIndexedPosts)
-	assert.Equal(t, writermap.MaxIndexedPosts, wp.blog(blogAPI).fetched, "only chosen posts are fetched")
+	assert.Len(t, index.postsFor(blogHost), writermap.PostsPerDestination)
+	assert.Equal(t, writermap.PostsPerDestination, wp.blog(blogAPI).fetched, "only chosen posts are fetched")
 	assert.NotContains(t, index.postIDs(blogHost), int64(500))
 	post := index.post(blogHost, 130)
 	assert.Equal(t, "https://blog.example/130", post.URL)
@@ -155,7 +155,7 @@ func TestSyncJob_PurgesPostsThatDropOut(t *testing.T) {
 	require.NoError(t, job.Run(context.Background()))
 
 	ids := index.postIDs(blogHost)
-	assert.Len(t, ids, writermap.MaxIndexedPosts)
+	assert.Len(t, ids, writermap.PostsPerDestination)
 	assert.Equal(t, int64(31), ids[0], "posts 1-30 were purged")
 	assert.Equal(t, int64(130), ids[len(ids)-1], "posts 101-130 were indexed")
 	assert.Equal(t, monthlyTime, index.state(blogHost).LastFull)
@@ -317,7 +317,7 @@ func TestSyncJob_BlogThatNeverHadPostsAndFindsNoneIsJustSkipped(t *testing.T) {
 
 	require.NoError(t, job.Run(context.Background()))
 
-	assert.Len(t, index.postsFor(blogHost), writermap.MaxIndexedPosts)
+	assert.Len(t, index.postsFor(blogHost), writermap.PostsPerDestination)
 	assert.Empty(t, index.postsFor(otherHost))
 	assert.Equal(t, crawlTime, index.state(otherHost).LastFull, "nothing to retry")
 	assert.NotContains(t, strings.Join(lines, "\n"), "warning")
@@ -336,6 +336,64 @@ func TestSyncJob_UsesCommentCountsToRankAndNoCommentsNewest(t *testing.T) {
 	assert.Contains(t, index.postIDs(blogHost), int64(1), "the only commented post is kept although it is the oldest")
 	assert.NotContains(t, index.postIDs(otherHost), int64(1))
 	assert.Contains(t, index.postIDs(otherHost), int64(120), "without comments the newest are taken")
+}
+
+func TestSyncJob_EachDestinationGetsItsOwnQuota(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(150)...)
+	for id := int64(1001); id <= 1030; id++ {
+		wp.put(blogAPI, namedPost(id, fmt.Sprintf("Post %d in Toronto", id), fmt.Sprintf("toronto-%d", id)))
+	}
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.MaxPosts = writermap.MaxIndexedPosts
+	job.Areas = []writermap.Area{{Name: "Madeira"}, {Name: "Toronto"}}
+
+	require.NoError(t, job.Run(context.Background()))
+
+	ids := index.postIDs(blogHost)
+	assert.Len(t, ids, writermap.PostsPerDestination+30, "Madeira keeps its 100 and Toronto adds its 30")
+	assert.Contains(t, ids, int64(1001))
+	assert.NotContains(t, ids, int64(50), "Madeira's oldest 50 are still left out")
+}
+
+func TestSyncJob_PostsNoDestinationPicksArePurged(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(10)...)
+	wp.put(blogAPI, namedPost(1001, "Post in Toronto", "toronto"))
+	index := newFakeIndex()
+	clock := &testClock{now: crawlTime}
+	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
+	job.Areas = []writermap.Area{{Name: "Madeira"}, {Name: "Toronto"}}
+	require.NoError(t, job.Run(context.Background()))
+	require.Contains(t, index.postIDs(blogHost), int64(1001))
+
+	job.Areas = []writermap.Area{{Name: "Madeira"}}
+	clock.set(monthlyTime)
+	require.NoError(t, job.Run(context.Background()))
+
+	assert.NotContains(t, index.postIDs(blogHost), int64(1001), "no destination picks it any more")
+	assert.Len(t, index.postIDs(blogHost), 10)
+}
+
+func TestSyncJob_TheUnionStaysWithinTheCeiling(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(40)...)
+	for id := int64(1001); id <= 1040; id++ {
+		wp.put(blogAPI, namedPost(id, fmt.Sprintf("Post %d in Toronto", id), fmt.Sprintf("toronto-%d", id)))
+	}
+	wp.blog(blogAPI).comments = map[int64]int{1001: 3}
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.MaxPosts = 50
+	job.Areas = []writermap.Area{{Name: "Madeira"}, {Name: "Toronto"}}
+
+	require.NoError(t, job.Run(context.Background()))
+
+	ids := index.postIDs(blogHost)
+	assert.Len(t, ids, 50)
+	assert.Contains(t, ids, int64(1001), "the commented post outranks the rest")
+	assert.NotContains(t, ids, int64(1), "the oldest uncommented posts went first")
 }
 
 func TestSyncJob_RunWaitsForNewMonthAndOffPeak(t *testing.T) {
@@ -658,6 +716,248 @@ func TestSyncJob_TwoUnchangedRunsKeepRowCountsAndFileSize(t *testing.T) {
 	assert.Equal(t, 1, counts["writer_sync"])
 }
 
+func TestSyncJob_TopUp_IndexesOnlyTheNewDestinationsPosts(t *testing.T) {
+	ctx := context.Background()
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(10)...)
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	require.NoError(t, job.Run(ctx))
+	addTorontoPosts(wp, blogAPI, 1001, 5)
+	fetched := wp.blog(blogAPI).fetched
+	var recomputed []writermap.Area
+	job.RecomputeDestination = func(_ context.Context, area writermap.Area) error {
+		recomputed = append(recomputed, area)
+		return nil
+	}
+	toronto := writermap.Area{Name: "Toronto", Country: "CA", Lat: 43.65, Lon: -79.38}
+
+	require.NoError(t, job.TopUp(ctx, toronto))
+
+	assert.Len(t, index.postIDs(blogHost), 15, "Madeira's 10 stay and Toronto's 5 are added")
+	assert.Equal(t, 5, wp.blog(blogAPI).fetched-fetched, "only the new posts are fetched")
+	assert.Equal(t, []string{"Madeira", "Toronto"}, wp.searches(blogAPI))
+	assert.Equal(t, []writermap.Area{toronto}, recomputed)
+	assert.Equal(t, crawlTime, index.state(blogHost).LastFull, "a top-up isn't a monthly run")
+}
+
+func TestSyncJob_TopUp_RanksByTheLastMonthlyTally(t *testing.T) {
+	ctx := context.Background()
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	wp.blog(blogAPI).comments = map[int64]int{1001: 7}
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.MaxPosts = writermap.MaxIndexedPosts
+	require.NoError(t, job.Run(ctx))
+	addTorontoPosts(wp, blogAPI, 1001, 110)
+	wp.blog(blogAPI).commentsErr = errors.New("comments must not be requested again")
+
+	require.NoError(t, job.TopUp(ctx, writermap.Area{Name: "Toronto"}))
+
+	ids := index.postIDs(blogHost)
+	assert.Contains(t, ids, int64(1001), "the commented post is kept although it is the oldest")
+	assert.NotContains(t, ids, int64(1011))
+	assert.Len(t, ids, 3+writermap.PostsPerDestination)
+}
+
+func TestSyncJob_TopUp_WithoutATallyTakesTheNewest(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI)
+	addTorontoPosts(wp, blogAPI, 1001, 110)
+	wp.blog(blogAPI).commentsErr = errors.New("comments must not be requested")
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+
+	require.NoError(t, job.TopUp(context.Background(), writermap.Area{Name: "Toronto"}))
+
+	ids := index.postIDs(blogHost)
+	assert.Len(t, ids, writermap.PostsPerDestination)
+	assert.Equal(t, int64(1011), ids[0])
+	assert.Equal(t, int64(1110), ids[len(ids)-1])
+}
+
+func TestSyncJob_TopUp_OverTheCeilingTrimsTheLowestRankedAcrossDestinations(t *testing.T) {
+	ctx := context.Background()
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(10)...)
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.MaxPosts = 12
+	var lines []string
+	job.Logf = func(format string, args ...any) { lines = append(lines, fmt.Sprintf(format, args...)) }
+	require.NoError(t, job.Run(ctx))
+	addTorontoPosts(wp, blogAPI, 1001, 5)
+
+	require.NoError(t, job.TopUp(ctx, writermap.Area{Name: "Toronto"}))
+
+	ids := index.postIDs(blogHost)
+	assert.Len(t, ids, 12)
+	assert.Equal(t, int64(4), ids[0], "Madeira's three oldest posts went")
+	assert.Contains(t, ids, int64(1001))
+	assert.Contains(t, strings.Join(lines, "\n"), "trimmed 3 posts to stay within 12 ("+blogHost+" 3)")
+}
+
+func TestSyncJob_TopUp_SkipsBlockedBlogsAndMarksNewlyBlockedOnes(t *testing.T) {
+	const blockedHost, blockedAPI = "blocked.example", "https://blocked.example/wp-json/wp/v2/posts"
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI)
+	addTorontoPosts(wp, blogAPI, 1001, 2)
+	wp.addBlog(otherAPI)
+	wp.blog(otherAPI).searchErr = api.ErrBlocked
+	wp.addBlog(blockedAPI)
+	blocked := activeSource(blockedHost, blockedAPI)
+	blocked.Status = writermap.StatusBlocked
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI), blocked)
+	job.BlockedErrors = []error{api.ErrBlocked}
+
+	require.NoError(t, job.TopUp(context.Background(), writermap.Area{Name: "Toronto"}))
+
+	assert.Len(t, index.postIDs(blogHost), 2)
+	assert.Equal(t, writermap.StatusBlocked, index.state(otherHost).Status)
+	assert.Empty(t, wp.searches(blockedAPI))
+}
+
+func TestSyncJob_TopUp_FailedSearchKeepsTheOtherBlogs(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI)
+	addTorontoPosts(wp, blogAPI, 1001, 2)
+	wp.addBlog(otherAPI)
+	wp.blog(otherAPI).searchErr = errors.New("status 502")
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI), activeSource(otherHost, otherAPI))
+
+	err := job.TopUp(context.Background(), writermap.Area{Name: "Toronto"})
+
+	require.ErrorContains(t, err, "status 502")
+	assert.Len(t, index.postIDs(blogHost), 2)
+}
+
+func TestSyncJob_TopUp_NothingNewSkipsTheRecompute(t *testing.T) {
+	ctx := context.Background()
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI)
+	addTorontoPosts(wp, blogAPI, 1001, 2)
+	job := newTestJob(newFakeIndex(), wp, crawlTime, activeSource(blogHost, blogAPI))
+	recomputes := 0
+	job.RecomputeDestination = func(context.Context, writermap.Area) error {
+		recomputes++
+		return nil
+	}
+	toronto := writermap.Area{Name: "Toronto"}
+
+	require.NoError(t, job.TopUp(ctx, toronto))
+	require.NoError(t, job.TopUp(ctx, toronto))
+
+	assert.Equal(t, 1, recomputes)
+}
+
+func TestSyncJob_TopUp_WaitsForARunningSync(t *testing.T) {
+	ctx := context.Background()
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	addTorontoPosts(wp, blogAPI, 1001, 2)
+	started, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	wp.blog(blogAPI).onSearch = func() { once.Do(func() { close(started); <-release }) }
+	job := newTestJob(newFakeIndex(), wp, crawlTime, activeSource(blogHost, blogAPI))
+	runDone, topUpDone := make(chan error, 1), make(chan error, 1)
+	go func() { runDone <- job.Run(ctx) }()
+	<-started
+
+	go func() { topUpDone <- job.TopUp(ctx, writermap.Area{Name: "Toronto"}) }()
+	assert.Never(t, func() bool { return len(wp.searches(blogAPI)) > 1 }, 50*time.Millisecond, 5*time.Millisecond)
+	close(release)
+
+	require.NoError(t, <-runDone)
+	require.NoError(t, <-topUpDone)
+	assert.Equal(t, []string{"Madeira", "Toronto"}, wp.searches(blogAPI))
+}
+
+func TestSyncJob_QueuedTopUpsRunOnceEach(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI)
+	job := newTestJob(newFakeIndex(), wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.QueueTopUp(writermap.Area{Name: "Toronto", Country: "CA", Lat: 43.65})
+	job.QueueTopUp(writermap.Area{Name: "toronto", Country: "ca", Lat: 43.70})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { job.WorkTopUps(ctx); close(done) }()
+
+	job.QueueTopUp(writermap.Area{Name: "Tokyo", Country: "JP"})
+	require.Eventually(t, func() bool { return len(wp.searches(blogAPI)) == 2 }, 5*time.Second, 5*time.Millisecond)
+	job.QueueTopUp(writermap.Area{Name: "Toronto", Country: "CA"})
+	cancel()
+	<-done
+
+	assert.Equal(t, []string{"Toronto", "Tokyo"}, wp.searches(blogAPI), "a destination is topped up once")
+}
+
+func TestSyncJob_TopUpsOverTheDailyBudgetWaitForTheNextDay(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI)
+	clock := &testClock{now: crawlTime}
+	job := newTestJobWithClock(newFakeIndex(), wp, clock, activeSource(blogHost, blogAPI))
+	var mu sync.Mutex
+	var slept []time.Duration
+	job.Sleep = func(_ context.Context, d time.Duration) error {
+		mu.Lock()
+		slept = append(slept, d)
+		mu.Unlock()
+		clock.set(clock.Now().Add(d))
+		return nil
+	}
+	for i := 0; i <= writermap.TopUpsPerDay; i++ {
+		job.QueueTopUp(writermap.Area{Name: fmt.Sprintf("City %d", i)})
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { job.WorkTopUps(ctx); close(done) }()
+
+	require.Eventually(t, func() bool { return len(wp.searches(blogAPI)) == writermap.TopUpsPerDay+1 }, 5*time.Second, 5*time.Millisecond)
+	cancel()
+	<-done
+
+	mu.Lock()
+	defer mu.Unlock()
+	assert.Equal(t, []time.Duration{10 * time.Hour}, slept, "the 21st waits from 14:00 until midnight UTC")
+}
+
+func TestSyncJob_ScheduleRetriesWhileATopUpRuns(t *testing.T) {
+	wp := newFakeWordPress()
+	wp.addBlog(blogAPI, testPosts(3)...)
+	addTorontoPosts(wp, blogAPI, 1001, 2)
+	started, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	wp.blog(blogAPI).onSearch = func() { once.Do(func() { close(started); <-release }) }
+	index := newFakeIndex()
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI))
+	job.Destinations = fakeDestinations{{Name: "Toronto"}} // cached before its top-up, as in the app
+	topUpDone := make(chan error, 1)
+	go func() { topUpDone <- job.TopUp(context.Background(), writermap.Area{Name: "Toronto"}) }()
+	<-started
+	ctx, cancel := context.WithCancel(context.Background())
+	var slept []time.Duration
+	job.Sleep = func(ctx context.Context, d time.Duration) error {
+		slept = append(slept, d)
+		if len(slept) == 1 {
+			close(release)
+			require.NoError(t, <-topUpDone)
+			return nil
+		}
+		cancel()
+		return ctx.Err()
+	}
+
+	job.Schedule(ctx)
+
+	require.NotEmpty(t, slept)
+	assert.Equal(t, time.Minute, slept[0], "a busy start waits a minute instead of a whole day")
+	assert.Equal(t, crawlTime, index.state(blogHost).LastFull, "the startup run happened after the top-up")
+	assert.Len(t, index.postIDs(blogHost), 5, "and kept the cached destination's posts")
+}
+
 // --- test helpers ---
 
 func newTestJob(index writermap.SyncIndex, posts writermap.PostSource, now time.Time, sources ...writermap.Source) *writermap.SyncJob {
@@ -667,6 +967,7 @@ func newTestJob(index writermap.SyncIndex, posts writermap.PostSource, now time.
 func newTestJobWithClock(index writermap.SyncIndex, posts writermap.PostSource, clock *testClock, sources ...writermap.Source) *writermap.SyncJob {
 	job := writermap.NewSyncJob(sources, index, posts)
 	job.Areas = []writermap.Area{{Name: "Madeira"}}
+	job.MaxPosts = 100 // a ceiling as small as one destination's quota, so the cap tests stay readable
 	job.Now = clock.Now
 	job.Logf = func(string, ...any) {}
 	return job
@@ -681,6 +982,13 @@ func seedRows(t *testing.T, index *fakeIndex, host string, n int) {
 	t.Helper()
 	for i := 1; i <= n; i++ {
 		require.NoError(t, index.UpsertPost(context.Background(), writermap.IndexedPost{Host: host, PostID: int64(1000 + i)}))
+	}
+}
+
+// addTorontoPosts adds n posts from ID first on whose titles name Toronto.
+func addTorontoPosts(wp *fakeWordPress, apiBase string, first int64, n int) {
+	for id := first; id < first+int64(n); id++ {
+		wp.put(apiBase, namedPost(id, fmt.Sprintf("Post %d in Toronto", id), fmt.Sprintf("toronto-%d", id)))
 	}
 }
 
@@ -779,6 +1087,12 @@ func (f *fakeWordPress) blog(apiBase string) *fakeBlog {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.blogs[apiBase]
+}
+
+func (f *fakeWordPress) searches(apiBase string) []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.blogs[apiBase].searched...)
 }
 
 func (f *fakeWordPress) put(apiBase string, post writermap.SourcePost) {

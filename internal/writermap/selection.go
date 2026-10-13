@@ -6,8 +6,52 @@ import (
 	"time"
 )
 
-// MaxIndexedPosts is the most posts the writers index holds in total, across all blogs.
-const MaxIndexedPosts = 100
+// PostsPerDestination is the most posts picked for one destination.
+const PostsPerDestination = 100
+
+// MaxIndexedPosts is the most posts the writers index holds in total, across all destinations
+// and blogs. About 11 KB each (names, positions and metadata), so the cap is about 55 MB.
+const MaxIndexedPosts = 5000
+
+// DestinationCandidates is one destination's search hits, per blog.
+type DestinationCandidates struct {
+	Name  string
+	Blogs []BlogCandidates
+}
+
+// SelectPerDestination picks up to perDestination posts for each destination with Select and
+// returns their union, each post once, in destination order. When the union is over limit, the
+// lowest-ranked posts across all destinations are dropped, as Trim ranks them.
+func SelectPerDestination(destinations []DestinationCandidates, places []string, perDestination, limit int) []Pick {
+	seen := make(map[Pick]bool)
+	var picks []Pick
+	for _, destination := range destinations {
+		for _, pick := range Select(destination.Blogs, places, perDestination) {
+			if !seen[pick] {
+				seen[pick] = true
+				picks = append(picks, pick)
+			}
+		}
+	}
+	if len(picks) <= limit {
+		return picks
+	}
+	var blogs []BlogCandidates
+	for _, destination := range destinations {
+		blogs = append(blogs, destination.Blogs...)
+	}
+	dropped := make(map[Pick]bool)
+	for _, pick := range Trim(MergeBlogs(blogs), places, picks, len(picks)-max(0, limit)) {
+		dropped[pick] = true
+	}
+	kept := picks[:0]
+	for _, pick := range picks {
+		if !dropped[pick] {
+			kept = append(kept, pick)
+		}
+	}
+	return kept
+}
 
 // Select chooses at most limit posts across blogs. A candidate is a destination post: its title
 // or URL slug names one of the known places (accent- and case-insensitive). Each blog's share is
@@ -82,6 +126,27 @@ func Trim(blogs []BlogCandidates, places []string, picks []Pick, n int) []Pick {
 		dropped = append(dropped, e.pick)
 	}
 	return dropped
+}
+
+// MergeBlogs joins the candidates of the same blog, from several searches, into one per blog,
+// in first-seen order. A blog's comment counts are the same for every search, so the first
+// non-nil map is kept.
+func MergeBlogs(blogs []BlogCandidates) []BlogCandidates {
+	var merged []BlogCandidates
+	at := make(map[string]int)
+	for _, blog := range blogs {
+		i, ok := at[blog.Host]
+		if !ok {
+			at[blog.Host] = len(merged)
+			merged = append(merged, BlogCandidates{Host: blog.Host, Comments: blog.Comments})
+			i = len(merged) - 1
+		}
+		merged[i].Hits = append(merged[i].Hits, blog.Hits...)
+		if merged[i].Comments == nil {
+			merged[i].Comments = blog.Comments
+		}
+	}
+	return merged
 }
 
 // BlogCandidates is one blog's search hits and recent-comment counts, by post ID. A blog with

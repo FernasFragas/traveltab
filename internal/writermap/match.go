@@ -9,7 +9,10 @@ import (
 	"weatherservice/internal/planner"
 )
 
-const maxMapPlaces = 200
+const (
+	maxMapPlaces  = 200
+	contextWindow = 1000
+)
 
 // MatchRow is one indexed phrase occurrence joined to its source post.
 type MatchRow struct {
@@ -116,6 +119,14 @@ type matchedSpan struct {
 }
 
 func matchPost(rows []MatchRow, aliases map[string][]placeName, context map[string]bool) map[string][]Position {
+	titleEnd := 0
+	if len(rows) > 0 {
+		var title textStream
+		title.appendHTML(rows[0].Post.Title, false)
+		if len(title.text) > 0 {
+			titleEnd = len(title.text) + 1
+		}
+	}
 	var contextRows []MatchRow
 	for _, row := range rows {
 		if context[row.Phrase.Folded] {
@@ -132,7 +143,7 @@ func matchPost(rows []MatchRow, aliases map[string][]placeName, context map[stri
 			if alias.Words == 1 && !phrase.OriginalCase {
 				continue
 			}
-			if !inDestinationContext(phrase, row.Post.Extracted.Days, contextRows) {
+			if !inDestinationContext(phrase, titleEnd, row.Post.Extracted.Days, contextRows) {
 				continue
 			}
 			spans = append(spans, matchedSpan{QID: alias.QID, Position: Position{Start: phrase.Start, End: phrase.End}})
@@ -165,13 +176,15 @@ func matchPost(rows []MatchRow, aliases map[string][]placeName, context map[stri
 	return result
 }
 
-func inDestinationContext(phrase NamePhrase, days []DaySection, contextRows []MatchRow) bool {
-	if len(days) == 0 {
-		return true
-	}
+func inDestinationContext(phrase NamePhrase, titleEnd int, days []DaySection, contextRows []MatchRow) bool {
 	day := dayAt(phrase.Start, days)
 	for _, row := range contextRows {
-		if dayAt(row.Phrase.Start, days) == day || dayAt(row.Phrase.Start, days) == -1 {
+		context := row.Phrase
+		if context.Start < titleEnd ||
+			(context.Start < phrase.End && phrase.Start < context.End) ||
+			(context.End <= phrase.Start && phrase.Start-context.End <= contextWindow) ||
+			(phrase.End <= context.Start && context.Start-phrase.End <= contextWindow) ||
+			(day >= 0 && dayAt(context.Start, days) == day) {
 			return true
 		}
 	}

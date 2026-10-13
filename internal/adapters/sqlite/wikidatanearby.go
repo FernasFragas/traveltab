@@ -50,6 +50,7 @@ type cachedBasePlaces struct {
 	flights    map[string]*basePlaceFlight
 	failures   map[string]basePlaceFailure
 	retryDelay time.Duration
+	onNew      func(writermap.Area) // guarded by mu
 }
 
 type basePlaceFlight struct {
@@ -106,6 +107,14 @@ func (c *cachedBasePlaces) Partial(ctx context.Context, dest writermap.Area) (wr
 		return failure.progress, failure.err
 	}
 	return c.start(ctx, dest, key, false).progress, nil
+}
+
+// OnNewDestination sets fn to run in the background load, once a destination's base places are
+// stored for the first time. A cache hit, a refresh or a failed load doesn't run it.
+func (c *cachedBasePlaces) OnNewDestination(fn func(writermap.Area)) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.onNew = fn
 }
 
 func (c *cachedBasePlaces) Refresh(ctx context.Context, dest writermap.Area) error {
@@ -191,6 +200,12 @@ func (c *cachedBasePlaces) load(ctx context.Context, dest writermap.Area, key, p
 	} else {
 		c.cache.store(key, result)
 		c.removePartial(partialKey)
+		c.mu.Lock()
+		onNew := c.onNew
+		c.mu.Unlock()
+		if onNew != nil && !flight.refresh {
+			onNew(dest)
+		}
 	}
 
 	c.mu.Lock()

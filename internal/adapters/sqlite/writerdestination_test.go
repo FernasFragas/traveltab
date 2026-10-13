@@ -84,5 +84,21 @@ func TestWriterDestination_IgnoresLegacyCommonsPage(t *testing.T) {
 func TestWriterDestination_KeyUsesBasePlaceVersion(t *testing.T) {
 	area := writermap.Area{Name: "Lisbon", Country: "PT", Lat: 38.7, Lon: -9.1}
 
-	assert.Equal(t, strings.Replace(basePlaceKey(area), "wikidata:", "writermap:", 1), writerDestinationKey(area))
+	assert.Equal(t, strings.Replace(basePlaceKey(area), "wikidata:", "writermap:", 1), strings.Replace(writerDestinationKey(area), ":m2:", ":", 1))
+	assert.Contains(t, writerDestinationKey(area), ":m2:")
+}
+
+func TestWriterDestination_IgnoresPreviousMatcherResults(t *testing.T) {
+	ctx := context.Background()
+	store := writerIndexTestStore(t)
+	area := writermap.Area{Name: "Lisbon", Country: "PT", Lat: 38.7, Lon: -9.1}
+	oldKey := strings.Replace(basePlaceKey(area), "wikidata:", "writermap:", 1)
+	store.writerDestinations().store(oldKey, writermap.DestinationResult{Places: []writermap.Place{{QID: "Q1"}}})
+
+	_, ok, err := store.WriterDestination(ctx, area)
+	require.NoError(t, err)
+	assert.False(t, ok)
+	areas, err := store.WriterDestinations(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, areas)
 }
