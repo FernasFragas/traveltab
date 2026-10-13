@@ -609,3 +609,46 @@ func TestWikidataNearbyCache_Partial_StoredProgressKeepsTheLoadMode(t *testing.T
 	require.Len(t, froms, 2)
 	assert.Equal(t, "dense", froms[1].Mode, "the retry resumed with the stored mode")
 }
+
+func TestWikidataNearbyCache_OnNewDestination_CalledOnceAfterTheFirstStore(t *testing.T) {
+	fake := &pagedFake{total: 2}
+	store, c := pagedCacheForTest(t, fake)
+	var mu sync.Mutex
+	var notified []writermap.Area
+	c.OnNewDestination(func(area writermap.Area) {
+		mu.Lock()
+		defer mu.Unlock()
+		areas, err := store.CachedDestinations(context.Background())
+		assert.NoError(t, err)
+		assert.Len(t, areas, 1, "the destination is already cached when the hook runs")
+		notified = append(notified, area)
+	})
+
+	_, err := c.Places(context.Background(), madeiraArea)
+	require.NoError(t, err)
+	_, err = c.Places(context.Background(), madeiraArea)
+	require.NoError(t, err)
+	require.NoError(t, c.Refresh(context.Background(), madeiraArea))
+
+	require.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return len(notified) > 0
+	}, 5*time.Second, 5*time.Millisecond)
+	mu.Lock()
+	defer mu.Unlock()
+	assert.Equal(t, []writermap.Area{madeiraArea}, notified, "a cache hit and a refresh don't notify")
+}
+
+func TestWikidataNearbyCache_OnNewDestination_NotCalledWhenTheLoadFails(t *testing.T) {
+	fake := &pagedFake{total: 2}
+	fake.step = func(int) error { return errors.New("wikidata 502") }
+	_, c := pagedCacheForTest(t, fake)
+	called := false
+	c.OnNewDestination(func(writermap.Area) { called = true })
+
+	_, err := c.Places(context.Background(), madeiraArea)
+
+	require.Error(t, err)
+	assert.False(t, called)
+}

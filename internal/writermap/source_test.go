@@ -137,6 +137,29 @@ func TestMapSource_RecomputeReplacesEveryStoredDestination(t *testing.T) {
 	assert.Len(t, store.results, 1)
 }
 
+func TestMapSource_RecomputeDestinationReplacesOnlyThatDestination(t *testing.T) {
+	ctx := context.Background()
+	index := &fakeMatchIndex{}
+	store := newFakeDestinationStore()
+	source := NewMapSource(sourceTestBase(), index, store, fakeSyncStates{}, sourceTestSources(), Overrides{})
+	funchal := Area{Name: "funchal", Country: "pt", Lat: 32.65, Lon: -16.91}
+	other := Area{Name: "funchal", Country: "pt", Lat: 32.66, Lon: -16.92}
+	_, err := source.Destination(ctx, funchal)
+	require.NoError(t, err)
+	_, err = source.Destination(ctx, other)
+	require.NoError(t, err)
+
+	index.rows = sourceTestIndex().rows
+	require.NoError(t, source.RecomputeDestination(ctx, funchal))
+
+	recomputed, err := source.Destination(ctx, funchal)
+	require.NoError(t, err)
+	assert.Equal(t, 1, recomputed.WriterCounts["Q1"])
+	untouched, err := source.Destination(ctx, other)
+	require.NoError(t, err)
+	assert.Zero(t, untouched.WriterCounts["Q1"], "the other stored destination waits for the monthly recompute")
+}
+
 func TestMapSource_ServesWithoutHTTPRequests(t *testing.T) {
 	ctx := context.Background()
 	transport := &countingTransport{}

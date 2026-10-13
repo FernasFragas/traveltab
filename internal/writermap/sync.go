@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,17 +28,25 @@ const (
 // commentPages is how many pages of recent comments (100 each) are tallied per blog.
 const commentPages = 10
 
+// TopUpsPerDay is the most destination top-ups started per UTC day; the rest wait for the next.
+const TopUpsPerDay = 20
+
+// busyRetry is how long Schedule waits when a top-up holds the lock, before trying the run again.
+const busyRetry = time.Minute
+
 // ErrSyncRunning means another run holds the single-run lock.
 var ErrSyncRunning = errors.New("writers sync already running")
 
-// SyncJob keeps the writers index at no more than MaxIndexedPosts posts, picked afresh on every
-// run: for each active blog it searches the destination names, keeps the hits whose title or
-// slug names a known place, ranks them by recent comments, and Select shares the cap across blogs.
-// Only the chosen posts are fetched and indexed; indexed posts that were not chosen are deleted.
-// Rows of a blocked blog, or of a blog with no destination candidates left, stay and count
-// inside the cap; the other blogs share what is left. If the total is still over MaxIndexedPosts
-// after the run (a blog's store failed and kept its old rows), the lowest-ranked rows of the
-// blogs updated in this run are deleted until it is exactly the cap.
+// SyncJob keeps the writers index at no more than MaxPosts posts, picked afresh on every run:
+// for each active blog it searches the destination names, keeps the hits whose title or slug
+// names a known place, and ranks them by recent comments. Each destination gets up to
+// PostsPerDestination posts, shared across blogs by Select; the index holds their union.
+// Only the chosen posts are fetched and indexed; indexed posts that no destination chose are
+// deleted. Rows of a blocked blog, or of a blog with no destination candidates left, stay and
+// count inside MaxPosts; a union over what is left loses its lowest-ranked posts. If the total is
+// still over MaxPosts after the run (a blog's store failed and kept its old rows), the
+// lowest-ranked rows of the blogs updated in this run are deleted until it is exactly MaxPosts.
+// Between runs, TopUp picks posts for a destination cached for the first time.
 // The first run for a source starts at once; afterwards a run is due once per calendar month, in
 // the off-peak window. When a run finishes, cached destinations are refreshed, and the summary
 // step runs if any post was added or removed. Only names, positions and post metadata are
@@ -60,12 +70,26 @@ type SyncJob struct {
 	SummaryStep func(ctx context.Context) error
 	// BlockedErrors are source errors that mark a source blocked so it is not requested again.
 	BlockedErrors []error
+	// MaxPosts is the ceiling on indexed posts across all destinations and blogs (MaxIndexedPosts).
+	MaxPosts int
+	// RecomputeDestination replaces a destination's stored writers' map result after its top-up
+	// indexed posts; nil skips it.
+	RecomputeDestination func(ctx context.Context, area Area) error
 
 	Now   func() time.Time
 	Sleep func(ctx context.Context, d time.Duration) error
 	Logf  func(format string, args ...any)
 
 	running sync.Mutex
+	// Guarded by running: the last monthly run's comment counts per blog, and the search hits
+	// of the indexed posts, which rank them when a top-up trims.
+	tallies map[string]map[int64]int
+	seen    []BlogCandidates
+
+	queueMu sync.Mutex
+	queue   []Area
+	queued  map[string]bool // every destination ever queued, so each is topped up once
+	wake    chan struct{}
 }
 
 // NewSyncJob returns a job with the real clock and the standard logger.
@@ -74,9 +98,13 @@ func NewSyncJob(sources []Source, index SyncIndex, posts PostSource) *SyncJob {
 		sources: sources,
 		index:   index,
 		posts:   posts,
-		Now:     time.Now,
-		Sleep:   sleepContext,
-		Logf:    log.Printf,
+
+		MaxPosts: MaxIndexedPosts,
+		Now:      time.Now,
+		queued:   make(map[string]bool),
+		wake:     make(chan struct{}, 1),
+		Sleep:    sleepContext,
+		Logf:     log.Printf,
 	}
 }
 
@@ -159,9 +187,17 @@ type DestinationRefresher interface {
 }
 
 // Schedule runs once at startup, then at the start of every off-peak window, until ctx ends.
+// While a top-up holds the lock, it tries again a minute later.
 func (j *SyncJob) Schedule(ctx context.Context) {
 	for {
-		if err := j.Run(ctx); err != nil {
+		err := j.Run(ctx)
+		if errors.Is(err, ErrSyncRunning) {
+			if err := j.Sleep(ctx, busyRetry); err != nil {
+				return
+			}
+			continue
+		}
+		if err != nil {
 			j.Logf("writers sync: %v", err)
 		}
 		if err := j.Sleep(ctx, untilOffPeak(j.Now())); err != nil {
@@ -262,9 +298,10 @@ func (j *SyncJob) syncSources(ctx context.Context, active []trackedSource, held 
 	}
 	var errs []error
 	var blogs []BlogCandidates
+	byTerm := make([][]BlogCandidates, len(terms))
 	var live []trackedSource
 	for _, entry := range active {
-		blog, err := j.candidates(ctx, entry.source, terms)
+		perTerm, err := j.candidates(ctx, entry.source, terms)
 		if err != nil && j.blocked(err) {
 			errs = append(errs, j.markBlocked(ctx, entry, err))
 			held = append(held, entry.source.Host)
@@ -273,6 +310,10 @@ func (j *SyncJob) syncSources(ctx context.Context, active []trackedSource, held 
 		if err != nil {
 			j.Logf("writers sync %s: stopped, %v", entry.source.Host, err)
 			return false, false, fmt.Errorf("%s: %w", entry.source.Host, err)
+		}
+		blog := BlogCandidates{Host: entry.source.Host}
+		if merged := MergeBlogs(perTerm); len(merged) > 0 {
+			blog = merged[0]
 		}
 		if CountDestinationPosts(blog, known) == 0 {
 			kept, err := j.index.PostIDs(ctx, entry.source.Host)
@@ -286,6 +327,17 @@ func (j *SyncJob) syncSources(ctx context.Context, active []trackedSource, held 
 			}
 		}
 		blogs, live = append(blogs, blog), append(live, entry)
+		for i := range perTerm {
+			byTerm[i] = append(byTerm[i], perTerm[i])
+		}
+	}
+	destinations := make([]DestinationCandidates, len(terms))
+	for i, term := range terms {
+		destinations[i] = DestinationCandidates{Name: term, Blogs: byTerm[i]}
+	}
+	j.tallies, j.seen = make(map[string]map[int64]int, len(blogs)), blogs
+	for _, blog := range blogs {
+		j.tallies[blog.Host] = blog.Comments
 	}
 	reserved := 0
 	for _, host := range held {
@@ -295,7 +347,7 @@ func (j *SyncJob) syncSources(ctx context.Context, active []trackedSource, held 
 		}
 		reserved += len(kept)
 	}
-	picks := Select(blogs, known, max(0, MaxIndexedPosts-reserved))
+	picks := SelectPerDestination(destinations, known, PostsPerDestination, max(0, j.MaxPosts-reserved))
 	var updated []string
 	for _, entry := range live {
 		indexed, deleted, err := j.store(ctx, entry, picks)
@@ -336,7 +388,7 @@ func (j *SyncJob) trimOverflow(ctx context.Context, blogs []BlogCandidates, know
 		}
 		total += len(stored)
 	}
-	if total <= MaxIndexedPosts {
+	if total <= j.MaxPosts {
 		return 0, nil
 	}
 	var candidates []Pick
@@ -356,13 +408,13 @@ func (j *SyncJob) trimOverflow(ctx context.Context, blogs []BlogCandidates, know
 		}
 	}
 	trimmed := 0
-	for _, pick := range Trim(blogs, known, candidates, total-MaxIndexedPosts) {
+	for _, pick := range Trim(blogs, known, candidates, total-j.MaxPosts) {
 		if err := j.index.DeletePost(ctx, pick.Host, pick.PostID); err != nil {
 			return trimmed, fmt.Errorf("%s: %w", pick.Host, err)
 		}
 		trimmed++
 	}
-	j.Logf("writers sync: trimmed %d posts to stay within %d", trimmed, MaxIndexedPosts)
+	j.Logf("writers sync: trimmed %d posts to stay within %d", trimmed, j.MaxPosts)
 	return trimmed, nil
 }
 
@@ -401,21 +453,24 @@ func (j *SyncJob) destinationNames(ctx context.Context) (terms, known []string, 
 }
 
 // candidates searches one blog for each term (first page only) and tallies its recent comments.
-func (j *SyncJob) candidates(ctx context.Context, source Source, terms []string) (BlogCandidates, error) {
-	blog := BlogCandidates{Host: source.Host}
-	for _, term := range terms {
+// It returns the blog's hits per term, in term order, all with the same comment counts.
+func (j *SyncJob) candidates(ctx context.Context, source Source, terms []string) ([]BlogCandidates, error) {
+	perTerm := make([]BlogCandidates, len(terms))
+	for i, term := range terms {
 		hits, _, err := j.posts.SearchPosts(ctx, source.APIBase, term, 1)
 		if err != nil {
-			return BlogCandidates{}, err
+			return nil, err
 		}
-		blog.Hits = append(blog.Hits, hits...)
+		perTerm[i] = BlogCandidates{Host: source.Host, Hits: hits}
 	}
 	comments, err := j.posts.RecentCommentCounts(ctx, source.APIBase, commentPages)
 	if err != nil {
-		return BlogCandidates{}, err
+		return nil, err
 	}
-	blog.Comments = comments
-	return blog, nil
+	for i := range perTerm {
+		perTerm[i].Comments = comments
+	}
+	return perTerm, nil
 }
 
 // store indexes the source's chosen posts, deletes its indexed posts that were not chosen, and
@@ -430,22 +485,9 @@ func (j *SyncJob) store(ctx context.Context, entry trackedSource, picks []Pick) 
 			chosen[pick.PostID] = true
 		}
 	}
-	if len(ids) > 0 {
-		posts, err := j.posts.PostsByID(ctx, source.APIBase, ids)
-		if err != nil {
-			return 0, 0, err
-		}
-		for _, post := range posts {
-			if err := j.index.UpsertPost(ctx, IndexedPost{
-				Host: source.Host, PostID: post.ID, URL: post.Link, Title: post.Title,
-				Language: source.Language, Modified: post.Modified,
-				Extracted: ExtractPost(post.Title, post.Content),
-			}); err != nil {
-				return indexed, 0, err
-			}
-			chosen[post.ID] = true
-			indexed++
-		}
+	indexed, err = j.indexPosts(ctx, source, ids)
+	if err != nil {
+		return indexed, 0, err
 	}
 	stored, err := j.index.PostIDs(ctx, source.Host)
 	if err != nil {
@@ -463,6 +505,30 @@ func (j *SyncJob) store(ctx context.Context, entry trackedSource, picks []Pick) 
 	state := entry.state
 	state.Status, state.LastFull = StatusActive, j.Now()
 	return indexed, deleted, j.index.SaveSyncState(ctx, state)
+}
+
+// indexPosts fetches the posts and indexes their extracted names; the text is not kept. It returns
+// how many were indexed.
+func (j *SyncJob) indexPosts(ctx context.Context, source Source, ids []int64) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	posts, err := j.posts.PostsByID(ctx, source.APIBase, ids)
+	if err != nil {
+		return 0, err
+	}
+	indexed := 0
+	for _, post := range posts {
+		if err := j.index.UpsertPost(ctx, IndexedPost{
+			Host: source.Host, PostID: post.ID, URL: post.Link, Title: post.Title,
+			Language: source.Language, Modified: post.Modified,
+			Extracted: ExtractPost(post.Title, post.Content),
+		}); err != nil {
+			return indexed, err
+		}
+		indexed++
+	}
+	return indexed, nil
 }
 
 // markBlocked records that a source refused us, so it is not requested again.
@@ -490,6 +556,182 @@ func (j *SyncJob) refreshDestinations(ctx context.Context) error {
 	}
 	j.Logf("writers sync: refreshed %d of %d cached destinations", len(areas)-len(errs), len(areas))
 	return errors.Join(errs...)
+}
+
+// QueueTopUp asks for a top-up of a destination cached for the first time. It never blocks. Each
+// destination (by name and country) is queued once per process, however often it is asked for.
+func (j *SyncJob) QueueTopUp(area Area) {
+	key := foldName(area.Name) + "\x00" + strings.ToLower(area.Country)
+	j.queueMu.Lock()
+	if j.queued[key] {
+		j.queueMu.Unlock()
+		return
+	}
+	j.queued[key] = true
+	j.queue = append(j.queue, area)
+	j.queueMu.Unlock()
+	select {
+	case j.wake <- struct{}{}:
+	default:
+	}
+}
+
+// WorkTopUps runs the queued top-ups one at a time until ctx ends, at most TopUpsPerDay per UTC
+// day; once the day's budget is spent, the queue waits for the next day.
+func (j *SyncJob) WorkTopUps(ctx context.Context) {
+	var day time.Time
+	started := 0
+	for {
+		if today := j.Now().UTC().Truncate(24 * time.Hour); !today.Equal(day) {
+			day, started = today, 0
+		}
+		if started >= TopUpsPerDay {
+			if err := j.Sleep(ctx, day.Add(24*time.Hour).Sub(j.Now())); err != nil {
+				return
+			}
+			continue
+		}
+		area, ok := j.nextTopUp()
+		if !ok {
+			select {
+			case <-ctx.Done():
+				return
+			case <-j.wake:
+			}
+			continue
+		}
+		started++
+		if err := j.TopUp(ctx, area); err != nil {
+			j.Logf("writers top-up %s: %v", area.Name, err)
+		}
+	}
+}
+
+func (j *SyncJob) nextTopUp() (Area, bool) {
+	j.queueMu.Lock()
+	defer j.queueMu.Unlock()
+	if len(j.queue) == 0 {
+		return Area{}, false
+	}
+	area := j.queue[0]
+	j.queue = j.queue[1:]
+	return area, true
+}
+
+// TopUp picks posts for one destination between monthly runs. It searches every active blog for
+// the destination's name, ranks the hits by the last monthly run's comment counts (newest first
+// when there are none yet), and indexes the up to PostsPerDestination picks not indexed yet. A
+// blog whose search fails is skipped. Over MaxPosts, the lowest-ranked posts of the active blogs,
+// whatever their destination, are deleted. If posts were added, the destination's stored result
+// is recomputed. It waits for a running sync or top-up.
+func (j *SyncJob) TopUp(ctx context.Context, area Area) error {
+	j.running.Lock()
+	defer j.running.Unlock()
+
+	active, _, errs := j.activeSources(ctx)
+	_, known, err := j.destinationNames(ctx)
+	if err != nil {
+		return errors.Join(append(errs, err)...)
+	}
+	known = append(known, area.Name)
+	var blogs []BlogCandidates
+	var live []trackedSource
+	for _, entry := range active {
+		hits, _, err := j.posts.SearchPosts(ctx, entry.source.APIBase, area.Name, 1)
+		if err != nil && j.blocked(err) {
+			errs = append(errs, j.markBlocked(ctx, entry, err))
+			continue
+		}
+		if err != nil {
+			j.Logf("writers top-up %s %s: skipped, %v", area.Name, entry.source.Host, err)
+			errs = append(errs, fmt.Errorf("%s: %w", entry.source.Host, err))
+			continue
+		}
+		blogs = append(blogs, BlogCandidates{Host: entry.source.Host, Hits: hits, Comments: j.tallies[entry.source.Host]})
+		live = append(live, entry)
+	}
+	picks := Select(blogs, known, PostsPerDestination)
+	j.seen = MergeBlogs(append(j.seen, blogs...))
+	added := 0
+	for _, entry := range live {
+		stored, err := j.index.PostIDs(ctx, entry.source.Host)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", entry.source.Host, err))
+			continue
+		}
+		indexed := make(map[int64]bool, len(stored))
+		for _, id := range stored {
+			indexed[id] = true
+		}
+		var ids []int64
+		for _, pick := range picks {
+			if pick.Host == entry.source.Host && !indexed[pick.PostID] {
+				ids = append(ids, pick.PostID)
+			}
+		}
+		n, err := j.indexPosts(ctx, entry.source, ids)
+		added += n
+		if err != nil && j.blocked(err) {
+			errs = append(errs, j.markBlocked(ctx, entry, err))
+			continue
+		}
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s: %w", entry.source.Host, err))
+		}
+	}
+	trimmed, err := j.trimToCeiling(ctx, live, known)
+	errs = append(errs, err)
+	j.Logf("writers top-up %s: indexed %d posts, trimmed %d", area.Name, added, trimmed)
+	if added > 0 && j.RecomputeDestination != nil {
+		errs = append(errs, j.RecomputeDestination(ctx, area))
+	}
+	return errors.Join(errs...)
+}
+
+// trimToCeiling deletes the lowest-ranked indexed posts of the given blogs, across all
+// destinations, while the index holds more than MaxPosts. Rows of every other blog count but
+// stay. Posts never seen in a search this process rank lowest. It logs how many each blog lost.
+func (j *SyncJob) trimToCeiling(ctx context.Context, live []trackedSource, known []string) (int, error) {
+	total := 0
+	var candidates []Pick
+	isLive := make(map[string]bool, len(live))
+	for _, entry := range live {
+		isLive[entry.source.Host] = true
+	}
+	for _, source := range j.sources {
+		if source.Status == StatusRemoved {
+			continue
+		}
+		stored, err := j.index.PostIDs(ctx, source.Host)
+		if err != nil {
+			return 0, fmt.Errorf("%s: %w", source.Host, err)
+		}
+		total += len(stored)
+		if isLive[source.Host] {
+			for _, id := range stored {
+				candidates = append(candidates, Pick{Host: source.Host, PostID: id})
+			}
+		}
+	}
+	if total <= j.MaxPosts {
+		return 0, nil
+	}
+	lost := make(map[string]int)
+	trimmed := 0
+	for _, pick := range Trim(j.seen, known, candidates, total-j.MaxPosts) {
+		if err := j.index.DeletePost(ctx, pick.Host, pick.PostID); err != nil {
+			return trimmed, fmt.Errorf("%s: %w", pick.Host, err)
+		}
+		lost[pick.Host]++
+		trimmed++
+	}
+	hosts := make([]string, 0, len(lost))
+	for host, n := range lost {
+		hosts = append(hosts, fmt.Sprintf("%s %d", host, n))
+	}
+	sort.Strings(hosts)
+	j.Logf("writers top-up: trimmed %d posts to stay within %d (%s)", trimmed, j.MaxPosts, strings.Join(hosts, ", "))
+	return trimmed, nil
 }
 
 func (j *SyncJob) blocked(err error) bool {

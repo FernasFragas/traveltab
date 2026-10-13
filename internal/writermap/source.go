@@ -189,6 +189,13 @@ func (s *MapSource) Recompute(ctx context.Context) error {
 	return errors.Join(errs...)
 }
 
+// RecomputeDestination replaces one destination's stored result from the current index. A top-up
+// calls it after indexing the destination's posts.
+func (s *MapSource) RecomputeDestination(ctx context.Context, dest Area) error {
+	_, err := s.recompute(ctx, dest)
+	return err
+}
+
 func (s *MapSource) recompute(ctx context.Context, dest Area) (*DestinationResult, error) {
 	base, err := s.base.Places(ctx, dest)
 	if err != nil {

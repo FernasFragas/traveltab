@@ -167,11 +167,74 @@ func TestTrim_NothingToDropOrMoreThanThereIs(t *testing.T) {
 	assert.Len(t, writermap.Trim(blogs, selectionPlaces, picks, 5), 2)
 }
 
+func TestSelectPerDestination_EachDestinationGetsItsOwnQuota(t *testing.T) {
+	destinations := []writermap.DestinationCandidates{
+		{Name: "Madeira", Blogs: []writermap.BlogCandidates{blogOf("a", 150)}},
+		{Name: "Toronto", Blogs: []writermap.BlogCandidates{rangeOf("a", 1001, 30, "Toronto")}},
+	}
+
+	picks := writermap.SelectPerDestination(destinations, []string{"Madeira", "Toronto"}, 100, 5000)
+
+	assert.Len(t, picks, 130, "Toronto's 30 don't take Madeira's 100")
+}
+
+func TestSelectPerDestination_OnePostPickedTwiceIsKeptOnce(t *testing.T) {
+	both := writermap.SearchHit{ID: 7, Title: "Madeira and Toronto", Slug: "both"}
+	destinations := []writermap.DestinationCandidates{
+		{Name: "Madeira", Blogs: []writermap.BlogCandidates{{Host: "a", Hits: []writermap.SearchHit{both}}}},
+		{Name: "Toronto", Blogs: []writermap.BlogCandidates{{Host: "a", Hits: []writermap.SearchHit{both}}}},
+	}
+
+	picks := writermap.SelectPerDestination(destinations, []string{"Madeira", "Toronto"}, 100, 5000)
+
+	assert.Equal(t, []writermap.Pick{{Host: "a", PostID: 7}}, picks)
+}
+
+func TestSelectPerDestination_OverTheLimitDropsTheLowestRankedAcrossDestinations(t *testing.T) {
+	madeira := blogOf("a", 3)
+	madeira.Comments = map[int64]int{1: 5, 2: 5, 3: 5}
+	toronto := rangeOf("b", 1, 3, "Toronto")
+	toronto.Comments = map[int64]int{1: 9}
+	destinations := []writermap.DestinationCandidates{
+		{Name: "Madeira", Blogs: []writermap.BlogCandidates{madeira}},
+		{Name: "Toronto", Blogs: []writermap.BlogCandidates{toronto}},
+	}
+
+	picks := writermap.SelectPerDestination(destinations, []string{"Madeira", "Toronto"}, 100, 4)
+
+	assert.Len(t, picks, 4)
+	assert.ElementsMatch(t, []int64{1, 2, 3}, ids(picks, "a"), "Madeira's commented posts stay")
+	assert.Equal(t, []int64{1}, ids(picks, "b"), "Toronto keeps only its commented post")
+}
+
+func TestSelectPerDestination_OneDestinationPicksLikeSelect(t *testing.T) {
+	blogs := []writermap.BlogCandidates{blogOf("a", 100), blogOf("b", 33), blogOf("c", 33)}
+
+	picks := writermap.SelectPerDestination([]writermap.DestinationCandidates{{Name: "Madeira", Blogs: blogs}}, selectionPlaces, 100, 5000)
+
+	assert.Equal(t, writermap.Select(blogs, selectionPlaces, 100), picks)
+}
+
+func TestSelectPerDestination_NoRoomPicksNothing(t *testing.T) {
+	destinations := []writermap.DestinationCandidates{{Name: "Madeira", Blogs: []writermap.BlogCandidates{blogOf("a", 3)}}}
+
+	assert.Empty(t, writermap.SelectPerDestination(destinations, selectionPlaces, 100, 0))
+}
+
 // blogOf returns a blog with n destination hits.
 func blogOf(host string, n int) writermap.BlogCandidates {
 	blog := writermap.BlogCandidates{Host: host}
 	for id := int64(1); id <= int64(n); id++ {
 		blog.Hits = append(blog.Hits, writermap.SearchHit{ID: id, Title: "Guide to Madeira", Slug: "guide"})
+	}
+	return blog
+}
+
+// rangeOf returns a blog with n hits from ID first on, each titled with place.
+func rangeOf(host string, first int64, n int, place string) writermap.BlogCandidates {
+	blog := writermap.BlogCandidates{Host: host}
+	for id := first; id < first+int64(n); id++ {
+		blog.Hits = append(blog.Hits, writermap.SearchHit{ID: id, Title: "Guide to " + place, Slug: "guide"})
 	}
 	return blog
 }
