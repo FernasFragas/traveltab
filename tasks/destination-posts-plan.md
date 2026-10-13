@@ -63,7 +63,7 @@ New posts can mention other cached destinations (a Toronto post naming Montreal)
 | Comment tally for top-ups | **Reuse the monthly tally in memory**; newest-first fallback |
 | Live update of the open map | **No**; pins show on the next visit |
 | Other destinations' results | **Wait for the monthly refresh** |
-| Existing indexes | **Next monthly run** switches to per-destination picks; no migration |
+| Existing indexes | **At the first startup after the deploy** (owner, 2026-10-13, replacing "next monthly run"): a source whose last run is before 2026-10-13 20:00 UTC (`perDestinationSince`) is due at once. No migration or manual step. |
 
 ## Risks
 

@@ -149,6 +149,29 @@ Index: 135 posts (75 + 19 + 41), 2.0 MB. The log contains no post text.
 
 Lisbon wasn't loaded in T5: its Wikidata load takes several minutes. Its top-up search was measured in T1 (37 picks).
 
+## Follow-up: re-pick at the first startup after the deploy
+
+Owner decision (2026-10-13), replacing "next monthly run": a source whose last run is before `perDestinationSince` (2026-10-13 20:00 UTC, just before this change was written) is due at once, so the deploy re-picks without a manual step. The test clock (`crawlTime`) moved from 11 to 14 October so the existing tests run after the cutoff.
+
+`go test ./internal/writermap/ -count=1`
+
+RED:
+```
+--- FAIL: TestSyncJob_RunBeforePerDestinationPicksIsDueAtOnce (0.00s)
+        	Messages:   	the shared-cap picks are re-picked at once
+        	Messages:   	only once: the new run is after the change
+FAIL
+```
+GREEN, `go test ./internal/writermap/ -count=1 -race` → `ok  	weatherservice/internal/writermap	1.725s`. `make test lint build` → exit 0, `0 issues.`; coverage 94.5%.
+
+| What is guaranteed | Test | Level | Result |
+|---|---|---|---|
+| A run from before the change is due at once, outside the window | `TestSyncJob_RunBeforePerDestinationPicksIsDueAtOnce` | unit | PASS |
+| It re-runs only once | same test, second `Run` | unit | PASS |
+| Runs after the change still wait for the monthly window | `TestSyncJob_RunWaitsForNewMonthAndOffPeak` | unit | PASS |
+
+**Not run at runtime:** starting the app on a copy of `launch-check.db` (last runs 11 October) failed to bind port 8080, which the owner's app was using. The rule is covered by the unit test above.
+
 ## Known gaps
 
 - **Pins appear on the next visit,** not on the open map (owner decision).

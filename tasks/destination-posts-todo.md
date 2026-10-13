@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](destination-posts-plan.md) first.
 
-**Status (2026-10-13):** T1–T5 done. See `docs/tdd/destination-posts.tdd.md`.
+**Status (2026-10-13):** T1–T5 done, plus the owner's follow-up: existing indexes re-pick at the first startup after the deploy. See `docs/tdd/destination-posts.tdd.md`.
 
 **How to read this file**
 - Tasks run in order T1 → T5. T2–T4 edit `sync.go` and must not run concurrently.
