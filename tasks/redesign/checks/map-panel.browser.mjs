@@ -11,6 +11,7 @@ try {
     window.__previewErrors = [];
     const originalError = console.error.bind(console);
     console.error = (...args) => { window.__previewErrors.push(args.map(String).join(' ')); originalError(...args); };
+    document.addEventListener('travelmap:ready', event => { window.__map = event.detail.map; window.__engine = event.detail.engine; });
     window.addEventListener('error', event => window.__previewErrors.push(event.message));
     window.addEventListener('unhandledrejection', event => window.__previewErrors.push(String(event.reason)));
   ` });
@@ -21,6 +22,23 @@ try {
         await browser.viewport(width, 900);
         await browser.navigate(`${preview.url}/trip/madeira-pt`);
         await browser.until("document.querySelectorAll('.map-pin').length > 0");
+        // The view opens on the destination, not fitted to the pins, so writer pins exist but may lie outside it.
+        // Pan to them, as a visitor would, before the click and keyboard steps below.
+        assert.ok(await browser.evaluate("document.querySelectorAll('.map-pin-writer').length") > 0, 'writer pins are drawn');
+        await browser.evaluate(`(async () => {
+          const data = await (await fetch(document.querySelector('[data-map-url]').dataset.mapUrl)).json();
+          const points = data.features.filter(f => f.properties.writer_count > 0).map(f => f.geometry.coordinates);
+          const lons = points.map(p => p[0]), lats = points.map(p => p[1]);
+          const [w, e, s, n] = [Math.min(...lons), Math.max(...lons), Math.min(...lats), Math.max(...lats)];
+          if (window.__engine === 'maplibre') window.__map.fitBounds([[w, s], [e, n]], { padding: 88, maxZoom: 12.3, animate: false });
+          else window.__map.fitBounds([[s, w], [n, e]], { padding: [48, 48], maxZoom: 12, animate: false });
+        })()`);
+        const inView = `(() => {
+          const canvas = document.querySelector('[data-map-canvas]').getBoundingClientRect();
+          return [...document.querySelectorAll('.map-pin-writer')].filter(pin => { const r = pin.getBoundingClientRect();
+            return r.width > 0 && r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom; }).length;
+        })()`;
+        await browser.until(`${inView} === document.querySelectorAll('.map-pin-writer').length`, 15000);
         const pins = await browser.evaluate(`(() => ({
           engine: document.querySelector('${scenario === 'writers-map-leaflet' ? '.leaflet-pane' : '.maplibregl-canvas'}') ? '${scenario === 'writers-map-leaflet' ? 'leaflet' : 'maplibre'}' : '',
           writers: [...document.querySelectorAll('.map-pin-writer')].map(pin => pin.querySelector('span').textContent),
@@ -36,14 +54,6 @@ try {
         assert.ok(pins.writerZ > pins.notableZ, JSON.stringify(pins));
         assert.ok(pins.focusable, JSON.stringify(pins));
 
-        // The writers' pins are framed, so they are on screen (not left outside the zoom-12 view).
-        const inView = `(() => {
-          const canvas = document.querySelector('[data-map-canvas]').getBoundingClientRect();
-          return [...document.querySelectorAll('.map-pin-writer')].filter(pin => { const r = pin.getBoundingClientRect();
-            return r.width > 0 && r.left >= canvas.left && r.right <= canvas.right && r.top >= canvas.top && r.bottom <= canvas.bottom; }).length;
-        })()`;
-        await browser.until(`${inView} === document.querySelectorAll('.map-pin-writer').length`, 15000);
-        assert.ok(await browser.evaluate(inView) > 0, 'writer pins are visible in the map');
         assert.equal(await browser.evaluate("document.querySelector('[data-map-slot=\"list\"]')"), null, 'no place-tag list');
         assert.equal(await browser.evaluate("document.querySelectorAll('[data-map-slot=\"list\"] button, [data-map-canvas] ~ ul button').length"), 0);
 

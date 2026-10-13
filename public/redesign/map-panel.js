@@ -6,6 +6,8 @@
     if (!window.TravelMap) return;
 
     var labelledPlaces = 5;
+    // A pin whose name is still loading has no name in the feed; never show its QID.
+    var pendingName = 'Loading name\u2026';
     var shownMonograms = 3;
     var writerPinZ = 1000;
     var popupId = 'pin-popup';
@@ -46,7 +48,7 @@
                     var marker = {
                         lngLat: feature.geometry.coordinates,
                         element: pinElement(place, writers, labelled.has(place.qid)),
-                        title: place.name,
+                        title: place.name || pendingName,
                         onClick: function () { showPopup(context, feature, marker.element, id); },
                         z: writers ? writerPinZ : 0
                     };
@@ -89,10 +91,10 @@
         var box = document.createElement('div');
         box.className = 'map-popup';
         box.setAttribute('role', 'dialog');
-        box.setAttribute('aria-label', place.name);
+        box.setAttribute('aria-label', place.name || pendingName);
         var name = document.createElement('strong');
         name.className = 'map-popup-name';
-        name.textContent = place.name;
+        name.textContent = place.name || pendingName;
         box.appendChild(name);
         var count = Number(place.writer_count);
         var meta = count > 0 ? 'Mentioned by ' + count + ' writer' + (count === 1 ? '' : 's') : place.kind;
@@ -171,7 +173,7 @@
 
     function biggestPlaces(features) {
         return new Set(features
-            .filter(function (feature) { return feature.properties && feature.properties.qid; })
+            .filter(function (feature) { return feature.properties && feature.properties.qid && feature.properties.name; })
             .sort(function (a, b) { return (b.properties.sitelinks || 0) - (a.properties.sitelinks || 0); })
             .slice(0, labelledPlaces)
             .map(function (feature) { return feature.properties.qid; }));
@@ -181,8 +183,8 @@
         var pin = document.createElement('button');
         pin.type = 'button';
         pin.className = 'map-pin ' + (writers ? 'map-pin-writer' : 'map-pin-notable');
-        pin.title = place.name;
-        pin.setAttribute('aria-label', place.name);
+        pin.title = place.name || pendingName;
+        pin.setAttribute('aria-label', place.name || pendingName);
         if (writers) {
             var count = document.createElement('span');
             count.textContent = String(Number(place.writer_count));

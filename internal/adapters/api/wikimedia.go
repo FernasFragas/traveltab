@@ -59,8 +59,9 @@ type EntityClaim struct {
 
 // Entity is a Wikidata item, holding whichever props were asked for.
 type Entity struct {
-	ID     string                 `json:"id"`
-	Labels map[string]EntityLabel `json:"labels"`
+	ID      string                   `json:"id"`
+	Labels  map[string]EntityLabel   `json:"labels"`
+	Aliases map[string][]EntityLabel `json:"aliases"`
 	// Descriptions are the short descriptions, keyed by language.
 	Descriptions map[string]EntityLabel     `json:"descriptions"`
 	Sitelinks    map[string]json.RawMessage `json:"sitelinks"`

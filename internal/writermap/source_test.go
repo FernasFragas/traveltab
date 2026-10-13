@@ -264,3 +264,99 @@ func (c *countingTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	c.calls++
 	return nil, errors.New("unexpected HTTP request")
 }
+
+type fakePartialBase struct {
+	*fakeBaseSource
+	progress BaseProgress
+	err      error
+	partials int
+}
+
+func (f *fakePartialBase) Partial(context.Context, Area) (BaseProgress, error) {
+	f.partials++
+	return f.progress, f.err
+}
+
+func TestMapSource_DestinationProgress_ServesPartialPinsWithoutMatchingWhileLoading(t *testing.T) {
+	ctx := context.Background()
+	monte := Place{QID: "Q1", Names: []string{"Monte"}, Lat: 32.67, Lon: -16.90}
+	base := &fakePartialBase{fakeBaseSource: sourceTestBase(), progress: BaseProgress{BasePlaces: BasePlaces{Pins: []Place{monte}, Gazetteer: []Place{monte}}}}
+	index, store := sourceTestIndex(), newFakeDestinationStore()
+	source := NewMapSource(base, index, store, fakeSyncStates{}, sourceTestSources(), Overrides{})
+	area := Area{Name: "Funchal", Lat: 32.65, Lon: -16.91}
+
+	got, loading, err := source.DestinationProgress(ctx, area)
+
+	require.NoError(t, err)
+	assert.True(t, loading)
+	assert.Equal(t, []Place{monte}, got.Places)
+	assert.False(t, got.Complete)
+	assert.Empty(t, got.WriterCounts)
+	assert.Zero(t, index.calls, "no writer matching on a partial result")
+	assert.Empty(t, store.results, "a partial result is not stored")
+}
+
+func TestMapSource_DestinationProgress_MatchesOnceWhenTheLoadIsDone(t *testing.T) {
+	ctx := context.Background()
+	monte := Place{QID: "Q1", Names: []string{"Monte"}, Lat: 32.67, Lon: -16.90}
+	done := BaseProgress{BasePlaces: BasePlaces{Pins: []Place{monte}, Gazetteer: []Place{monte}}, Done: true}
+	base := &fakePartialBase{fakeBaseSource: sourceTestBase(), progress: done}
+	index, store := sourceTestIndex(), newFakeDestinationStore()
+	source := NewMapSource(base, index, store, fakeSyncStates{}, sourceTestSources(), Overrides{})
+	area := Area{Name: "Funchal", Lat: 32.65, Lon: -16.91}
+
+	first, loading, err := source.DestinationProgress(ctx, area)
+	require.NoError(t, err)
+	second, _, err := source.DestinationProgress(ctx, area)
+	require.NoError(t, err)
+
+	assert.False(t, loading)
+	assert.Equal(t, 1, first.WriterCounts["Q1"])
+	assert.Equal(t, first, second)
+	assert.Equal(t, 1, index.calls, "matching ran once; the second call read the stored result")
+	assert.Equal(t, 1, base.partials)
+}
+
+func TestMapSource_DestinationProgress_FailureWithNothingLoadedIsAnError(t *testing.T) {
+	base := &fakePartialBase{fakeBaseSource: sourceTestBase(), err: errors.New("wikidata down")}
+	source := NewMapSource(base, sourceTestIndex(), newFakeDestinationStore(), fakeSyncStates{}, sourceTestSources(), Overrides{})
+
+	got, _, err := source.DestinationProgress(context.Background(), Area{Name: "Funchal"})
+
+	assert.Error(t, err)
+	assert.Nil(t, got)
+}
+
+func TestMapSource_DestinationProgress_FailureWithPinsServesThemAsNotLoading(t *testing.T) {
+	monte := Place{QID: "Q1", Names: []string{"Monte"}}
+	base := &fakePartialBase{fakeBaseSource: sourceTestBase(), err: errors.New("wikidata down"), progress: BaseProgress{BasePlaces: BasePlaces{Pins: []Place{monte}}}}
+	source := NewMapSource(base, sourceTestIndex(), newFakeDestinationStore(), fakeSyncStates{}, sourceTestSources(), Overrides{})
+
+	got, loading, err := source.DestinationProgress(context.Background(), Area{Name: "Funchal"})
+
+	require.NoError(t, err)
+	assert.False(t, loading, "the load stopped; the next visit resumes it")
+	assert.Equal(t, []Place{monte}, got.Places)
+}
+
+func TestMapSource_DestinationProgress_PlainBaseSourceBlocksLikeDestination(t *testing.T) {
+	source := NewMapSource(sourceTestBase(), sourceTestIndex(), newFakeDestinationStore(), fakeSyncStates{}, sourceTestSources(), Overrides{})
+
+	got, loading, err := source.DestinationProgress(context.Background(), Area{Name: "Funchal", Lat: 32.65, Lon: -16.91})
+
+	require.NoError(t, err)
+	assert.False(t, loading)
+	assert.Equal(t, 1, got.WriterCounts["Q1"])
+}
+
+func TestMapSource_Place_FindsAPinInAPartialResult(t *testing.T) {
+	monte := Place{QID: "Q1", Names: []string{"Monte"}}
+	base := &fakePartialBase{fakeBaseSource: sourceTestBase(), progress: BaseProgress{BasePlaces: BasePlaces{Pins: []Place{monte}}}}
+	source := NewMapSource(base, sourceTestIndex(), newFakeDestinationStore(), fakeSyncStates{}, sourceTestSources(), Overrides{})
+
+	place, summary, err := source.Place(context.Background(), Area{Name: "Funchal"}, "Q1")
+
+	require.NoError(t, err)
+	assert.Equal(t, "Q1", place.QID)
+	assert.Nil(t, summary)
+}

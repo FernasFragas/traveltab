@@ -30,6 +30,8 @@ type stubHit struct{ id, label, match string }
 type stubEntity struct {
 	lat, lon    float64
 	noCoords    bool
+	label       string
+	aliases     []string
 	countries   []string
 	types       []string
 	populated   bool
@@ -56,16 +58,17 @@ type stubFile struct {
 // photoWorld is a small offline Wikidata, Wikipedia and Commons. Everything the adapter asks is
 // answered from these tables, and every request is recorded.
 type photoWorld struct {
-	mu        sync.Mutex
-	search    map[string][]stubHit
-	entities  map[string]stubEntity
-	countries map[string]string
-	nearby    []stubHit
-	pageImage map[string]string // article title -> file name
-	files     map[string]stubFile
-	redirects map[string]string // file title -> target file title
-	requests  []*http.Request
-	override  func(*http.Request) *stubResponse
+	mu         sync.Mutex
+	search     map[string][]stubHit
+	entities   map[string]stubEntity
+	countries  map[string]string
+	nearby     []stubHit
+	nearSearch []stubHit
+	pageImage  map[string]string // article title -> file name
+	files      map[string]stubFile
+	redirects  map[string]string // file title -> target file title
+	requests   []*http.Request
+	override   func(*http.Request) *stubResponse
 }
 
 func newPhotoWorld() *photoWorld {
@@ -135,6 +138,8 @@ func (w *photoWorld) respond(req *http.Request) string {
 		return w.claimsJSON(q.Get("entity"))
 	case q.Get("generator") == "geosearch":
 		return w.nearbyJSON()
+	case q.Get("action") == "query" && q.Get("list") == "search":
+		return w.nearSearchJSON()
 	case q.Get("prop") == "pageimages":
 		return w.pageImageJSON(q.Get("titles"))
 	case q.Get("prop") == "imageinfo":
@@ -215,6 +220,16 @@ func (w *photoWorld) entitiesJSON(ids []string) string {
 		}
 
 		entity := map[string]any{"id": id, "claims": claims, "sitelinks": sitelinks}
+		if e.label != "" {
+			entity["labels"] = map[string]any{"en": map[string]string{"value": e.label}}
+		}
+		if len(e.aliases) > 0 {
+			var aliases []map[string]string
+			for _, alias := range e.aliases {
+				aliases = append(aliases, map[string]string{"value": alias})
+			}
+			entity["aliases"] = map[string]any{"en": aliases}
+		}
 		if e.description != "" {
 			entity["descriptions"] = map[string]any{"en": map[string]string{"language": "en", "value": e.description}}
 		}
@@ -242,6 +257,14 @@ func (w *photoWorld) nearbyJSON() string {
 	}
 
 	return mustJSON(map[string]any{"query": map[string]any{"pages": pages}})
+}
+
+func (w *photoWorld) nearSearchJSON() string {
+	var hits []map[string]string
+	for _, hit := range w.nearSearch {
+		hits = append(hits, map[string]string{"title": hit.id})
+	}
+	return mustJSON(map[string]any{"query": map[string]any{"search": hits}})
 }
 
 func (w *photoWorld) pageImageJSON(title string) string {
@@ -545,19 +568,182 @@ func TestDestinationPhoto_FindsAnEntityTheNameSearchMissed(t *testing.T) {
 	w.entities["Q3"] = stubEntity{noCoords: true}
 	w.files["File:Spain.jpg"] = goodFile()
 	w.files["File:Venezuela.jpg"] = goodFile()
+	w.nearSearch = []stubHit{{id: "Q4"}}
+	w.entities["Q4"] = stubEntity{lat: 10.18, lon: -68.01, countries: []string{"Q717"}, populated: true, sitelinks: 90, label: "Valencia", images: []string{"Populated.jpg"}}
+	w.files["File:Populated.jpg"] = goodFile()
 
 	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "Valencia", Country: "VE", Lat: 10.1800, Lon: -68.0000})
 	require.NoError(t, err)
 	require.NotNil(t, photo)
-	assert.Equal(t, "Q2", photo.SourceID)
+	assert.Equal(t, "Q2", photo.SourceID, "a nearby article's match wins over the populated-place fallback")
 	assert.Equal(t, 1, w.count("geosearch"))
 }
 
-func TestDestinationPhoto_SkipsTheNearbyFallbackWhenTheSearchMatched(t *testing.T) {
+func TestDestinationPhoto_PrefersTheNameSearchOverTheFallbacks(t *testing.T) {
 	w := parisWorld()
-	_, err := w.api(t).Photo(context.Background(), parisFR)
+	w.nearby = []stubHit{{"Q7", "Paris", ""}}
+	w.nearSearch = []stubHit{{id: "Q8"}}
+	w.entities["Q7"] = stubEntity{lat: 48.86, lon: 2.33, countries: []string{"Q142"}, populated: true, sitelinks: 900, images: []string{"Nearby.jpg"}}
+	w.entities["Q8"] = stubEntity{lat: 48.86, lon: 2.34, countries: []string{"Q142"}, populated: true, sitelinks: 900, label: "Paris", images: []string{"Populated.jpg"}}
+	w.files["File:Nearby.jpg"] = goodFile()
+	w.files["File:Populated.jpg"] = goodFile()
+
+	photo, err := w.api(t).Photo(context.Background(), parisFR)
 	require.NoError(t, err)
-	assert.Zero(t, w.count("geosearch"))
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q90", photo.SourceID, "the name search's match wins over better-linked fallback places")
+}
+
+func TestDestinationPhoto_PopulatedNearPrefersMatchingAliasOverMoreSitelinks(t *testing.T) {
+	w := newPhotoWorld()
+	w.countries["Q30"] = "US"
+	w.search["New York"] = []stubHit{{"Q1384", "New York", "New York"}}
+	w.entities["Q1384"] = stubEntity{lat: 42.9, lon: -75, countries: []string{"Q30"}, populated: true, sitelinks: 500}
+	w.nearSearch = []stubHit{{id: "Q18419"}, {id: "Q60"}}
+	w.entities["Q18419"] = stubEntity{lat: 40.65, lon: -73.95, countries: []string{"Q30"}, populated: true, sitelinks: 500, label: "Brooklyn", images: []string{"Brooklyn.jpg"}}
+	w.entities["Q60"] = stubEntity{lat: 40.7127, lon: -74.0059, countries: []string{"Q30"}, populated: true, sitelinks: 200, label: "New York City", aliases: []string{"New York"}, images: []string{"New York.jpg"}}
+	w.files["File:Brooklyn.jpg"] = goodFile()
+	w.files["File:New York.jpg"] = goodFile()
+
+	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "New York", Country: "US", Lat: 40.713, Lon: -74.006})
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q60", photo.SourceID)
+	for _, req := range w.requests {
+		if req.URL.Query().Get("list") != "search" {
+			continue
+		}
+		assert.Equal(t, "https://www.wikidata.org/w/api.php", req.URL.Scheme+"://"+req.URL.Host+req.URL.Path)
+		assert.Equal(t, "haswbstatement:P1082 nearcoord:25km,40.713000,-74.006000", req.URL.Query().Get("srsearch"))
+		assert.Equal(t, "5", req.URL.Query().Get("srlimit"))
+	}
+}
+
+// newYorkWorld is New York as Wikidata answers it: the name search finds only the state, no
+// nearby article is titled "New York", and the populated-place search finds the city.
+func newYorkWorld() *photoWorld {
+	w := newPhotoWorld()
+	w.search["New York"] = []stubHit{{"Q1384", "New York", "New York"}}
+	w.entities["Q1384"] = stubEntity{lat: 42.9, lon: -75, countries: []string{"Q30"}, populated: true, sitelinks: 500}
+	w.nearby = []stubHit{{"Q11299", "Manhattan", ""}}
+	w.nearSearch = []stubHit{{id: "Q60"}}
+	w.entities["Q60"] = stubEntity{lat: 40.7127, lon: -74.0059, countries: []string{"Q30"}, populated: true, sitelinks: 200, label: "New York City", aliases: []string{"New York"}, images: []string{"New York.jpg"}}
+	w.files["File:New York.jpg"] = goodFile()
+
+	return w
+}
+
+var newYorkUS = application.DestinationIdentity{City: "New York", Country: "US", Lat: 40.713, Lon: -74.006}
+
+func TestDestinationPhoto_RunsTheThreeSearchesAtOnce(t *testing.T) {
+	w := newYorkWorld()
+	var mu sync.Mutex
+	arrived := 0
+	all := make(chan struct{})
+	w.override = func(req *http.Request) *stubResponse {
+		q := req.URL.Query()
+		if q.Get("action") != "wbsearchentities" && q.Get("generator") != "geosearch" && q.Get("list") != "search" {
+			return nil
+		}
+		mu.Lock()
+		arrived++
+		if arrived == 3 {
+			close(all)
+		}
+		mu.Unlock()
+		// Each search waits for the other two, so searches made one after another never finish.
+		select {
+		case <-all:
+			return nil
+		case <-time.After(time.Second):
+			return &stubResponse{status: http.StatusServiceUnavailable, body: "the other searches never started"}
+		}
+	}
+
+	photo, err := w.api(t).Photo(context.Background(), newYorkUS)
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q60", photo.SourceID)
+}
+
+func TestDestinationPhoto_LoadsEveryCandidateInOneEntityRequest(t *testing.T) {
+	w := newYorkWorld()
+
+	photo, err := w.api(t).Photo(context.Background(), newYorkUS)
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q60", photo.SourceID)
+	assert.Equal(t, 1, w.count("wbgetentities"), "the state from the name search and the city from the fallback load together")
+}
+
+func TestDestinationPhoto_IgnoresFallbackFailuresWhenTheNameSearchMatched(t *testing.T) {
+	w := parisWorld()
+	w.override = func(req *http.Request) *stubResponse {
+		q := req.URL.Query()
+		if q.Get("generator") == "geosearch" || q.Get("list") == "search" {
+			return &stubResponse{status: http.StatusServiceUnavailable, body: "unavailable"}
+		}
+		return nil
+	}
+
+	photo, err := w.api(t).Photo(context.Background(), parisFR)
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q90", photo.SourceID)
+}
+
+func TestDestinationPhoto_PopulatedNearChoosesTorontoWithoutANameMatch(t *testing.T) {
+	w := newPhotoWorld()
+	w.countries["Q16"] = "CA"
+	w.search["Old Toronto"] = []stubHit{{"Q919169", "Old Toronto", "Old Toronto"}}
+	w.entities["Q919169"] = stubEntity{noCoords: true}
+	w.nearSearch = []stubHit{{id: "Q50816"}, {id: "Q172"}}
+	w.entities["Q50816"] = stubEntity{lat: 43.59, lon: -79.65, countries: []string{"Q16"}, populated: true, sitelinks: 50, label: "Mississauga", images: []string{"Mississauga.jpg"}}
+	w.entities["Q172"] = stubEntity{lat: 43.653, lon: -79.383, countries: []string{"Q16"}, populated: true, sitelinks: 250, label: "Toronto", images: []string{"Toronto.jpg"}}
+	w.files["File:Toronto.jpg"] = goodFile()
+
+	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "Old Toronto", Country: "CA", Lat: 43.653, Lon: -79.384})
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q172", photo.SourceID)
+}
+
+func TestDestinationPhoto_PopulatedNearRefusesAmbiguousCities(t *testing.T) {
+	w := newPhotoWorld()
+	w.nearSearch = []stubHit{{id: "Q1"}, {id: "Q2"}}
+	w.entities["Q1"] = stubEntity{lat: 10, lon: 20, countries: []string{"Q45"}, populated: true, sitelinks: 100, label: "Alpha", images: []string{"One.jpg"}}
+	w.entities["Q2"] = stubEntity{lat: 10.15, lon: 20, countries: []string{"Q45"}, populated: true, sitelinks: 90, label: "Beta", images: []string{"Two.jpg"}}
+	w.files["File:One.jpg"] = goodFile()
+	w.files["File:Two.jpg"] = goodFile()
+
+	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "Missing", Country: "PT", Lat: 10.075, Lon: 20})
+	require.NoError(t, err)
+	assert.Nil(t, photo)
+}
+
+func TestDestinationPhoto_PopulatedNearRefusesForeignCity(t *testing.T) {
+	w := newPhotoWorld()
+	w.nearSearch = []stubHit{{id: "Q2"}}
+	w.entities["Q2"] = stubEntity{lat: 10, lon: 20, countries: []string{"Q30"}, populated: true, sitelinks: 90, label: "Beta", images: []string{"Two.jpg"}}
+	w.files["File:Two.jpg"] = goodFile()
+
+	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "Missing", Country: "PT", Lat: 10, Lon: 20})
+	require.NoError(t, err)
+	assert.Nil(t, photo)
+}
+
+func TestDestinationPhoto_PopulatedNearProviderErrorIsNotNoPhoto(t *testing.T) {
+	w := newPhotoWorld()
+	w.override = func(req *http.Request) *stubResponse {
+		if req.URL.Query().Get("list") == "search" {
+			return &stubResponse{status: 503, body: "unavailable"}
+		}
+		return nil
+	}
+	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "Missing", Country: "PT", Lat: 10, Lon: 20})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "503")
+	assert.Nil(t, photo)
 }
 
 func TestDestinationPhoto_RejectsUnsuitableImagesAndTriesTheNext(t *testing.T) {
@@ -866,6 +1052,48 @@ func TestDestinationPhoto_RemembersCountryCodes(t *testing.T) {
 	assert.Equal(t, first, w.count("wbgetclaims"), "an ISO code is fetched once")
 }
 
+func TestDestinationPhoto_DeprecatedCountryCodeOnlyWhenNoCurrentCode(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		claims string
+		want   string
+	}{
+		{"deprecated only", `{"claims":{"P297":[{"rank":"deprecated","mainsnak":{"datavalue":{"value":"NL"}}}]}}`, "NL"},
+		{"normal takes precedence", `{"claims":{"P297":[{"rank":"deprecated","mainsnak":{"datavalue":{"value":"XX"}}},{"rank":"normal","mainsnak":{"datavalue":{"value":"NL"}}}]}}`, "NL"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newPhotoWorld()
+			w.override = func(req *http.Request) *stubResponse {
+				if req.URL.Query().Get("action") == "wbgetclaims" {
+					return &stubResponse{status: http.StatusOK, body: tc.claims}
+				}
+				return nil
+			}
+			code, err := w.api(t).countryCode(context.Background(), "Q55")
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, code)
+		})
+	}
+}
+
+func TestDestinationPhoto_AmsterdamAcceptsDeprecatedOnlyNLCode(t *testing.T) {
+	w := newPhotoWorld()
+	w.search["Amsterdam"] = []stubHit{{"Q727", "Amsterdam", "Amsterdam"}}
+	w.entities["Q727"] = stubEntity{lat: 52.3676, lon: 4.9041, countries: []string{"Q55"}, types: []string{"Q515"}, images: []string{"Amsterdam.jpg"}}
+	w.files["File:Amsterdam.jpg"] = goodFile()
+	w.override = func(req *http.Request) *stubResponse {
+		if req.URL.Query().Get("action") == "wbgetclaims" && req.URL.Query().Get("entity") == "Q55" {
+			return &stubResponse{status: http.StatusOK, body: `{"claims":{"P297":[{"rank":"deprecated","mainsnak":{"datavalue":{"value":"NL"}}}]}}`}
+		}
+		return nil
+	}
+
+	photo, err := w.api(t).Photo(context.Background(), application.DestinationIdentity{City: "Amsterdam", Country: "NL", Lat: 52.3676, Lon: 4.9041})
+	require.NoError(t, err)
+	require.NotNil(t, photo)
+	assert.Equal(t, "Q727", photo.SourceID)
+}
+
 func TestDestinationPhoto_ImageRequestAsksForABoundedThumbnail(t *testing.T) {
 	w := parisWorld()
 	_, err := w.api(t).Photo(context.Background(), parisFR)
@@ -941,6 +1169,66 @@ var liveDestinations = []application.DestinationIdentity{
 	{City: "Valencia", Country: "VE", Lat: 10.1620, Lon: -68.0077},
 	{City: "Springfield", Country: "US", Lat: 39.7817, Lon: -89.6501},
 	{City: "Kandersteg", Country: "CH", Lat: 46.4953, Lon: 7.6742},
+	// OpenWeather identities from destination-photo-fallback-plan.md.
+	{City: "New York", Country: "US", Lat: 40.713, Lon: -74.006},
+	{City: "Los Angeles", Country: "US", Lat: 34.054, Lon: -118.243},
+	{City: "San Francisco", Country: "US", Lat: 37.779, Lon: -122.420},
+	{City: "Washington", Country: "US", Lat: 38.895, Lon: -77.037},
+	{City: "Chicago", Country: "US", Lat: 41.876, Lon: -87.624},
+	{City: "Miami", Country: "US", Lat: 25.774, Lon: -80.194},
+	{City: "Las Vegas", Country: "US", Lat: 36.167, Lon: -115.148},
+	{City: "Mexico City", Country: "MX", Lat: 19.433, Lon: -99.133},
+	{City: "Rio de Janeiro", Country: "BR", Lat: -22.911, Lon: -43.209},
+	{City: "Buenos Aires", Country: "AR", Lat: -34.608, Lon: -58.437},
+	{City: "Old Toronto", Country: "CA", Lat: 43.653, Lon: -79.384},
+	{City: "Montreal", Country: "CA", Lat: 45.503, Lon: -73.570},
+	{City: "London", Country: "GB", Lat: 51.507, Lon: -0.128},
+	{City: "Paris", Country: "FR", Lat: 48.859, Lon: 2.320},
+	{City: "Rome", Country: "IT", Lat: 41.893, Lon: 12.483},
+	{City: "Venice", Country: "IT", Lat: 45.437, Lon: 12.335},
+	{City: "Florence", Country: "IT", Lat: 43.770, Lon: 11.256},
+	{City: "Barcelona", Country: "ES", Lat: 41.383, Lon: 2.177},
+	{City: "Madrid", Country: "ES", Lat: 40.417, Lon: -3.704},
+	{City: "Lisbon", Country: "PT", Lat: 38.708, Lon: -9.137},
+	{City: "Porto", Country: "PT", Lat: 41.149, Lon: -8.611},
+	{City: "Funchal", Country: "PT", Lat: 32.650, Lon: -16.909},
+	{City: "Amsterdam", Country: "NL", Lat: 52.373, Lon: 4.894},
+	{City: "Berlin", Country: "DE", Lat: 52.517, Lon: 13.389},
+	{City: "Munich", Country: "DE", Lat: 48.137, Lon: 11.575},
+	{City: "Frankfurt", Country: "DE", Lat: 50.111, Lon: 8.682},
+	{City: "Vienna", Country: "AT", Lat: 48.208, Lon: 16.373},
+	{City: "Prague", Country: "CZ", Lat: 50.087, Lon: 14.421},
+	{City: "Budapest", Country: "HU", Lat: 47.498, Lon: 19.040},
+	{City: "Athens", Country: "GR", Lat: 37.984, Lon: 23.728},
+	{City: "Istanbul", Country: "TR", Lat: 41.009, Lon: 28.966},
+	{City: "Dubrovnik", Country: "HR", Lat: 42.649, Lon: 18.095},
+	{City: "Brussels", Country: "BE", Lat: 50.847, Lon: 4.352},
+	{City: "Copenhagen", Country: "DK", Lat: 55.687, Lon: 12.570},
+	{City: "Saint Petersburg", Country: "RU", Lat: 59.939, Lon: 30.316},
+	{City: "City of Edinburgh", Country: "GB", Lat: 55.953, Lon: -3.188},
+	{City: "Tokyo", Country: "JP", Lat: 35.677, Lon: 139.764},
+	{City: "Kyoto", Country: "JP", Lat: 35.021, Lon: 135.756},
+	{City: "Seoul", Country: "KR", Lat: 37.567, Lon: 126.978},
+	{City: "Beijing", Country: "CN", Lat: 39.906, Lon: 116.391},
+	{City: "Singapore", Country: "SG", Lat: 1.290, Lon: 103.852},
+	{City: "Bangkok", Country: "TH", Lat: 13.752, Lon: 100.494},
+	{City: "Ho Chi Minh City", Country: "VN", Lat: 10.776, Lon: 106.702},
+	{City: "Hanoi", Country: "VN", Lat: 21.029, Lon: 105.854},
+	{City: "Pulau Bali", Country: "ID", Lat: -8.456, Lon: 115.270},
+	{City: "Delhi", Country: "IN", Lat: 28.652, Lon: 77.222},
+	{City: "Mumbai", Country: "IN", Lat: 19.079, Lon: 72.878},
+	{City: "Dubai", Country: "AE", Lat: 25.265, Lon: 55.292},
+	{City: "Marrakesh", Country: "MA", Lat: 31.626, Lon: -7.989},
+	{City: "Cairo", Country: "EG", Lat: 30.044, Lon: 31.236},
+	{City: "Cape Town", Country: "ZA", Lat: -33.929, Lon: 18.417},
+	{City: "Sydney", Country: "AU", Lat: -33.870, Lon: 151.208},
+	{City: "Melbourne", Country: "AU", Lat: -37.814, Lon: 144.963},
+	{City: "Auckland", Country: "NZ", Lat: -36.852, Lon: 174.763},
+	{City: "Reykjavik", Country: "IS", Lat: 64.146, Lon: -21.942},
+	{City: "Kuala Lumpur", Country: "MY", Lat: 3.152, Lon: 101.694},
+	{City: "Vatican City", Country: "VA", Lat: 41.903, Lon: 12.453},
+	{City: "Monaco", Country: "MC", Lat: 43.731, Lon: 7.420},
+	{City: "Quebec", Country: "CA", Lat: 46.814, Lon: -71.208},
 }
 
 // The live check is opt-in: it calls the real Wikimedia APIs, reports what each city resolved to
@@ -963,6 +1251,7 @@ func TestDestinationPhotoLive(t *testing.T) {
 			photo, err := NewDestinationPhotoAPI(nil).Photo(context.Background(), id)
 			elapsed := time.Since(start)
 			latencies = append(latencies, elapsed)
+			assert.Less(t, elapsed, destinationPhotoTimeout, "%s, %s: lookup exceeded the four-second deadline", id.City, id.Country)
 
 			if err != nil {
 				t.Errorf("%s, %s: error after %s: %v", id.City, id.Country, elapsed.Round(time.Millisecond), err)

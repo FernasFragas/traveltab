@@ -109,33 +109,96 @@ func (a *DestinationPhotoAPI) Photo(ctx context.Context, id application.Destinat
 	ctx, cancel := context.WithTimeout(ctx, a.timeout)
 	defer cancel()
 
-	candidates, err := a.searchCities(ctx, id.City)
+	// The three searches only need the name and coordinates, so they run at once and their
+	// candidates load in one request. They are still consulted in order: the name search, then
+	// articles near the coordinates (a smaller namesake the name search missed), then populated
+	// places nearby (the city is known by another name, as New York City is).
+	searches := a.searchAll(ctx, id)
+
+	usable := searches
+	for i, search := range searches {
+		if search.err != nil {
+			usable = searches[:i]
+			break
+		}
+	}
+
+	entities, err := a.loadCandidates(ctx, usable)
 	if err != nil {
 		return nil, err
 	}
 
-	city, err := a.matchCity(ctx, id, candidates)
-	if err != nil {
-		return nil, err
-	}
+	for i, search := range searches {
+		// A search's failure matters only when no earlier search found the city.
+		if search.err != nil {
+			return nil, search.err
+		}
 
-	if city == nil {
-		// The name search returns only the best-known entities for a name, so a smaller
-		// namesake can be missing. Articles near the coordinates find it.
-		if candidates, err = a.nearbyCities(ctx, id); err != nil {
+		city, err := a.matchCity(ctx, id, search.candidates, entities, i == len(searches)-1)
+		if err != nil {
 			return nil, err
 		}
 
-		if city, err = a.matchCity(ctx, id, candidates); err != nil {
-			return nil, err
+		if city != nil {
+			return a.photoFor(ctx, id, *city)
 		}
 	}
 
-	if city == nil {
+	return nil, nil
+}
+
+// citySearch is one search's candidates, or the reason it has none.
+type citySearch struct {
+	candidates []cityCandidate
+	err        error
+}
+
+// searchAll runs the name search, the nearby-article search and the populated-place search
+// concurrently, and returns their results in that order.
+func (a *DestinationPhotoAPI) searchAll(ctx context.Context, id application.DestinationIdentity) []citySearch {
+	finds := []func() ([]cityCandidate, error){
+		func() ([]cityCandidate, error) { return a.searchCities(ctx, id.City) },
+		func() ([]cityCandidate, error) { return a.nearbyCities(ctx, id) },
+		func() ([]cityCandidate, error) { return a.populatedNear(ctx, id) },
+	}
+
+	searches := make([]citySearch, len(finds))
+
+	var wg sync.WaitGroup
+
+	for i, find := range finds {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			searches[i].candidates, searches[i].err = find()
+		}()
+	}
+
+	wg.Wait()
+
+	return searches
+}
+
+// loadCandidates loads every candidate of the searches in one entity request, labels and aliases
+// included for the populated-place search's name match.
+func (a *DestinationPhotoAPI) loadCandidates(ctx context.Context, searches []citySearch) (map[string]Entity, error) {
+	var ids []string
+
+	for _, search := range searches {
+		for _, candidate := range search.candidates {
+			if !slices.Contains(ids, candidate.ID) {
+				ids = append(ids, candidate.ID)
+			}
+		}
+	}
+
+	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	return a.photoFor(ctx, id, *city)
+	return a.wiki.GetEntities(ctx, ids, "claims|sitelinks|descriptions|labels|aliases")
 }
 
 // cityCandidate is an entity a search proposed, with the names the search matched it by.
@@ -240,25 +303,45 @@ func (a *DestinationPhotoAPI) nearbyCities(ctx context.Context, id application.D
 	return found, nil
 }
 
-// matchCity loads the candidates, which already carry the destination's name, and returns the one
-// entity that is the destination: it is a place people live in, lies within application.DestinationMatchKM and belongs to the
-// destination's country. nil means none qualifies or the choice is ambiguous.
-func (a *DestinationPhotoAPI) matchCity(ctx context.Context, id application.DestinationIdentity, candidates []cityCandidate) (*cityMatch, error) {
-	if len(candidates) == 0 {
-		return nil, nil
+// populatedNear finds populated Wikidata items near the destination when neither name nor
+// Wikipedia article discovery found its city.
+func (a *DestinationPhotoAPI) populatedNear(ctx context.Context, id application.DestinationIdentity) ([]cityCandidate, error) {
+	params := url.Values{
+		"action":   {"query"},
+		"list":     {"search"},
+		"format":   {"json"},
+		"srlimit":  {fmt.Sprint(cityCandidateLimit)},
+		"srsearch": {fmt.Sprintf("haswbstatement:P1082 nearcoord:%dkm,%f,%f", application.DestinationMatchKM, id.Lat, id.Lon)},
 	}
-
-	ids := make([]string, len(candidates))
-	for i, candidate := range candidates {
-		ids[i] = candidate.ID
+	var response struct {
+		Query struct {
+			Search []struct {
+				Title string `json:"title"`
+			} `json:"search"`
+		} `json:"query"`
+		mediaWikiError
 	}
-
-	entities, err := a.wiki.GetEntities(ctx, ids, "claims|sitelinks|descriptions")
-	if err != nil {
+	if err := a.wiki.get(ctx, wikidataAPIURL, params, &response); err != nil {
+		return nil, fmt.Errorf("wikidata nearby search: %w", err)
+	}
+	if err := response.err("wikidata nearby search"); err != nil {
 		return nil, err
 	}
+	var found []cityCandidate
+	for _, hit := range response.Query.Search {
+		if hit.Title != "" && len(found) < cityCandidateLimit {
+			found = append(found, cityCandidate{ID: hit.Title})
+		}
+	}
+	return found, nil
+}
 
+// matchCity keeps the loaded candidates that are places people live in within
+// application.DestinationMatchKM and the destination's country. The populated-place fallback also
+// prefers matching English labels or aliases. nil means none qualifies or the choice is ambiguous.
+func (a *DestinationPhotoAPI) matchCity(ctx context.Context, id application.DestinationIdentity, candidates []cityCandidate, entities map[string]Entity, matchNames bool) (*cityMatch, error) {
 	var matches []cityMatch
+	var named []cityMatch
 
 	for _, candidate := range candidates {
 		entity, ok := entities[candidate.ID]
@@ -282,9 +365,25 @@ func (a *DestinationPhotoAPI) matchCity(ctx context.Context, id application.Dest
 
 		match.ID = candidate.ID
 		matches = append(matches, match)
+		if matchNames && entityMatchesName(entity, id.City) {
+			named = append(named, match)
+		}
 	}
 
+	if len(named) > 0 {
+		return chooseCity(named), nil
+	}
 	return chooseCity(matches), nil
+}
+
+func entityMatchesName(entity Entity, name string) bool {
+	want := application.FoldName(name)
+	if application.FoldName(entity.Labels["en"].Value) == want {
+		return true
+	}
+	return slices.ContainsFunc(entity.Aliases["en"], func(alias EntityLabel) bool {
+		return application.FoldName(alias.Value) == want
+	})
 }
 
 // entityLocation checks that the entity is a populated place near the destination.
@@ -395,7 +494,16 @@ func (a *DestinationPhotoAPI) countryCode(ctx context.Context, qid string) (stri
 		return "", err
 	}
 
-	for _, claim := range bestClaims(response.Claims["P297"]) {
+	claims := bestClaims(response.Claims["P297"])
+	if len(claims) == 0 {
+		for _, claim := range response.Claims["P297"] {
+			if claim.Rank == "deprecated" {
+				claims = append(claims, claim)
+			}
+		}
+	}
+
+	for _, claim := range claims {
 		var value string
 		if json.Unmarshal(claim.MainSnak.DataValue.Value, &value) == nil {
 			code = strings.ToUpper(strings.TrimSpace(value))

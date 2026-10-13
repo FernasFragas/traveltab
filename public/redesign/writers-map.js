@@ -8,6 +8,7 @@
     // contract's named slots. Engines: MapLibre here, Leaflet in writers-map-leaflet.js.
     var maplibreCSS = 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css';
     var maplibreJS = 'https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js';
+    var pollDelay = 3000;
     var defaultStyle = 'https://tiles.openfreemap.org/styles/dark';
     var defaultTerrain = 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp';
     var buildingLow = '#2c3044';
@@ -43,11 +44,11 @@
             'place_country_other', 'place_country_minor', 'place_country_major'], { 'text-color': '#e0e0e0', 'text-halo-color': '#101820' }],
         [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city'], { 'text-size': 11 }]
     ];
-    var camera = { zoom: 12.3, pitch: 55, bearing: -20 };
+    // Opens centred on the destination at about a 200 m scale bar (zoom 14.3 at mid latitudes); the
+    // view is not fitted to the pins, so places farther out are reached by panning.
+    var camera = { zoom: 14.3, pitch: 55, bearing: -20 };
     var loadTimeout = 20000;
     var tileFailureLimit = 3;
-    var framePadding = 48;
-    var tiltedFramePadding = 88; // perspective stretches the near edge of the 3D view
     var layers = new Map();
     var engine = null;
     var canvas = null;
@@ -351,7 +352,6 @@
             context.engine = created.name;
             context.draw = created.draw;
             addLayers();
-            frameMap(context.features);
             document.dispatchEvent(new CustomEvent('travelmap:ready', {
                 detail: { map: created.map, destination: context.destination, engine: created.name }
             }));
@@ -460,37 +460,27 @@
         };
     }
 
+    // While the server is still loading places it answers with the pins so far and loading: true,
+    // so draw them and ask again; the last answer carries the writer matches.
     function loadPlaces(currentRequest) {
         return fetch(shell.dataset.mapUrl, { headers: { Accept: 'application/geo+json' } }).then(function (response) {
             if (!response.ok) throw new Error('Places unavailable');
             return response.json();
         }).then(function (data) {
             if (currentRequest !== requestNumber) return;
+            var loading = data.loading === true;
             if (engine && context.features.length) removeLayers();
             context.features = Array.isArray(data.features) ? data.features : [];
-            if (engine) { addLayers(); frameMap(context.features); }
+            if (engine) addLayers();
             showStatus(shell, !engine ? 'Map unavailable.' :
+                loading ? 'Loading more places\u2026' :
                 data.complete === false ? 'Some map sources are unavailable.' : '');
+            if (loading) setTimeout(function () { if (currentRequest === requestNumber) loadPlaces(currentRequest); }, pollDelay);
         }).catch(function () {
             if (currentRequest !== requestNumber) return;
             if (engine) addLayers();
             showStatus(shell, engine ? 'Places are unavailable. The map is still available.' : 'Map and places are unavailable.');
         });
-    }
-
-    // Madeira is wider than the zoom-12 view, so frame the writers' pins (all places when no pin
-    // has a writer) instead of leaving them off screen.
-    function frameMap(features) {
-        var points = features.filter(function (feature) {
-            return feature.geometry && Array.isArray(feature.geometry.coordinates);
-        });
-        var written = points.filter(function (feature) { return feature.properties && feature.properties.writer_count > 0; });
-        points = (written.length ? written : points).map(function (feature) { return feature.geometry.coordinates; });
-        if (!points.length) return;
-        var lons = points.map(function (point) { return point[0]; });
-        var lats = points.map(function (point) { return point[1]; });
-        engine.draw.fit([[Math.min.apply(null, lons), Math.min.apply(null, lats)], [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
-            { padding: engine.name === 'maplibre' ? tiltedFramePadding : framePadding, maxZoom: camera.zoom, animate: false });
     }
 
     function showStatus(root, message) {

@@ -35,6 +35,40 @@ type BaseSource interface {
 	Places(ctx context.Context, dest Area) (BasePlaces, error)
 }
 
+// PartialBaseSource is a BaseSource that loads in the background and can report what it has.
+type PartialBaseSource interface {
+	BaseSource
+	// Partial starts the destination's load if none is running, then returns the places loaded so
+	// far; Done is true once the result is complete. After a failed load it returns what was loaded
+	// with the error, and retries on a later call.
+	Partial(ctx context.Context, dest Area) (BaseProgress, error)
+}
+
+// PagedBaseSource loads a destination's base places a page at a time, nearest ring first, so the
+// pins found so far can be shown and a failed load can resume where it stopped.
+type PagedBaseSource interface {
+	// PlacesFrom continues from the given progress (zero value starts fresh) and calls onPage
+	// with the progress after each stored page. On failure it returns the progress so far and
+	// the error.
+	PlacesFrom(ctx context.Context, dest Area, from BaseProgress, onPage func(BaseProgress)) (BaseProgress, error)
+}
+
+// BaseProgress is a partly or fully loaded set of base places plus where the load stopped.
+type BaseProgress struct {
+	BasePlaces
+	Ring   int  `json:"ring"`   // index of the next 5 km ring to load
+	Offset int  `json:"offset"` // items already loaded from that ring
+	Done   bool `json:"done"`
+	// Mode is how the destination loads, decided once from its density after the first page:
+	// "normal" (5 km rings out to the radius) or "dense" (eight 1 km rings). Empty until decided.
+	Mode string `json:"mode,omitempty"`
+	// Unnamed is the current page as the page query returned it (coordinates, sitelinks, types, no
+	// names) while its label query is pending; visitable ones are already in Pins. PageRows is the
+	// page's row count, which moves Offset once the labels are in. A resume asks only for the labels.
+	Unnamed  []Place `json:"unnamed,omitempty"`
+	PageRows int     `json:"page_rows,omitempty"`
+}
+
 // MatchIndex returns indexed occurrences of folded phrases, with each post's day sections.
 type MatchIndex interface {
 	WriterMatchRows(ctx context.Context, phrases []string) ([]MatchRow, error)
@@ -86,9 +120,40 @@ func (s *MapSource) Destination(ctx context.Context, dest Area) (*DestinationRes
 	return s.recompute(ctx, dest)
 }
 
+// DestinationProgress is Destination for a map that can show pins while base places load. It
+// returns the stored result, or, while a background load is running, the pins found so far with
+// no writer matches and loading true. Matching runs once, when the load is done. A load that
+// failed after finding pins serves them with loading false; the next visit resumes it.
+func (s *MapSource) DestinationProgress(ctx context.Context, dest Area) (*DestinationResult, bool, error) {
+	result, ok, err := s.store.WriterDestination(ctx, dest)
+	if err != nil {
+		return nil, false, err
+	}
+	if ok {
+		return &result, false, nil
+	}
+	partial, ok := s.base.(PartialBaseSource)
+	if !ok {
+		result, err := s.recompute(ctx, dest)
+		return result, false, err
+	}
+	progress, loadErr := partial.Partial(ctx, dest)
+	if loadErr == nil && progress.Done {
+		result, err := s.recompute(ctx, dest)
+		return result, false, err
+	}
+	if loadErr != nil && len(progress.Pins) == 0 {
+		return nil, false, loadErr
+	}
+	return &DestinationResult{
+		Places: progress.Pins, WriterCounts: map[string]int{},
+		Itineraries: []Itinerary{}, SourceStatuses: []SourceStatus{},
+	}, loadErr == nil, nil
+}
+
 // Place returns one pin of the destination and its summary, if one is stored.
 func (s *MapSource) Place(ctx context.Context, dest Area, qid string) (*Place, *Summary, error) {
-	result, err := s.Destination(ctx, dest)
+	result, _, err := s.DestinationProgress(ctx, dest)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -11,7 +11,7 @@
     var osmTiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     var osmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
     var maxZoom = 18;
-    var startZoom = 12;
+    var startZoom = 15; // about a 200 m scale bar at mid latitudes
     var leafletPromise = null;
 
     window.TravelMapEngines = window.TravelMapEngines || {};

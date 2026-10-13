@@ -28,6 +28,13 @@ test('draws numbered buttons and one styled route through context.draw', async (
   assert.deepEqual(app.calls().filter(c => c !== 'clear'), ['line', 'markers']);
 });
 
+test('an answer that is still loading is not kept, so the routes appear on the next draw', async () => {
+  const app = browser({ itineraries: [routeA], loadingFirst: true }); app.run(); await app.mount();
+  assert.equal(app.pins().length, 0, 'no routes while the places load');
+  await app.mount();
+  assert.equal(app.pins().length, 3);
+});
+
 test('the itineraries legend dot matches the route line colour', () => {
   const css = readFileSync(new URL('../../../public/redesign/writers-map-layout.css', import.meta.url), 'utf8');
   assert.match(css, /\.writers-map-layer-itineraries \{ --layer-color: #b794f6; \}/);
@@ -98,7 +105,7 @@ test('disable clears every drawing and the popup; re-enable restores one route',
   assert.equal(app.ids().length, 1);
 });
 
-function browser({ core = true, itineraries = [], features: places = features, fail = false } = {}) {
+function browser({ core = true, itineraries = [], features: places = features, fail = false, loadingFirst = false } = {}) {
   const registered = [], listeners = new Map(), groups = new Map(), calls = [];
   let layer, enabled = true;
   const slot = element('div'), canvas = element('div');
@@ -119,7 +126,8 @@ function browser({ core = true, itineraries = [], features: places = features, f
     setLayerEnabled(name, on) { if (on === enabled) return; enabled = on;
       if (on) layer.add({}, { shell, draw }); else layer.remove({}, { shell, draw }); }
   };
-  const fetch = async () => { if (fail) throw new Error('offline'); return { ok: true, json: async () => ({ features: places, itineraries }) }; };
+  let fetches = 0;
+  const fetch = async () => { fetches++; if (fail) throw new Error('offline'); const loading = loadingFirst && fetches === 1; return { ok: true, json: async () => ({ features: places, itineraries: loading ? [] : itineraries, loading }) }; };
   const vmContext = vm.createContext({ document, window, fetch });
   const settle = () => new Promise(resolve => setImmediate(resolve));
   return { registered, shell, slot, settle, run: () => vm.runInContext(source, vmContext),

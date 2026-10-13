@@ -51,6 +51,8 @@ try {
         await browser.until(`performance.getEntriesByType('resource').some(item => item.name.includes('/fixture-map/terrain/'))`, 15000);
         // The map is always dark: the style extrudes buildings, and canvas land and water match the palette.
         assert.ok(await browser.evaluate(`window.__mapObject.getStyle().layers.some(layer => layer.type === 'fill-extrusion')`), 'no fill-extrusion layer');
+        // The palette check needs land and water in view; the destination view is zoomed in over land.
+        await browser.evaluate(`window.__mapObject.jumpTo({ zoom: 12.3 }); 0`);
         await browser.until(`window.__mapObject.areTilesLoaded()`, 15000);
         const box = await browser.evaluate(`(() => { const r = document.querySelector('[data-map-canvas]').getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height }; })()`);
         const picture = decodePNG(await browser.shot({ x: box.x, y: box.y, width: box.width, height: box.height }));

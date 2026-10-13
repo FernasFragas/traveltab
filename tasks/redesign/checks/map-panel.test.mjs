@@ -37,6 +37,21 @@ test('labels only the biggest places', () => {
   assert.ok(!labelled.includes('Seixal'));
 });
 
+test('a pin whose name has not loaded yet is a neutral marker: no label, no QID, and it fills in on the next draw', () => {
+  const nameless = feature('Q777', '', 0, 999);
+  const app = browser({ features: [nameless, ...features()] });
+  app.run();
+  const map = app.addLayers();
+  const pin = map.markers('notable').find(marker => marker.element.getAttribute('aria-label') === 'Loading name…');
+  assert.ok(pin, 'a pin with the loading title exists');
+  assert.equal(pin.title, 'Loading name…');
+  assert.equal(pin.element.children.filter(child => child.className === 'map-pin-label').length, 0, 'the biggest place gets no label while nameless');
+  const labelled = [...map.markers('notable'), ...map.markers('writers')]
+    .flatMap(marker => marker.element.children.filter(child => child.className === 'map-pin-label').map(child => child.textContent));
+  assert.ok(labelled.includes('Funchal'), 'the next biggest places are labelled instead');
+  assert.ok(![pin.title, pin.element.title, ...labelled].some(text => text.includes('Q777')));
+});
+
 test('a pin click opens a popup with the name, the writer count and the blog monograms, and does not open the panel', async () => {
   const app = browser();
   app.run();

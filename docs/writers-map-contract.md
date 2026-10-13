@@ -32,11 +32,17 @@ coordinates use decimal degrees (latitude, then longitude). QIDs are Wikidata it
 - `WriterMapSource.Place(ctx, area, qid)` returns panel place data and an optional summary. A
   missing summary is represented by `nil`; this is a normal state. An unknown QID returns an error
   wrapping `writermap.ErrPlaceNotFound`, never a `nil` place without an error.
-- `BasePlaceSource.Places(ctx, area)` returns `BasePlaces` from one Wikidata query: `Pins` is
-  filtered to visitable types and capped for the base layer; `Gazetteer` keeps the full nearby
-  list and each place's P31 `Types` for writer matching. When they cannot be fetched and nothing
-  is cached, it returns an empty result with an error the caller can log; the map still shows
-  tiles and the day plan. The Wikidata adapter and its cache decorator both implement it.
+- `BasePlaceSource.Places(ctx, area)` returns `BasePlaces` loaded from Wikidata in 5 km rings, nearest
+  first, 50 items per page, one page at a time: `Pins` is filtered to visitable types and capped at
+  200 for the base layer; `Gazetteer` keeps the nearby items with at least 2 sitelinks (not the full
+  list) and each place's P31 `Types` for writer matching. The load stops when 200 pins are filled,
+  a ring comes back thin, or the radius is covered. A dense city (more than 1,500 items with 2+ sitelinks within 5 km of the centre, measured once after the first page and stored with the progress) instead loads eight 1 km rings and stops at 8 km, so its `Gazetteer` and writer matches reach 8 km only. The cache decorator runs the load in the
+  background (detached from the request, one per destination), stores the partial result after each
+  page, and stores only the finished result as complete; `Places` waits for it. Each page is published twice: first the page's visitable items as pins with no names (coordinates, sitelinks and types only), then again once the label query has named them. Only named places enter the `Gazetteer`, the 200-pin count and writer matching. `Partial(ctx, area)`
+  returns what is loaded so far; writer matches are computed once, when the load is done. When they
+  cannot be fetched and nothing is cached, it returns an empty result with an error the caller can
+  log; the map still shows tiles and the day plan. The Wikidata adapter and its cache decorator both
+  implement it.
 - `BasePlaceRefresher.Refresh(ctx, area)` re-runs the base query and replaces the cached places in
   place. Only the cache decorator implements it; the monthly job calls it.
 - `Summarizer.Summarize(ctx, place, passages)` returns English prose. Passage text is transient:
@@ -75,7 +81,9 @@ coordinates are `[longitude, latitude]`. `properties` contains:
 | `panel_url` | string | URL to fetch panel fragment |
 
 The top-level `complete` boolean indicates whether all configured sources were checked. A result
-can contain useful features while incomplete.
+can contain useful features while incomplete. The top-level `loading` boolean is true while nearby
+places are still being loaded: the response is `200` with the pins so far and no writer counts, and
+the browser asks again. A pin whose name has not loaded yet has `name: ""` and `names: []` (the browser shows an unlabelled marker, never the QID); the last response (`loading: false`) carries the writer matches.
 
 The top-level `itineraries` array carries the writers' routes (an empty array when there are none).
 Each entry has `writer_host`, `post_url`, `post_title`, `language` and `days`; each day has `qids`
