@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	maxMapPlaces  = 200
-	contextWindow = 1000
+	maxMapPlaces               = 200
+	contextWindow              = 1000
+	minimumDestinationMentions = 3
 )
 
 // MatchRow is one indexed phrase occurrence joined to its source post.
@@ -22,9 +23,10 @@ type MatchRow struct {
 
 // MatchOverrides contains the reviewed name rules from writerdata/overrides.json.
 type MatchOverrides struct {
-	AliasRemovals []AliasRemoval `json:"alias_removals"`
-	Merges        []PlaceMerge   `json:"merges"`
-	Stoplist      []string       `json:"stoplist"`
+	AliasRemovals      []AliasRemoval      `json:"alias_removals"`
+	DestinationAliases map[string][]string `json:"destination_aliases"`
+	Merges             []PlaceMerge        `json:"merges"`
+	Stoplist           []string            `json:"stoplist"`
 }
 
 type AliasRemoval struct {
@@ -38,11 +40,15 @@ type PlaceMerge struct {
 }
 
 // MatchDestination turns nearby places and indexed rows into pins, mentions and routes.
-// destinationNames are the destination phrases used to establish post or day context.
+// destinationNames start with the destination's own name, followed by aliases and nearby areas.
 func MatchDestination(base BasePlaces, rows []MatchRow, destinationNames []string, sources []Source, overrides MatchOverrides) DestinationResult {
 	places := matchingPlaces(base.Gazetteer, overrides)
 	aliases := placeAliases(places, destinationNames, overrides)
 	context := foldedSet(destinationNames)
+	var about map[string]bool
+	if len(destinationNames) > 0 {
+		about = foldedSet(overrides.destinationNames(destinationNames[0]))
+	}
 	byPost := make(map[PostRef][]MatchRow)
 	posts := make(map[PostRef]IndexedPost)
 	for _, row := range rows {
@@ -58,7 +64,7 @@ func MatchDestination(base BasePlaces, rows []MatchRow, destinationNames []strin
 	writerHosts := make(map[string]map[string]bool)
 	for ref, postRows := range byPost {
 		post := posts[ref]
-		for qid, positions := range matchPost(postRows, aliases, context) {
+		for qid, positions := range matchPost(postRows, aliases, context, about) {
 			mentions[qid] = append(mentions[qid], Mention{
 				WriterHost: post.Host, BlogName: blogNames[post.Host], PostRef: ref,
 				PostURL: post.URL, PostTitle: post.Title, Language: post.Language, Positions: positions,
@@ -118,7 +124,7 @@ type matchedSpan struct {
 	Position
 }
 
-func matchPost(rows []MatchRow, aliases map[string][]placeName, context map[string]bool) map[string][]Position {
+func matchPost(rows []MatchRow, aliases map[string][]placeName, context, about map[string]bool) map[string][]Position {
 	titleEnd := 0
 	if len(rows) > 0 {
 		var title textStream
@@ -126,6 +132,9 @@ func matchPost(rows []MatchRow, aliases map[string][]placeName, context map[stri
 		if len(title.text) > 0 {
 			titleEnd = len(title.text) + 1
 		}
+	}
+	if !postIsAboutDestination(rows, titleEnd, about) {
+		return nil
 	}
 	var contextRows []MatchRow
 	for _, row := range rows {
@@ -174,6 +183,33 @@ func matchPost(rows []MatchRow, aliases map[string][]placeName, context map[stri
 		result[qid] = unique
 	}
 	return result
+}
+
+func postIsAboutDestination(rows []MatchRow, titleEnd int, about map[string]bool) bool {
+	positions := make(map[Position]bool)
+	for _, row := range rows {
+		if !about[row.Phrase.Folded] {
+			continue
+		}
+		if row.Phrase.Start < titleEnd {
+			return true
+		}
+		positions[Position{Start: row.Phrase.Start, End: row.Phrase.End}] = true
+		if len(positions) >= minimumDestinationMentions {
+			return true
+		}
+	}
+	return false
+}
+
+func (o MatchOverrides) destinationNames(name string) []string {
+	names := []string{name}
+	for destination, aliases := range o.DestinationAliases {
+		if foldName(destination) == foldName(name) {
+			return append(names, aliases...)
+		}
+	}
+	return names
 }
 
 func inDestinationContext(phrase NamePhrase, titleEnd int, days []DaySection, contextRows []MatchRow) bool {
@@ -248,6 +284,29 @@ func placeAliases(places []Place, destinationNames []string, overrides MatchOver
 			}
 			aliases[folded] = append(aliases[folded], placeName{QID: place.QID, Words: len(strings.Fields(folded))})
 		}
+	}
+	return mostNotableOwners(aliases, places)
+}
+
+// mostNotableOwners keeps a shared alias (e.g. "Louvre" for the museum and its metro station)
+// only on the place with the most Wikipedia sitelinks; ties keep every owner.
+func mostNotableOwners(aliases map[string][]placeName, places []Place) map[string][]placeName {
+	sitelinks := make(map[string]int, len(places))
+	for _, place := range places {
+		sitelinks[place.QID] = place.Sitelinks
+	}
+	for folded, owners := range aliases {
+		best := 0
+		for _, owner := range owners {
+			best = max(best, sitelinks[owner.QID])
+		}
+		kept := owners[:0]
+		for _, owner := range owners {
+			if sitelinks[owner.QID] == best {
+				kept = append(kept, owner)
+			}
+		}
+		aliases[folded] = kept
 	}
 	return aliases
 }

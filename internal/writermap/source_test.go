@@ -37,9 +37,10 @@ func TestMapSource_DestinationMatchesStoresAndServesStored(t *testing.T) {
 
 func TestMapSource_ContextIncludesOverrideAreasAroundTheDestination(t *testing.T) {
 	ctx := context.Background()
-	post := IndexedPost{Host: "writer.test", PostID: 2, Title: "Madeira"}
+	post := IndexedPost{Host: "writer.test", PostID: 2, Title: "Funchal Madeira"}
 	index := &fakeMatchIndex{rows: []MatchRow{
-		{Post: post, Phrase: NamePhrase{Folded: "madeira", OriginalCase: true, Start: 0, End: 7}},
+		{Post: post, Phrase: NamePhrase{Folded: "funchal", OriginalCase: true, Start: 0, End: 7}},
+		{Post: post, Phrase: NamePhrase{Folded: "madeira", OriginalCase: true, Start: 8, End: 15}},
 		{Post: post, Phrase: NamePhrase{Folded: "monte", OriginalCase: true, Start: 20, End: 25}},
 	}}
 	overrides := Overrides{Areas: []Area{
@@ -54,6 +55,15 @@ func TestMapSource_ContextIncludesOverrideAreasAroundTheDestination(t *testing.T
 	assert.Equal(t, 1, got.WriterCounts["Q1"])
 	assert.Contains(t, index.phrases, "madeira")
 	assert.NotContains(t, index.phrases, "sao miguel")
+}
+
+func TestMapSource_ContextNamesIncludeDestinationAliases(t *testing.T) {
+	source := NewMapSource(nil, nil, nil, nil, nil, Overrides{
+		MatchOverrides: MatchOverrides{DestinationAliases: map[string][]string{"Lisbon": {"Lisboa"}}},
+	})
+
+	assert.Equal(t, []string{"Lisbon", "Lisboa"}, source.contextNames(Area{Name: "Lisbon"}))
+	assert.Equal(t, []string{"lisbon", "Lisboa"}, source.contextNames(Area{Name: "lisbon"}))
 }
 
 func TestMapSource_ReportsSourceStatusesAndCompleteness(t *testing.T) {

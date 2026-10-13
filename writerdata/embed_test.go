@@ -55,6 +55,7 @@ func TestOverrides_DecodeWithKnownFieldsOnly(t *testing.T) {
 	var o overrides
 	decodeStrict(t, "overrides.json", &o)
 	assert.NotEmpty(t, o.Stoplist)
+	assert.Equal(t, []string{"Lisboa"}, o.DestinationAliases["Lisbon"])
 }
 
 func TestOverrides_AreasHaveAPositiveRadius(t *testing.T) {
@@ -110,7 +111,8 @@ type overrides struct {
 		CanonicalName string   `json:"canonical_name"`
 		Names         []string `json:"names"`
 	} `json:"merges"`
-	Areas []struct {
+	DestinationAliases map[string][]string `json:"destination_aliases"`
+	Areas              []struct {
 		Name     string  `json:"name"`
 		Lat      float64 `json:"lat"`
 		Lon      float64 `json:"lon"`

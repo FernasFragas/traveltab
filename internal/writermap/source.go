@@ -217,9 +217,9 @@ func (s *MapSource) recompute(ctx context.Context, dest Area) (*DestinationResul
 	return &result, nil
 }
 
-// contextNames are the destination's own name plus every override area that contains it.
+// contextNames are the destination's own names plus every override area that contains it.
 func (s *MapSource) contextNames(dest Area) []string {
-	names := []string{dest.Name}
+	names := s.overrides.destinationNames(dest.Name)
 	point := planner.Place{Lat: dest.Lat, Lon: dest.Lon}
 	for _, area := range s.overrides.Areas {
 		if planner.DistanceKM(point, planner.Place{Lat: area.Lat, Lon: area.Lon}) <= area.RadiusKM {

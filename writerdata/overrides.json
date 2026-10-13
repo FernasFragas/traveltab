@@ -8,6 +8,7 @@
   "merges": [
     {"canonical_name":"Igreja e Torre dos Clérigos","names":["Igreja dos Clérigos","Torre dos Clérigos"]}
   ],
+  "destination_aliases": {"Lisbon": ["Lisboa"]},
   "areas": [
     {"name":"Madeira","lat":32.75,"lon":-16.96,"radius_km":70},
     {"name":"São Miguel","lat":37.78,"lon":-25.50,"radius_km":50}
