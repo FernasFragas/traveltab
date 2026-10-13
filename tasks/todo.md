@@ -2,7 +2,7 @@
 
 Source of truth for progress. Read [the plan](plan.md) (especially **Delivery** and **Rules for Agents**) and [the one-pager](../docs/ideas/community-map.md) first.
 
-**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). **As of October 11, 2026:** PRs 3, 4 and 5 are done; PR 6 code is merged, with the 6a precision review and the 6b local run still open; **PR 7 is built (7a–7k) and integrated; `make lint` cannot run here (golangci-lint go1.26 vs module go1.27.2), and the open items are listed under PR 7**. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
+**Status:** PR 1 subtasks 1a–1e done, plus the contract gaps found on October 8, 2026 (`:dest` in map URLs, the base-place ports and fake, the panel template owner). The owner approved the contract on October 8, 2026, so it is frozen and **PR 1 is done**; PR 3, PR 4 and the early 6a/9a can start once PR 1 is merged. PR 2 is fully recorded (October 10, 2026): size and lookup pass, but coverage (24/49) and precision (31/40) fail their bars, The owner decided October 10, 2026: writer-mentioned places skip the type filter, precision ≥90% moves to a 6a acceptance, travellemming is `blocked`. **PR 5 is unblocked** (see [the results](writers-map-results.md)). **As of October 11, 2026:** PRs 3, 4 and 5 are done; **PR 6 is done** (6a precision review and 6b real-data run checked by the owner, October 13, 2026); **PR 7 is built (7a–7k) and integrated; `make lint` cannot run here (golangci-lint go1.26 vs module go1.27.2), and the open items are listed under PR 7**. Updated October 6, 2026: summaries replace excerpts, AI in MVP (PR 9), monthly sync, caches never expire, "Plan with these places" (7e). Updated October 7, 2026: UI matches [the mockup](../docs/ideas/writers-map-mockup.png) — new subtasks 1e, 3d, 7f, 7g, 7h; 7a and 7c extended. **Updated October 10, 2026: target is now [the Funchal mockup](<../docs/ideas/Funchal Travel Guide Dashboard.png>) for every city** — new 1f (contract change, approved by the owner October 10), 3e (satellite source, blocks 3d), 7i (hero + weather), 7k (travelers); 3d, 4a, 7a, 7c–7g reworked; 7h removed; hour estimates removed (see **Target Output** in the plan).
 
 **How to read this file**
 - Each **PR** merges on its own, CI green, with `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` **off**.
@@ -315,7 +315,7 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 > **6a can start right after PR 1** against the fixture, and waits in its branch until PR 6 opens. On-demand excerpts were dropped on October 6 — summaries (PR 9) replace them.
 
 ### 6a. Write the matcher and itinerary assembly · *early*
-- [ ] Done — code merged (#31), [TDD evidence](../docs/tdd/6a.tdd.md); **open:** the 40-mention precision review
+- [x] Done — code merged (#31), [TDD evidence](../docs/tdd/6a.tdd.md); precision review checked by the owner (2026-10-13)
 
 **Owns:** `internal/writermap/match.go`, `match_test.go`, `internal/writermap/itinerary.go`, `itinerary_test.go`
 
@@ -326,18 +326,18 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 - **Destination context rule:** a mention counts only when its post (or section) is about the destination, not just a same-name place elsewhere in Portugal. Use indexed destination phrases (e.g. "Madeira", "Funchal") per post.
 
 **Acceptance**
-- [ ] "São Pedro de Alcântara" doesn't count as "Alcântara".
-- [ ] "praia" in running text doesn't match.
-- [ ] The three Clérigos entries merge into one.
-- [ ] Itinerary days are ordered by first mention.
-- [ ] São Jorge, Monte, Ponta do Sol and Teleférico do Funchal show as writer pins although their types aren't in `PlaceTypes`.
-- [ ] "Bom Jesus do Monte" in a post about Braga doesn't count for Monte (Madeira).
-- [ ] **Precision:** 40 random first mentions on the real Madeira gazetteer, hand-reviewed, ≥90% right place (2a baseline: 31/40, 34/40 with the alias fixes).
+- [x] "São Pedro de Alcântara" doesn't count as "Alcântara".
+- [x] "praia" in running text doesn't match.
+- [x] The three Clérigos entries merge into one.
+- [x] Itinerary days are ordered by first mention.
+- [x] São Jorge, Monte, Ponta do Sol and Teleférico do Funchal show as writer pins although their types aren't in `PlaceTypes`.
+- [x] "Bom Jesus do Monte" in a post about Braga doesn't count for Monte (Madeira).
+- [x] **Precision:** 40 random first mentions on the real Madeira gazetteer, hand-reviewed, ≥90% right place (2a baseline: 31/40, 34/40 with the alias fixes).
 
 **Verify:** `go test ./internal/writermap/...`.
 
 ### 6b. Compose the real source and wire it · **integrator**
-- [ ] Done — code merged (#31), [TDD evidence](../docs/tdd/6b.tdd.md); **open:** owner's local run on real Madeira data
+- [x] Done — code merged (#31), [TDD evidence](../docs/tdd/6b.tdd.md); real-data Madeira run checked by the owner (2026-10-13; see also [post-limit L4](post-limit-results.md#coverage-l4) and `docs/tdd/nearby-rings.tdd.md` R6)
 
 **Owns:** `internal/writermap/source.go`, `source_test.go`, `internal/adapters/sqlite/writerdestination.go`, `internal/adapters/httpserver/writermap.go`, `internal/adapters/httpserver/server.go`, `cmd/web/main.go`
 
@@ -511,20 +511,20 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 ## PR 8 — Verify and Launch · needs: PR 6, PR 7
 
 ### 8a. Add resilience tests
-- [ ] Done
+- [x] Done
 
 **Owns:** `internal/writermap/resilience_test.go`, `internal/adapters/httpserver/writermap_resilience_test.go`
 
 **Acceptance**
-- [ ] Wikidata down with no cache → tiles, day plan and an honest message.
-- [ ] Summary table empty or `WRITERS_AI` off → panels show links only.
-- [ ] A sync killed mid-crawl → it resumes, and searches keep working.
-- [ ] 20 concurrent searches for a new destination → one Wikidata query.
+- [x] Wikidata down with no cache → tiles, day plan and an honest message.
+- [x] Summary table empty or `WRITERS_AI` off → panels show links only.
+- [x] A sync killed mid-crawl → it resumes, and searches keep working.
+- [x] 20 concurrent searches for a new destination → one Wikidata query.
 
-**Verify:** `go test -race ./...`.
+**Verify:** `go test -race ./...`. [Evidence](../docs/tdd/8a.tdd.md).
 
 ### 8b. Measure live behavior
-- [ ] Done
+- [ ] Partial measurements recorded in [PR 8 live verification](writers-map-results.md#pr-8-live-verification); an unchanged-data rerun, current 40-match precision, 20 itinerary posts and Fly-sized VM verification remain open
 
 **Owns:** `tasks/writers-map-results.md`
 
@@ -533,17 +533,17 @@ recorded in `docs/maintenance.md` and accepted by the owner on 2026-10-11.
 **Acceptance — record:**
 - [ ] Full sync: time, bandwidth, peak memory, index size.
 - [ ] Monthly delta size; database size after two runs (should not grow on unchanged data).
-- [ ] Search latency warm and cold for Madeira, Lisbon, a non-Portuguese city, and a city with no writers.
-- [ ] Panel open time (local read only).
+- [x] Search latency warm and cold for Madeira, Lisbon, a non-Portuguese city, and a city with no writers. *Lisbon's full cold time exceeded the 180-second probe; see results.*
+- [x] Panel open time (local read only).
 - [ ] Live 40-match precision.
-- [ ] Share of Madeira and Lisbon places with Wikidata opening hours.
+- [x] Share of Madeira and Lisbon places with Wikidata opening hours.
 - [ ] 20 itinerary posts parsed.
 - [ ] The owner sets the targets and the launch date.
 
 **Verify:** results document.
 
 ### 8c. Run journeys and write docs
-- [ ] Done
+- [x] Done — [TDD and browser evidence](../docs/tdd/8c.tdd.md); `make test lint build` passes with a temporary Go 1.27-built linter
 
 **Owns:** `cmd/design-preview/fixture.go`, `README.md`, `docs/architecture.md`, `CHANGELOG.md`
 

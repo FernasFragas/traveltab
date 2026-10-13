@@ -16,7 +16,7 @@ working directory. Run the commands from the repository root, as before.
 | `internal/slug` | The `city-country` slug format (`Build`/`Parse`) shared by `/trip/:slug` URLs and `guides/guides.json` keys | None |
 | `internal/guides` | Offline Wikivoyage collection, a local Ollama call and generation of `guides/guides.json`, plus `Book`, the in-memory reader that serves only reviewed entries as `application.CityGuideSource` | `application`, `slug`, `adapters/api` (Wikivoyage client user agent) |
 | `weatherservice/guides` (package `guidedata`) | Embeds `guides/guides.json` in the web binary | None |
-| `internal/writermap` | Writers' map domain types (`Area`, `DestinationResult`, `Place`, `Mention`, `Summary`, `Passage`). In progress: not wired into `cmd/web` | None |
+| `internal/writermap` | Writers' map domain types, matching, itinerary assembly and capped monthly sync | None |
 | `internal/writermap/writermaptest` | Fixture-backed fake `WriterMapSource`, base-place source and summarizer (Madeira) for tests and the future preview | `application`, `writermap` |
 | `weatherservice/writerdata` | Embeds the writers' map source allowlist and matching overrides | None |
 
@@ -57,11 +57,12 @@ serves `/suggest` from a small in-memory cache (10 minutes, 128 queries) and ret
 fragment when the provider fails, so autocomplete never blocks a search. A picked suggestion
 sends its country code and coordinates with the search, so a namesake resolves to the chosen place.
 
-**Writers' map (in progress).** `application.WriterMapSource`, `BasePlaceSource`,
-`BasePlaceRefresher` and `Summarizer` (`internal/application/writermap.go`) are the ports for the
-planned map; the
-[contract](writers-map-contract.md) defines their shapes and the planned routes. No adapter,
-route or template uses them yet, and the feature flags are not read by `cmd/web`.
+**Writers' map (release candidate).** `application.WriterMapSource` and `BasePlaceSource` are
+implemented by `writermap.MapSource` and the SQLite-cached Wikidata adapter. The source joins
+nearby places with the capped writer index and serves `/map/:dest.geojson` and `/map/:dest/:qid`.
+`WRITERS_SYNC` starts the WordPress crawl in the background; `WRITERS_MAP` enables those routes and
+the map UI. Both flags remain off until the PR 8 release review. `Summarizer` and `WRITERS_AI` are
+reserved for PR 9. The [contract](writers-map-contract.md) defines the endpoint and browser shapes.
 
 `internal/adapters/httpserver` also holds shareable-link and export code: `slug.go`
 (`Slug`/`ParseSlug`, thin wrappers over `internal/slug` for the `city-country` `/trip/:slug` path segment), `export_ics.go`/

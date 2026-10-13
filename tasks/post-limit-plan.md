@@ -1,6 +1,6 @@
 # Writers index: cap at 100 posts
 
-**Status:** planned 2026-10-11; L1 done, owner decisions recorded, L2–L4 not started. Tasks: [post-limit-todo.md](post-limit-todo.md).
+**Status:** L1–L4 done 2026-10-11, merged in #36 (evidence: `docs/tdd/post-limit.tdd.md`). **Open:** owner reviews the coverage before Writers' Map 8b ([results](post-limit-results.md#coverage-l4)). Tasks: [post-limit-todo.md](post-limit-todo.md).
 
 **Goal:** the writers index holds **at most 100 posts in total**: each blog's **most-commented destination posts**, split proportionally (see **Owner decisions**), re-chosen on every monthly sync. Posts that drop out are purged.
 

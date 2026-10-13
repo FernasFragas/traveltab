@@ -134,9 +134,9 @@
     }
 
     function focusPlacePanel(panel) {
-        focusPanel = false;
         var heading = panel.querySelector('.map-place-panel h3');
         if (!heading) return;
+        focusPanel = false;
         heading.tabIndex = -1;
         heading.focus({ preventScroll: true });
     }

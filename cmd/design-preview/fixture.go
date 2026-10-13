@@ -50,7 +50,7 @@ func (f fixtureWeather) GenerateReport(ctx context.Context, query string) (*app.
 		lat, lon      float64
 	}{
 		{"Tokyo", "jp", 35.6895, 139.6917}, {"Tavira", "pt", 37.1264, -7.6506}, {"Porto", "pt", 41.1494, -8.6108},
-		{"Madeira", "pt", 32.65, -16.9},
+		{"Madeira", "pt", 32.65, -16.9}, {"Funchal", "pt", 32.65, -16.91},
 	} {
 		if strings.EqualFold(city, place.name) {
 			city, country, lat, lon = place.name, place.country, place.lat, place.lon

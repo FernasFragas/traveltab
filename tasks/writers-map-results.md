@@ -85,3 +85,40 @@ Same draw as `match.py` (`random.seed(7)`, one sample per place per blog). Snipp
 3. **travellemming → `blocked`** in `writerdata/sources.json`, checked 2026-10-10.
 
 **Design decision (unchanged):** keep the phrase/QID/position shape. **PR 5 is unblocked.**
+
+## PR 8 live verification
+
+Run on October 13, 2026, against real WordPress and Wikidata sources using a temporary SQLite database (`/private/tmp/traveltab-pr8b.db`). `WRITERS_SYNC=1`, `WRITERS_MAP=1`, `WRITERS_AI=0` and `GOMEMLIMIT=850MiB` were used locally. Fly is configured for 1 GB, but a Go heap limit on a local machine is not a Fly machine memory test. The current sync selects at most **100 posts in total**, not the original plan's 20,400-post crawl. No raw post body was saved.
+
+The first source-indexing phase was observed from 16:08:47 to 16:12:41 local time (about 3m54s). The resulting database has 75 selected posts, 23,382 `writer_names` rows, 40 `writer_days` rows and 11 source states. It occupies 1,691,648 bytes; SQLite `dbstat` attributes 1,216,512 bytes to the `writer_*` tables and indexes. The local process had 43,344 KiB RSS after the run (`ps -o pid,rss,vsz,etime,command -p 48063`). Peak RSS and bandwidth were not captured on this first run. The machine and process are local, not Fly.
+
+**Second live run, against a copy of that database.** One `writer_sync.last_full` was cleared in the scratch copy to make the scheduler run. The process started at 16:55:06 local time, finished selecting posts by 17:00:00 (4m54s), and logged `writers sync: refreshed 4 of 4 cached destinations` at 17:09:03: **13m57s total**. Reykjavik's first Wikidata refresh attempt failed after 278 partial places and was retried. A 1-second `ps` sampler collected 833 RSS samples during the run; its maximum was **48,160 KiB** (about 47 MiB). `nettop -P -x -L 1 -p 53297 -J bytes_in,bytes_out` reported **664,538 bytes in** and **323,195 bytes out** near completion, about 0.99 MB combined for that process. These are process counters on the local machine, including any local HTTP traffic; they are not a Fly billing measure. The final database was **3,018,752 bytes**, with 100 selected posts, 8 itinerary posts and 2,428,928 bytes in `writer_*` tables and indexes. It grew because four cached destinations were searched in the second run, whereas the first run began with fewer cached destinations and selected only 75 posts. This is **not** the unchanged-data growth check.
+
+An intermediate cold-map observation reported Madeira ready about 87.5 seconds after an already-started request and Lisbon ready in 65.5 seconds. Those intermediate timings have no retained command output, so they are indicative only. The four-city script was rerun against the completed cache with `python3 /private/tmp/traveltab-pr8b-latency.py`:
+
+| Cached destination | Features | Writer pins | Writer itineraries | Five warm GeoJSON requests (ms) |
+| --- | ---: | ---: | ---: | --- |
+| Madeira | 200 | 124 | 4 | 6.1, 5.3, 5.0, 4.5, 4.5 |
+| Lisbon | 200 | 13 | 0 | 2.0, 1.9, 1.9, 1.8, 1.7 |
+| Paris | 200 | 1 | 0 | 1.6, 1.6, 1.6, 1.4, 1.7 |
+| Reykjavik | 140 | 0 | 0 | 1.2, 0.9, 1.1, 0.9, 0.8 |
+
+The same local server's cached Madeira panel (`/map/madeira-pt/Q473169?lat=32.75&lon=-16.96`) took 12.7, 6.0, 6.0, 5.6 and 5.0 ms for five sequential reads. The first cached `writermap:v3` results contain opening hours for **0/200 Madeira** and **1/200 Lisbon** map places; after the refresh, they contain **0/200 Madeira** and **0/200 Lisbon**, showing upstream result variation. The first index marked **6/75 posts** as itineraries, with 40 day rows; the second marked **8/100**, with 73 day rows. Neither provides 20 itinerary posts to review.
+
+**Cold map check with the 100-post index.** A copy of the second database had only its `wikidata:*` and `writermap:*` cache rows removed; the writer index remained. `WRITERS_SYNC=0` kept the source selection fixed. `python3 /private/tmp/traveltab-pr8b-latency.py` ran Madeira, Lisbon, Paris and Reykjavik sequentially; `python3 /private/tmp/traveltab-pr8b-no-writers.py` then ran Longyearbyen. The first response is progressive and may contain zero pins; “ready” means its `loading` flag became false. A later localhost read confirmed Lisbon eventually finished with 200 places, but its finish time was not captured.
+
+| Destination | First progressive response | Full result after first response | Final places | Writer pins | Five warm requests (ms) |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Madeira | 23.1 ms | 46.31 s | 200 | 100 | 2.7, 2.4, 2.2, 2.2, 2.2 |
+| Lisbon | 0.3 ms | **>180.95 s**; 74 partial places at cutoff | 200 later | 0 at cutoff | 0.9, 1.5, 1.0, 0.7, 1.1 (partial result) |
+| Paris | 0.8 ms | 84.55 s | 200 | 46 | 1.8, 1.6, 1.7, 1.8, 1.8 |
+| Reykjavik | 0.3 ms | 135.76 s | 153 | 28 | 1.6, 1.7, 1.8, 1.4, 1.6 |
+| Longyearbyen, no writer matches | 4.8 ms | 42.21 s | 45 | **0** | 1.6, 0.9, 0.8, 0.7, 0.7 |
+
+The four sequential requests overlap with detached background loads, so Paris and Reykjavik timings include possible contention from Lisbon's still-running load. The first response byte count was 91 for each cold city: it announces loading and is not a complete map.
+
+The task's “monthly delta size” measure no longer corresponds to a separate job: the current capped scheduler reselects and upserts the full at-most-100-post set each due month, while `writer_sync.last_delta` is no longer written. The changed-selection second run is therefore a monthly-style run, but it cannot establish unchanged-data growth.
+
+A deterministic SQLite check covers the unchanged-input invariant: `go test ./internal/writermap/ -run TestSyncJob_TwoUnchangedRunsKeepRowCountsAndFileSize -count=1 -v` → `--- PASS: TestSyncJob_TwoUnchangedRunsKeepRowCountsAndFileSize`. It runs three due syncs with the same fake posts and compares row counts and database file size between the latter two. This proves the storage behavior under fixed input; the second real-source run above had different selected posts and is not that control.
+
+**Open before 8b can be marked done:** repeat a full run with the *same* cached destinations and compare database size; hand-review a fresh 40-match precision sample on the current real index; and review 20 itinerary posts or record an owner-approved smaller sample. The measured memory limit was a Go heap limit, not an actual Fly 1 GB VM, so the machine-sized build remains unverified. Lisbon's complete cold time remains bounded only below by 180.95 seconds. `tasks/todo.md` says the 6a precision review was checked by the owner, while `docs/tdd/6a.tdd.md` contains no numeric current sample, so the PR 2 result of 31/40 cannot stand in for PR 8. The owner asked to **measure first** before setting target thresholds and a launch date. No release sign-off has been recorded.
