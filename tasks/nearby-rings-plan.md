@@ -1,6 +1,6 @@
 # Ring-by-ring nearby loading: pins appear as they arrive
 
-**Status:** plan only, not started. Owner decisions recorded 2026-10-12 (see **Decisions**). Tasks: [nearby-rings-todo.md](nearby-rings-todo.md). **Replaces** [nearby-query-plan.md](nearby-query-plan.md).
+**Status:** done 2026-10-12; all tasks complete, merged in #39 (evidence: `docs/tdd/nearby-rings.tdd.md`). Owner decisions recorded 2026-10-12 (see **Decisions**). Tasks: [nearby-rings-todo.md](nearby-rings-todo.md). **Replaces** [nearby-query-plan.md](nearby-query-plan.md).
 
 **Goal:** a cold destination shows its first notable pins quickly and fills in as more arrive, in every city (Lisbon, Kyoto, London, Paris, New York, Tokyo, Funchal). No single request is big or slow, so none hits the 30 s client timeout or Wikidata's ~60 s server limit.
 

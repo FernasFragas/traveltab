@@ -60,6 +60,46 @@ func TestWriterMapPreview_Scenarios(t *testing.T) {
 	}
 }
 
+// As a traveler, I can complete the writer map journey in two distinct cities.
+func TestWriterMapPreview_TwoWriterCities(t *testing.T) {
+	source := newWriterMapPreviewSource()
+	for _, tc := range []struct {
+		city, place string
+	}{
+		{"Funchal", "Pico Ruivo"},
+		{"Lisbon", "Belém Tower"},
+	} {
+		t.Run(tc.city, func(t *testing.T) {
+			result, err := source.Destination(context.Background(), writermap.Area{Name: tc.city})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(result.Itineraries) == 0 {
+				t.Fatal("no writer itinerary")
+			}
+			for _, place := range result.Places {
+				if len(place.Names) > 0 && place.Names[0] == tc.place {
+					if result.WriterCounts[place.QID] == 0 || len(result.Mentions[place.QID]) == 0 {
+						t.Fatalf("%s has no writer posts: %+v", tc.place, result)
+					}
+					if _, _, err := source.Place(context.Background(), writermap.Area{Name: tc.city}, place.QID); err != nil {
+						t.Fatalf("%s panel: %v", tc.place, err)
+					}
+					return
+				}
+			}
+			t.Fatalf("missing %s", tc.place)
+		})
+	}
+}
+
+func TestWriterMapPreview_FunchalWeatherUsesCityCoordinates(t *testing.T) {
+	info, err := (fixtureWeather{}).GenerateReport(context.Background(), "Funchal, PT")
+	if err != nil || info.City != "Funchal" || info.Country != "pt" || info.Lat != 32.65 || info.Lon != -16.91 {
+		t.Fatalf("Funchal weather identity = %+v, err=%v", info, err)
+	}
+}
+
 func TestWriterMapPreview_RoutesAndLocalTiles(t *testing.T) {
 	base, client := startPreviewProcess(t, "writers-map")
 	for _, tc := range []struct {

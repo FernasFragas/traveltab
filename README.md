@@ -18,7 +18,7 @@ This started as a RESTful JSON weather API, a personal project for practising Go
 
 The redesigned interface and September 2026 repairs are implemented. [Verification results](tasks/project-fix-results.md) cover the app and fixture browser journeys; live provider rendering and other remaining limits are listed there. The prioritized roadmap is in [maintenance notes](docs/maintenance.md#next-up). Every searched destination now gets a photograph looked up live on Wikimedia (see [destination photos](#destination-photos)); the [results](tasks/destination-photos-results.md) record what was verified. The search box suggests matching places as you type.
 
-**In progress:** a *writers' map* of places that travel bloggers mention. Only its approved contracts, source data and feature flags exist so far; nothing is shown on the site. See the [plan](tasks/plan.md), [task list](tasks/todo.md) and [contract](docs/writers-map-contract.md).
+**Release candidate:** a *writers' map* of places travel bloggers mention is built behind feature flags. It has not been enabled on the live site. See the [plan](tasks/plan.md), [task list](tasks/todo.md), [contract](docs/writers-map-contract.md) and [PR 8 results](tasks/writers-map-results.md#pr-8-live-verification).
 
 ## Tech stack
 
@@ -174,7 +174,7 @@ When something is unavailable, the page degrades instead of failing:
 │   │   └── testdata/      # Recorded city acceptance fixtures
 │   ├── placetypes/       # Offline type classification and generation
 │   ├── guides/           # Wikivoyage + Ollama city-intro generation, and the reviewed-guide book the site reads
-│   ├── writermap/        # Writers' map domain types and test fakes (in progress, not served)
+│   ├── writermap/        # Writers' map source, matching, sync and test fakes
 │   ├── config/           # Environment and .env loading and feature flags
 │   └── adapters/
 │       ├── api/          # External HTTP providers and their test fixtures
@@ -219,7 +219,7 @@ YOUTUBE_NEW=your-youtube-data-api-key
 | `OVERPASS_URLS`      | Optional. Comma-separated Overpass servers to try, in order. Falls back to the built-in public list |
 | `DB_PATH`            | Optional. Where the SQLite file lives. Defaults to `weatherservice.db` in the working directory |
 | `STATS_TOKEN`        | Optional. Enables `/stats` for requests with a matching `?token=`          |
-| `WRITERS_MAP`, `WRITERS_SYNC`, `WRITERS_AI` | Writers' map feature flags, off unless set to `1`. Read by `config.LoadFeatureFlags` but not yet used by the app |
+| `WRITERS_MAP`, `WRITERS_SYNC`, `WRITERS_AI` | Writers' map flags, off unless set to `1`. `WRITERS_SYNC` starts the capped monthly crawl; `WRITERS_MAP` serves the map and panels. `WRITERS_AI` is reserved for the later summary job. Enable the first two only after the PR 8 release review. |
 | `LLM_GATEWAY_URL`, `LLM_GATEWAY_KEY` | Optional. LLM Gateway for the planned writers' map summaries. Loaded, not yet used |
 | `ENV`                | Set to `production` to skip loading `.env` and read only real environment variables |
 
@@ -331,7 +331,7 @@ Visit the site in a browser, then open the stats URL to verify recording.
 - [Architecture](docs/architecture.md): packages, dependency boundaries, and verification commands.
 - [Maintenance notes](docs/maintenance.md): planner decisions, known limits, and follow-ups.
 - [Design reference](docs/design.md): visual target, template contracts, and data rules.
-- [Writers' map contract](docs/writers-map-contract.md): ports, GeoJSON and panel shapes, and browser hooks for the planned map. The idea and feasibility notes are in [docs/ideas](docs/ideas/community-map.md), and TDD evidence per task in [docs/tdd](docs/tdd/).
+- [Writers' map contract](docs/writers-map-contract.md): ports, GeoJSON and panel shapes, and browser hooks. The [PR 8 results](tasks/writers-map-results.md#pr-8-live-verification) track launch checks; the idea and feasibility notes are in [docs/ideas](docs/ideas/community-map.md), and TDD evidence per task in [docs/tdd](docs/tdd/).
 - [Design preview](tasks/redesign/preview.md): deterministic fixtures and reproducible HTTP/browser checks.
 - [Verification results](tasks/project-fix-results.md): current test and browser evidence, and remaining limits.
 - [Destination photos](tasks/destination-photos-plan.md): the plan, and the [results](tasks/destination-photos-results.md) with live samples, latency and remaining limits.

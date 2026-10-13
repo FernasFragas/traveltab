@@ -37,8 +37,8 @@ Stop the process with Ctrl-C when done. Use separate unused ports if another pre
 
 ## Stable destinations and routes
 
-For the writers' map preview, run with `-scenario writers-map`. Search **Madeira** for the
-embedded fixture with writer mentions, **Porto** for a base-only place, and **Coimbra** for an
+For the writers' map preview, run with `-scenario writers-map`. Search **Madeira** or **Funchal** for the
+embedded fixture with writer mentions, **Lisbon** for a second writer fixture, **Porto** for a base-only place, and **Coimbra** for an
 unavailable source. The map and place endpoints use the real handlers. Its tile URL points to
 `/fixture-tiles/{z}/{x}/{y}.png` on the local fixture origin; every valid XYZ path returns a
 synthetic tile unless `-live-tiles` is passed. To see the 3d layout with the satellite imagery used
@@ -49,6 +49,7 @@ two HTMX destination swaps with:
 
 ```sh
 CDP_PORT=9227 node tasks/redesign/checks/writers-map-preview.browser.mjs
+CDP_PORT=9227 node tasks/redesign/checks/pr8c-journeys.browser.mjs
 ```
 
 The script starts its own `writers-map` preview. Leaflet itself loads from the production
