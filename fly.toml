@@ -10,6 +10,9 @@ primary_region = 'mad'
 
 [env]
   DB_PATH = "/data/weatherservice.db"
+  # Writers sync: sources last synced before this run again at startup instead of waiting for the
+  # monthly window. Set it to a time before the deploy, after changing how posts are picked.
+  WRITERS_RESYNC_BEFORE = "2026-10-13T20:00:00Z"
 
 [http_service]
   internal_port = 8080

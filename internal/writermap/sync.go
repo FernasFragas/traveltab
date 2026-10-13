@@ -31,11 +31,6 @@ const commentPages = 10
 // TopUpsPerDay is the most destination top-ups started per UTC day; the rest wait for the next.
 const TopUpsPerDay = 20
 
-// perDestinationSince is when each destination got its own PostsPerDestination. A source whose
-// last run is older picked from the shared 100-post cap, so it is due at once, without waiting for
-// the monthly window. It must stay before any run of this code, or that run would be due again.
-var perDestinationSince = time.Date(2026, 10, 13, 20, 0, 0, 0, time.UTC)
-
 // busyRetry is how long Schedule waits when a top-up holds the lock, before trying the run again.
 const busyRetry = time.Minute
 
@@ -77,6 +72,9 @@ type SyncJob struct {
 	BlockedErrors []error
 	// MaxPosts is the ceiling on indexed posts across all destinations and blogs (MaxIndexedPosts).
 	MaxPosts int
+	// ResyncBefore makes a source whose last run is older due at once, outside the monthly
+	// window: set it after a change to how posts are picked. Zero is off.
+	ResyncBefore time.Time
 	// RecomputeDestination replaces a destination's stored writers' map result after its top-up
 	// indexed posts; nil skips it.
 	RecomputeDestination func(ctx context.Context, area Area) error
@@ -279,12 +277,13 @@ func (j *SyncJob) activeSources(ctx context.Context) (active []trackedSource, he
 }
 
 // due reports whether any source needs a run: one that has never finished (this includes a
-// run that failed before saving), one last run before per-destination picks, or, in the off-peak
+// run that failed before saving), one whose last run is before ResyncBefore, or, in the off-peak
 // window, one whose last run was in an earlier month. One due source re-picks every blog.
 func (j *SyncJob) due(active []trackedSource) bool {
 	offPeak := inOffPeak(j.Now())
 	for _, entry := range active {
-		if entry.state.LastFull.Before(perDestinationSince) || offPeak && monthlyDue(entry.state, j.Now()) {
+		last := entry.state.LastFull
+		if last.IsZero() || last.Before(j.ResyncBefore) || offPeak && monthlyDue(entry.state, j.Now()) {
 			return true
 		}
 	}

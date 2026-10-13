@@ -270,12 +270,14 @@ cursor crawl or deleted-posts sweep any more. How the posts are picked:
 6. Only the chosen posts are fetched (`include=`) and indexed. Indexed posts that no destination
    chose are deleted, so a post that drops out of the top is purged on the next monthly run.
 
-**Switching to per-destination picks.** A source whose last run was before 2026-10-13 20:00 UTC
-(`perDestinationSince` in `sync.go`) picked from the old shared 100-post cap, so the first startup
-after deploying this change runs the sync at once, without waiting for the monthly window. Nothing
-needs to be reset by hand. That run also refreshes every cached destination's Wikidata places, which
-can take several minutes per big city. Its new `last_full` is after the cutoff, so later restarts
-don't re-run it.
+**Re-running the sync after a deploy.** A restart doesn't run an already-current sync. To make
+the next startup re-pick the posts (for example after changing how they're picked), set
+`WRITERS_RESYNC_BEFORE` in `fly.toml`'s `[env]` to a date or RFC 3339 time **before** the deploy,
+then deploy. Every source whose `last_full` is older runs at once; its new `last_full` is after the
+value, so later restarts don't repeat it. A value in the future would re-run the sync on every
+restart until then. The run also refreshes every cached destination's Wikidata places, which can
+take several minutes per big city. Set to `2026-10-13T20:00:00Z` for the switch to per-destination
+picks.
 
 **Top-ups for new destinations.** When a destination's base places are cached for the first time
 (a refresh doesn't count), it is queued for a **top-up**, so its writer pins don't wait for the

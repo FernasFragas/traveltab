@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	crawlTime   = time.Date(2026, 10, 14, 14, 0, 0, 0, time.UTC) // outside the off-peak window, after per-destination picks shipped
+	crawlTime   = time.Date(2026, 10, 11, 14, 0, 0, 0, time.UTC) // outside the off-peak window
 	monthlyTime = time.Date(2026, 11, 1, 3, 0, 0, 0, time.UTC)   // first off-peak window of November
 )
 
@@ -405,7 +405,7 @@ func TestSyncJob_RunWaitsForNewMonthAndOffPeak(t *testing.T) {
 	require.NoError(t, job.Run(context.Background()))
 	calls := len(wp.blog(blogAPI).searched)
 
-	clock.set(time.Date(2026, 10, 15, 3, 0, 0, 0, time.UTC)) // off-peak, same month
+	clock.set(time.Date(2026, 10, 12, 3, 0, 0, 0, time.UTC)) // off-peak, same month
 	require.NoError(t, job.Run(context.Background()))
 	clock.set(time.Date(2026, 11, 1, 14, 0, 0, 0, time.UTC)) // new month, peak hours
 	require.NoError(t, job.Run(context.Background()))
@@ -416,22 +416,22 @@ func TestSyncJob_RunWaitsForNewMonthAndOffPeak(t *testing.T) {
 	assert.Greater(t, len(wp.blog(blogAPI).searched), calls)
 }
 
-func TestSyncJob_RunBeforePerDestinationPicksIsDueAtOnce(t *testing.T) {
+func TestSyncJob_RunBeforeResyncBeforeIsDueAtOnce(t *testing.T) {
 	wp := newFakeWordPress()
 	wp.addBlog(blogAPI, testPosts(3)...)
 	index := newFakeIndex()
-	seedRows(t, index, blogHost, 100)
-	oldRun := time.Date(2026, 10, 11, 18, 0, 0, 0, time.UTC) // picked with the shared 100-post cap
-	require.NoError(t, index.SaveSyncState(context.Background(), writermap.SyncState{Host: blogHost, Status: writermap.StatusActive, LastFull: oldRun}))
-	clock := &testClock{now: crawlTime} // same month, peak hours: not monthly due
-	job := newTestJobWithClock(index, wp, clock, activeSource(blogHost, blogAPI))
+	require.NoError(t, index.SaveSyncState(context.Background(), writermap.SyncState{
+		Host: blogHost, Status: writermap.StatusActive, LastFull: time.Date(2026, 10, 10, 18, 0, 0, 0, time.UTC),
+	}))
+	job := newTestJob(index, wp, crawlTime, activeSource(blogHost, blogAPI)) // same month, peak hours
+	job.ResyncBefore = time.Date(2026, 10, 11, 0, 0, 0, 0, time.UTC)
 
 	require.NoError(t, job.Run(context.Background()))
 
-	assert.Equal(t, []string{"Madeira"}, wp.searches(blogAPI), "the shared-cap picks are re-picked at once")
+	assert.Equal(t, []string{"Madeira"}, wp.searches(blogAPI), "a run older than ResyncBefore is due at once")
 	assert.Equal(t, crawlTime, index.state(blogHost).LastFull)
 	require.NoError(t, job.Run(context.Background()))
-	assert.Len(t, wp.searches(blogAPI), 1, "only once: the new run is after the change")
+	assert.Len(t, wp.searches(blogAPI), 1, "only once: the new run is after ResyncBefore")
 }
 
 func TestSyncJob_DueRunSearchesEveryActiveBlogEvenWhenOnlyOneIsDue(t *testing.T) {
