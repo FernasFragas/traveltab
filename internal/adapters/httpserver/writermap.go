@@ -77,7 +77,7 @@ func (s *Server) writerMapGeoJSON(ctx *fiber.Ctx) error {
 	if !ok {
 		return nil
 	}
-	result, err := s.writerMapSource.Destination(ctx.Context(), area)
+	result, loading, err := s.destinationSoFar(ctx, area)
 	if err != nil || result == nil {
 		return ctx.SendStatus(fiber.StatusServiceUnavailable)
 	}
@@ -86,7 +86,7 @@ func (s *Server) writerMapGeoJSON(ctx *fiber.Ctx) error {
 		if !validCoordinates(place.Lat, place.Lon) || place.QID == "" {
 			continue
 		}
-		name := place.QID
+		name := "" // a pin still waiting for its name; the browser shows it unlabelled
 		if len(place.Names) > 0 {
 			name = place.Names[0]
 		}
@@ -112,7 +112,7 @@ func (s *Server) writerMapGeoJSON(ctx *fiber.Ctx) error {
 		})
 	}
 	return ctx.JSON(mapCollection{
-		Type: "FeatureCollection", Complete: result.Complete, Features: features,
+		Type: "FeatureCollection", Complete: result.Complete, Loading: loading, Features: features,
 		Itineraries: mapItineraries(result.Itineraries),
 	}, "application/geo+json; charset=utf-8")
 }
@@ -130,11 +130,11 @@ func (s *Server) writerMapPlace(ctx *fiber.Ctx) error {
 	if err != nil || place == nil {
 		return ctx.SendStatus(fiber.StatusServiceUnavailable)
 	}
-	result, err := s.writerMapSource.Destination(ctx.Context(), area)
+	result, _, err := s.destinationSoFar(ctx, area)
 	if err != nil || result == nil {
 		return ctx.SendStatus(fiber.StatusServiceUnavailable)
 	}
-	name := place.QID
+	name := "Loading name…"
 	if len(place.Names) > 0 {
 		name = place.Names[0]
 	}
@@ -148,6 +148,16 @@ func (s *Server) writerMapPlace(ctx *fiber.Ctx) error {
 		"Place": &visiblePlace, "Name": name, "Summary": summary,
 		"WriterCount": result.WriterCounts[qid], "Mentions": result.Mentions[qid],
 	})
+}
+
+// destinationSoFar returns the destination, or while its places are still loading the pins found so
+// far, so a cold big city answers at once instead of waiting for the last ring.
+func (s *Server) destinationSoFar(ctx *fiber.Ctx, area writermap.Area) (*writermap.DestinationResult, bool, error) {
+	if source, ok := s.writerMapSource.(application.ProgressiveWriterMapSource); ok {
+		return source.DestinationProgress(ctx.Context(), area)
+	}
+	result, err := s.writerMapSource.Destination(ctx.Context(), area)
+	return result, false, err
 }
 
 func (s *Server) mapRequest(ctx *fiber.Ctx) (writermap.Area, string, bool) {
@@ -185,6 +195,7 @@ func validPlacePhotoURL(raw string) bool {
 type mapCollection struct {
 	Type        string         `json:"type"`
 	Complete    bool           `json:"complete"`
+	Loading     bool           `json:"loading"` // more places are still being loaded; poll again
 	Features    []mapFeature   `json:"features"`
 	Itineraries []mapItinerary `json:"itineraries"`
 }

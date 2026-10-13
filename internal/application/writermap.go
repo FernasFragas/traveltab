@@ -13,7 +13,14 @@ type WriterMapSource interface {
 	Place(ctx context.Context, dest writermap.Area, qid string) (*writermap.Place, *writermap.Summary, error)
 }
 
-// BasePlaceSource returns capped map pins and the full nearby gazetteer from one Wikidata query.
+// ProgressiveWriterMapSource also serves a destination that is still loading: the pins found so
+// far with no writer matches, and loading true until the last ring is in.
+type ProgressiveWriterMapSource interface {
+	WriterMapSource
+	DestinationProgress(ctx context.Context, dest writermap.Area) (result *writermap.DestinationResult, loading bool, err error)
+}
+
+// BasePlaceSource returns capped map pins and the nearby gazetteer, loaded in 5 km rings.
 // When they cannot be fetched and nothing is cached, it returns an empty result with an error.
 type BasePlaceSource interface {
 	Places(ctx context.Context, dest writermap.Area) (writermap.BasePlaces, error)

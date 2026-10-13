@@ -1,7 +1,9 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http/httptest"
 	"strings"
@@ -243,4 +245,128 @@ func TestWriterMap_GeoJSONHasEmptyItinerariesWhenThereAreNone(t *testing.T) {
 
 	require.Equal(t, 200, status)
 	assert.Contains(t, body, `"itineraries":[]`)
+}
+
+// loadingSource is a writers' map source that is still loading base places.
+type loadingSource struct {
+	*writermaptest.FakeSource
+	result  writermap.DestinationResult
+	loading bool
+	err     error
+}
+
+func (l *loadingSource) DestinationProgress(context.Context, writermap.Area) (*writermap.DestinationResult, bool, error) {
+	if l.err != nil {
+		return nil, false, l.err
+	}
+	result := l.result
+	return &result, l.loading, nil
+}
+
+// As a traveller opening a big city cold, I want the map to answer straight away with the pins
+// found so far and say it is still loading, so that I see places instead of an error.
+func TestWriterMap_GeoJSONServesPinsSoFarWhileLoading(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(&loadingSource{
+		FakeSource: &writermaptest.FakeSource{},
+		result: writermap.DestinationResult{
+			Places:       []writermap.Place{{QID: "Q1", Names: []string{"Cliff"}, Lat: 32.66, Lon: -17}},
+			WriterCounts: map[string]int{},
+		},
+		loading: true,
+	}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status, "a slow load is not a 503")
+	var collection struct {
+		Loading  bool `json:"loading"`
+		Complete bool `json:"complete"`
+		Features []struct {
+			Properties struct {
+				QID string `json:"qid"`
+			} `json:"properties"`
+		} `json:"features"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(body), &collection))
+	assert.True(t, collection.Loading)
+	assert.False(t, collection.Complete)
+	require.Len(t, collection.Features, 1)
+	assert.Equal(t, "Q1", collection.Features[0].Properties.QID)
+}
+
+func TestWriterMap_GeoJSONSaysLoadingFalseWhenTheLoadIsDone(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(&loadingSource{FakeSource: &writermaptest.FakeSource{}, result: writermap.DestinationResult{WriterCounts: map[string]int{}, Complete: true}}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, `"loading":false`)
+}
+
+func TestWriterMap_GeoJSONWithAPlainSourceIsNeverLoading(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(&writermaptest.FakeSource{Empty: true}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, `"loading":false`)
+}
+
+func TestWriterMap_GeoJSONStillFailsWhenNothingLoaded(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(&loadingSource{FakeSource: &writermaptest.FakeSource{}, err: errors.New("wikidata down")}, true)
+
+	status, _ := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	assert.Equal(t, 503, status)
+}
+
+func TestWriterMap_PanelOpensForAPinWhileLoading(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	place := writermap.Place{QID: "Q1", Names: []string{"Cliff"}, Lat: 32.66, Lon: -17}
+	server.SetWriterMapSource(&loadingSource{
+		FakeSource: &writermaptest.FakeSource{Result: writermap.DestinationResult{Places: []writermap.Place{place}}},
+		result:     writermap.DestinationResult{Places: []writermap.Place{place}, WriterCounts: map[string]int{}},
+		loading:    true,
+	}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt/Q1?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, "Cliff")
+}
+
+// As a traveller, I never want to see a raw QID as a place name, so a pin whose name has not
+// loaded yet has an empty name for the browser to treat as "loading".
+func TestWriterMap_GeoJSONNamelessPinHasAnEmptyNameNotItsQID(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(&loadingSource{
+		FakeSource: &writermaptest.FakeSource{},
+		result:     writermap.DestinationResult{Places: []writermap.Place{{QID: "Q42", Lat: 32.66, Lon: -17}}, WriterCounts: map[string]int{}},
+		loading:    true,
+	}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, `"name":""`)
+	assert.Contains(t, body, `"names":[]`)
+}
+
+func TestWriterMap_PanelForANamelessPinDoesNotShowTheQID(t *testing.T) {
+	server := NewAppServer(nil, nil, testStore)
+	place := writermap.Place{QID: "Q42", Lat: 32.66, Lon: -17}
+	server.SetWriterMapSource(&loadingSource{
+		FakeSource: &writermaptest.FakeSource{Result: writermap.DestinationResult{Places: []writermap.Place{place}}},
+		result:     writermap.DestinationResult{Places: []writermap.Place{place}, WriterCounts: map[string]int{}},
+		loading:    true,
+	}, true)
+
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt/Q42?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, "Loading name")
 }

@@ -3,8 +3,11 @@ package httpserver
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http/httptest"
+	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 	"weatherservice/internal/application"
@@ -212,4 +215,105 @@ func TestSelectedCoordinatesUsedForNamesakeCity(t *testing.T) {
 	status, _ := doRequest(t, server, httptest.NewRequest("GET", "/process-form/?city_name=Paris%2C+United+States&country_code=US&place_lat=36.302&place_lon=-88.32671", nil))
 	assert.Equal(t, 500, status)
 	assert.Equal(t, application.PlaceSelection{Name: "Paris", CountryCode: "US", Lat: 36.302, Lon: -88.32671}, reporter.selected)
+}
+
+// partialBaseSource starts loads like the cache decorator: Partial returns at once while Places
+// would wait for the whole ring load.
+type partialBaseSource struct {
+	*writermaptest.FakeBaseSource
+	mu       sync.Mutex
+	partials int
+	err      error
+	release  chan struct{}
+}
+
+func (p *partialBaseSource) Places(ctx context.Context, area writermap.Area) (writermap.BasePlaces, error) {
+	<-p.release
+	return p.FakeBaseSource.Places(ctx, area)
+}
+
+func (p *partialBaseSource) Partial(context.Context, writermap.Area) (writermap.BaseProgress, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.partials++
+	return writermap.BaseProgress{}, p.err
+}
+
+func (p *partialBaseSource) partialCalls() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.partials
+}
+
+// captureLog returns a reader of everything logged since the call.
+func captureLog(t *testing.T) func() string {
+	t.Helper()
+	var out strings.Builder
+	var mu sync.Mutex
+	log.SetOutput(writerFunc(func(b []byte) (int, error) { mu.Lock(); defer mu.Unlock(); return out.Write(b) }))
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	return func() string { mu.Lock(); defer mu.Unlock(); return out.String() }
+}
+
+type writerFunc func([]byte) (int, error)
+
+func (f writerFunc) Write(b []byte) (int, error) { return f(b) }
+
+// As a visitor typing a city, I want the warm-up to only start the ring load, so a slow cold load
+// is not reported as a failure and later searches do not start it again.
+func TestSuggestionWarm_StartsAPartialSourceWithoutWaitingForTheLoad(t *testing.T) {
+	logged := captureLog(t)
+	cache := newSuggestionCache()
+	place := application.PlaceSuggestion{Name: "London", Country: "United Kingdom", Lat: 51.5074, Lon: -0.1278}
+	key := baseWarmKey{place.Name, place.Country, place.Lat, place.Lon}
+	source := &partialBaseSource{FakeBaseSource: &writermaptest.FakeBaseSource{}, release: make(chan struct{})}
+	defer close(source.release)
+	cache.baseSource = source
+
+	cache.warm("192.0.2.1", place)
+
+	require.Eventually(t, func() bool { return source.partialCalls() == 1 }, time.Second, 5*time.Millisecond)
+	assert.Zero(t, source.PlacesCalls(), "the warm-up does not call the blocking Places")
+	time.Sleep(50 * time.Millisecond)
+	cache.mu.Lock()
+	assert.True(t, cache.baseStarted[key], "a started load stays marked")
+	cache.mu.Unlock()
+	assert.NotContains(t, logged(), "Could not warm")
+}
+
+func TestSuggestionWarm_FailedStartClearsTheMarkAndLogs(t *testing.T) {
+	logged := captureLog(t)
+	cache := newSuggestionCache()
+	place := application.PlaceSuggestion{Name: "London", Country: "United Kingdom", Lat: 51.5074, Lon: -0.1278}
+	key := baseWarmKey{place.Name, place.Country, place.Lat, place.Lon}
+	source := &partialBaseSource{FakeBaseSource: &writermaptest.FakeBaseSource{}, err: errors.New("offline"), release: make(chan struct{})}
+	defer close(source.release)
+	cache.baseSource = source
+
+	cache.warm("192.0.2.1", place)
+
+	require.Eventually(t, func() bool {
+		cache.mu.Lock()
+		defer cache.mu.Unlock()
+		return !cache.baseStarted[key]
+	}, time.Second, 5*time.Millisecond)
+	require.Eventually(t, func() bool { return strings.Contains(logged(), "Could not warm base places for London") }, time.Second, 5*time.Millisecond)
+}
+
+func TestSuggestionWarm_SecondSearchForTheSameCityDoesNotStartAnotherLoad(t *testing.T) {
+	cache := newSuggestionCache()
+	now := time.Now()
+	cache.now = func() time.Time { return now }
+	place := application.PlaceSuggestion{Name: "London", Country: "United Kingdom", Lat: 51.5074, Lon: -0.1278}
+	source := &partialBaseSource{FakeBaseSource: &writermaptest.FakeBaseSource{}, release: make(chan struct{})}
+	defer close(source.release)
+	cache.baseSource = source
+
+	cache.warm("192.0.2.1", place)
+	require.Eventually(t, func() bool { return source.partialCalls() == 1 }, time.Second, 5*time.Millisecond)
+	now = now.Add(time.Minute)
+	cache.warm("192.0.2.2", place)
+	time.Sleep(50 * time.Millisecond)
+
+	assert.Equal(t, 1, source.partialCalls())
 }

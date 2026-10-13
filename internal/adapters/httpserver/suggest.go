@@ -145,10 +145,18 @@ func (c *suggestionCache) warm(client string, place application.PlaceSuggestion)
 	go c.loadBase(source, key, writermap.Area{Name: place.Name, Country: place.Country, Lat: place.Lat, Lon: place.Lon})
 }
 
+// loadBase starts the destination's load and returns. A source that loads in the background
+// (the cache decorator) is started with Partial, which does not wait for the rings; any other
+// source is asked for its places with a time limit. Only a failure to start is logged.
 func (c *suggestionCache) loadBase(source application.BasePlaceSource, key baseWarmKey, area writermap.Area) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	_, err := source.Places(ctx, area)
+	var err error
+	if partial, ok := source.(writermap.PartialBaseSource); ok {
+		_, err = partial.Partial(ctx, area)
+	} else {
+		_, err = source.Places(ctx, area)
+	}
 	if err != nil {
 		c.mu.Lock()
 		delete(c.baseStarted, key)

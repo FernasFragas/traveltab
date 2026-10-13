@@ -30,7 +30,7 @@ test('draws a 3D MapLibre map with the dark default style, terrain and camera', 
   const map = app.maplibre[0];
   assert.equal(map.options.style, 'https://tiles.openfreemap.org/styles/dark');
   assert.deepEqual(Array.from(map.options.center), [-16.9, 32.65]);
-  assert.deepEqual([map.options.zoom, map.options.pitch, map.options.bearing], [12.3, 55, -20]);
+  assert.deepEqual([map.options.zoom, map.options.pitch, map.options.bearing], [14.3, 55, -20]);
   const source = map.sources['terrain-dem'];
   assert.deepEqual(Array.from(source.tiles), ['https://tiles.mapterhorn.com/{z}/{x}/{y}.webp']);
   assert.equal(source.tileSize, 512);
@@ -418,29 +418,26 @@ for (const engine of ['maplibre', 'leaflet']) {
     assert.deepEqual(closed, ['second']);
   });
 
-  test(`${engine}: frames the writer pins once the places load, and all places when none has a writer`, async () => {
+  test(`${engine}: opens on the destination at the 200 m view and does not fit the camera to the pins`, async () => {
     const places = (...rows) => rows.map(([qid, lon, lat, writers]) => ({ geometry: { coordinates: [lon, lat] }, properties: { qid, name: qid, writer_count: writers } }));
     const fitOf = app => engine === 'maplibre' ? app.maplibre[0].fit : app.leafletMaps[0].fit;
-    const boundsOf = fit => JSON.parse(JSON.stringify(engine === 'maplibre' ? fit[0] : [fit[0][0].slice().reverse(), fit[0][1].slice().reverse()]));
-    const withWriters = browser({ webgl: engine === 'maplibre', features: places(['Q1', -17.2, 32.7, 2], ['Q2', -16.7, 32.8, 1], ['Q3', -16.0, 32.9, 0], ['Q4', -17.9, 32.5, 0]) });
-    withWriters.run();
-    withWriters.mount();
-    await withWriters.flush();
-    assert.deepEqual(boundsOf(fitOf(withWriters)), [[-17.2, 32.7], [-16.7, 32.8]]);
-    assert.equal(fitOf(withWriters)[1].maxZoom, 12.3);
-    assert.equal(fitOf(withWriters)[1].animate, false, 'the first view jumps instead of swooping');
-    // The tilted 3D view stretches its near edge, so it keeps more room than the flat fallback.
-    assert.deepEqual(JSON.parse(JSON.stringify(fitOf(withWriters)[1].padding)), engine === 'maplibre' ? 88 : [48, 48]);
-    const baseOnly = browser({ webgl: engine === 'maplibre', features: places(['Q3', -16.0, 32.9, 0], ['Q4', -17.9, 32.5, 0]) });
-    baseOnly.run();
-    baseOnly.mount();
-    await baseOnly.flush();
-    assert.deepEqual(boundsOf(fitOf(baseOnly)), [[-17.9, 32.5], [-16.0, 32.9]]);
-    const none = browser({ webgl: engine === 'maplibre', features: [] });
-    none.run();
-    none.mount();
-    await none.flush();
-    assert.equal(fitOf(none), null);
+    for (const features of [places(['Q1', -17.2, 32.7, 2], ['Q2', -16.7, 32.8, 1]), places(['Q3', -16.0, 32.9, 0]), []]) {
+      const app = browser({ webgl: engine === 'maplibre', features });
+      app.run();
+      app.mount();
+      await app.flush();
+      assert.equal(fitOf(app), null, 'the view stays on the destination; pins outside it are reached by panning');
+    }
+    const app = browser({ webgl: engine === 'maplibre', features: places(['Q1', -17.2, 32.7, 2]) });
+    app.run();
+    app.mount();
+    await app.flush();
+    if (engine === 'maplibre') {
+      assert.deepEqual(Array.from(app.maplibre[0].options.center), [-16.9, 32.65]);
+      assert.equal(app.maplibre[0].options.zoom, 14.3);
+    } else {
+      assert.deepEqual(JSON.parse(JSON.stringify(app.leafletMaps[0].views[0])), [[32.65, -16.9], 15]);
+    }
   });
 
   test(`${engine}: a layer that clears its ids on remove gets the same result from add after remove`, async () => {
@@ -610,6 +607,69 @@ test('a swap clears what the layers drew before the map is reused', async () => 
   assert.equal(app.visible().markers, 1);
 });
 
+// --- Loading more places ---
+
+const pin = qid => ({ properties: { qid, name: qid } });
+const pollTimers = app => app.timers.filter(timer => timer.ms === 3000);
+
+test('polls while places are loading, adds the new pins and says it is loading', async () => {
+  const app = browser({ pages: [
+    { loading: true, complete: false, features: [pin('Q1')] },
+    { loading: true, complete: false, features: [pin('Q1'), pin('Q2')] },
+    { loading: false, complete: true, features: [pin('Q1'), pin('Q2'), pin('Q3')] }
+  ] });
+  app.run();
+  const seen = [];
+  app.window.TravelMap.registerLayer('probe', { add: (_, context) => seen.push(context.features.length), remove() {} });
+  const shell = app.mount();
+  await app.flush();
+  assert.deepEqual(seen, [1]);
+  assert.equal(shell.status.textContent, 'Loading more places…');
+  assert.equal(shell.status.hidden, false);
+  assert.equal(pollTimers(app).length, 1, 'one poll is scheduled');
+
+  pollTimers(app)[0].fn();
+  await app.flush();
+  assert.deepEqual(seen, [1, 2]);
+  assert.equal(shell.status.textContent, 'Loading more places…');
+
+  pollTimers(app)[1].fn();
+  await app.flush();
+  assert.deepEqual(seen, [1, 2, 3]);
+  assert.equal(shell.status.textContent, '');
+  assert.equal(shell.status.hidden, true);
+  assert.equal(pollTimers(app).length, 2, 'no poll is scheduled once loading is false');
+});
+
+test('a finished load with missing sources still reports them after polling', async () => {
+  const app = browser({ pages: [
+    { loading: true, complete: false, features: [] },
+    { loading: false, complete: false, features: [pin('Q1')] }
+  ] });
+  app.run();
+  const shell = app.mount();
+  await app.flush();
+  assert.equal(shell.status.textContent, 'Loading more places…');
+  pollTimers(app)[0].fn();
+  await app.flush();
+  assert.equal(shell.status.textContent, 'Some map sources are unavailable.');
+});
+
+test('stops polling when the map is swapped to another destination', async () => {
+  const app = browser({ pages: [{ loading: true, complete: false, features: [pin('Q1')] }] });
+  app.run();
+  const first = app.mount();
+  await app.flush();
+  const stale = pollTimers(app)[0];
+  app.body.emit('htmx:beforeSwap', { target: { contains: node => node === first.root } });
+  app.mount('Paris');
+  await app.flush();
+  const before = pollTimers(app).length;
+  stale.fn();
+  await app.flush();
+  assert.equal(pollTimers(app).length, before, 'the old destination schedules nothing more');
+});
+
 test('toggles registered layers and reports unavailable places', async () => {
   const app = browser({ failFetch: true });
   app.run();
@@ -676,7 +736,7 @@ async function drawn(engine) {
 
 // options: webgl (default true); maplibre: null (not loaded yet) or { ready: false } (never loads on its own);
 // leaflet: null (not loaded yet); style: the stub MapLibre style's sources and layers.
-function browser({ failFetch = false, delayFirstFetch = false, webgl = true, maplibre = {}, leaflet = {}, style = {}, features = null } = {}) {
+function browser({ failFetch = false, delayFirstFetch = false, webgl = true, maplibre = {}, leaflet = {}, style = {}, features = null, pages = null } = {}) {
   const nodes = [];
   const events = [];
   const warnings = [];
@@ -724,6 +784,7 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
     fetch: () => {
       fetchCount++;
       if (failFetch) return Promise.reject(new Error('unavailable'));
+      if (pages) return Promise.resolve({ ok: true, json: () => Promise.resolve(pages[Math.min(fetchCount - 1, pages.length - 1)]) });
       const response = { ok: true, json: () => Promise.resolve({ complete: false, features: features || [
         { properties: { qid: 'Q1', name: 'Pico do Arieiro' } }
       ] }) };

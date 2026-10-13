@@ -54,6 +54,8 @@
                 if (!response.ok) throw new Error('Itineraries unavailable');
                 return response.json();
             }).then(function (data) {
+                // Routes arrive with the last answer; an answer that is still loading is not kept.
+                if (data.loading === true) delete loads[url];
                 return {
                     features: Array.isArray(data.features) ? data.features : [],
                     itineraries: Array.isArray(data.itineraries) ? data.itineraries : []
