@@ -6,12 +6,15 @@ import (
 	"errors"
 	"io"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"weatherservice/internal/adapters/sqlite"
 	"weatherservice/internal/writermap"
 	"weatherservice/internal/writermap/writermaptest"
 )
@@ -106,7 +109,8 @@ func TestWriterMap_FixturePanel(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt/Q473169?lat=32.65&lon=-16.91", nil))
 	require.Equal(t, 200, status)
 	assert.Contains(t, body, "Pico Ruivo")
-	assert.Contains(t, body, "AI summary")
+	assert.Contains(t, body, "Writers describe Pico Ruivo as a rewarding high mountain hike")
+	assert.NotContains(t, body, `role="tablist"`)
 	assert.Contains(t, body, "Hiking Pico Ruivo")
 	assert.Contains(t, body, "Salt in our Hair")
 	assert.Contains(t, body, `data-language="pt"`)
@@ -129,14 +133,15 @@ func TestWriterMap_PageFlagStates(t *testing.T) {
 		status, body := doRequest(t, server, httptest.NewRequest("GET", "/process-form/?city_name="+city, nil))
 		require.Equal(t, 200, status)
 		if enabled {
-			for _, slot := range []string{"panel", "layers", "saved", "status"} {
+			for _, slot := range []string{"panel", "layers", "status"} {
 				assert.Contains(t, body, `data-map-slot="`+slot+`"`)
 			}
+			assert.NotContains(t, body, `data-map-slot="saved"`, "saved count belongs to the planner")
 			assert.NotContains(t, body, `data-map-slot="list"`, "the place-tag list was removed")
 			assert.Contains(t, body, `data-writers-map`)
 			assert.Contains(t, body, `hx-trigger="load"`)
 			assert.Contains(t, body, "/map/mapflagon-pt.geojson?lat=38.7223&amp;lon=-9.1393")
-			assert.Contains(t, body, "View larger map")
+			assert.Contains(t, body, "View full map")
 			assert.NotContains(t, body, "Map by Waze")
 		} else {
 			assert.Contains(t, body, "Map by Waze")
@@ -187,6 +192,54 @@ func TestWriterMap_ShellCanTurnTerrainOff(t *testing.T) {
 	assert.Contains(t, body, `data-map-terrain-url=""`)
 	assert.NotContains(t, body, "data-map-style-url")
 	assert.NotContains(t, body, "data-map-engine")
+}
+
+// As a traveler, I want to see the city before I pick a place, so the map panel opens with the
+// destination's photo and its credit.
+func TestWriterMap_DefaultPanelShowsTheCityPhoto(t *testing.T) {
+	body := mapShellBody(t, "Lisbon", func(*Server) {})
+	panel := body[strings.Index(body, `class="map-default-panel"`):]
+	panel = panel[:strings.Index(panel, `class="map-default-guide"`)]
+	assert.Contains(t, panel, `class="map-default-photo"`)
+	assert.Contains(t, panel, `src="/images/destinations/lisbon-alfama.jpg"`)
+	assert.Contains(t, panel, `class="map-default-photo-credit"`)
+}
+
+// As a traveler, I want the destination banner above the map, so that the page opens with the
+// city's photo, name and current weather.
+func TestWriterMap_DestinationBannerPrecedesTheMap(t *testing.T) {
+	// Only Lisbon has a curated photo and other tests cache Lisbon too, so use a store of its own.
+	// The server saves to its cache in the background, so clean up without failing on a late write.
+	dir, err := os.MkdirTemp("", "traveltab-banner")
+	require.NoError(t, err)
+	store, err := sqlite.Open(filepath.Join(dir, "banner.db"))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = store.Close(); _ = os.RemoveAll(dir) })
+	ctrl := gomock.NewController(t)
+	weather, videos := NewMockWeatherReporter(ctrl), NewMockVideoStreamReporter(ctrl)
+	server := NewAppServer(weather, videos, store)
+	server.SetWriterMapSource(writermaptest.NewMadeiraSource(), true)
+	info := createTestGeneralWeatherInfoFor("Lisbon")
+	info.Country = "PT"
+	weather.EXPECT().GenerateReport(gomock.Any(), "lisbon, pt").Return(info, nil)
+	videos.EXPECT().GenerateReport(gomock.Any(), "Turistic places in Lisbon, PT").Return(createTestVideosStream(), nil)
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/lisbon-pt", nil))
+	require.Equal(t, 200, status)
+	overview := body[strings.Index(body, `id="overview"`):]
+	overview = overview[:strings.Index(overview, `id="itinerary"`)]
+	banner := overview[strings.Index(overview, `class="destination-banner"`)+1:]
+	banner = banner[:strings.Index(banner, `class="tt-overview-map"`)]
+	assert.Less(t, strings.Index(overview, `class="destination-banner"`), strings.Index(overview, `class="tt-overview-map"`), "the banner comes before the map")
+	assert.Contains(t, banner, `src="/images/destinations/lisbon-alfama.jpg"`)
+	assert.Contains(t, banner, `<h2 class="destination-title">Lisbon</h2>`)
+	assert.Contains(t, banner, `class="weather-card weather-metrics"`)
+	assert.Equal(t, 1, strings.Count(body, "<h1"), "the map page keeps one h1")
+}
+
+func TestWriterMap_DefaultPanelOmitsThePhotoWhenThereIsNone(t *testing.T) {
+	body := mapShellBody(t, "Nophotocity", func(*Server) {})
+	assert.Contains(t, body, `class="map-default-panel"`)
+	assert.NotContains(t, body, "map-default-photo")
 }
 
 func mapShellBody(t *testing.T, city string, configure func(*Server)) string {

@@ -7,7 +7,7 @@
         <p class="guide-eyebrow"><i class="bi bi-journal-text" aria-hidden="true"></i> City guide</p>
         <span class="guide-badge"><i class="bi bi-patch-check" aria-hidden="true"></i> Reviewed</span>
     </header>
-    <h3 id="guide-title" class="guide-title">About {{ .City }}</h3>
+    <h2 id="guide-title" class="guide-title">About {{ .City }}</h2>
     <div class="guide-body">
         {{ range .Paragraphs }}<p class="guide-paragraph">{{ . }}</p>{{ end }}
     </div>
@@ -19,7 +19,7 @@
     <header class="guide-header">
         <p class="guide-eyebrow"><i class="bi bi-journal-text" aria-hidden="true"></i> City guide</p>
     </header>
-    <h3 id="guide-title" class="guide-title">About {{ if .City }}{{ .City }}{{ else }}this destination{{ end }}</h3>
+    <h2 id="guide-title" class="guide-title">About {{ if .City }}{{ .City }}{{ else }}this destination{{ end }}</h2>
     <div class="guide-body">
         <p class="guide-paragraph guide-missing">We don't have a reviewed guide for {{ if .City }}{{ .City }}{{ else }}this destination{{ end }} yet. Guides appear here only after a person has checked them against their source.</p>
     </div>

@@ -344,7 +344,7 @@ func TestPreview_MapStyleUsesElectroversePalette(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[string][2]string{
-		"land":           {"background-color", "#18263b"},
+		"land":           {"background-color", "#202a32"},
 		"water":          {"fill-color", "#000e29"},
 		"road-secondary": {"line-color", "#404860"},
 		"road-primary":   {"line-color", "#4c576c"},
@@ -390,4 +390,25 @@ func TestPreview_MapStyleThinsMinorRoads(t *testing.T) {
 		return
 	}
 	t.Error("style lacks road-secondary")
+}
+
+func TestPreview_MapStyleHidesGenericPOIs(t *testing.T) {
+	var style struct {
+		Layers []struct {
+			ID     string         `json:"id"`
+			Layout map[string]any `json:"layout"`
+		} `json:"layers"`
+	}
+	if err := json.Unmarshal(fixtureStyle("http://example.test"), &style); err != nil {
+		t.Fatal(err)
+	}
+	for _, layer := range style.Layers {
+		if layer.ID == "poi" {
+			if layer.Layout["visibility"] != "none" {
+				t.Errorf("generic POI visibility = %v, want none", layer.Layout["visibility"])
+			}
+			return
+		}
+	}
+	t.Error("style lacks a POI layer to exercise hiding")
 }

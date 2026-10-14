@@ -1,8 +1,10 @@
 <div id="trip-card" class="trip-card">
     <div class="trip-card-head">
-        <h3 class="trip-card-title">Plan your trip</h3>
+        <h2 class="trip-card-title">Plan your trip</h2>
         <p class="trip-card-subtitle">Famous places day by day, with museums saved for the rain.</p>
     </div>
+
+    <div data-map-slot="saved"></div>
 
     <form class="trip-form"
           aria-describedby="trip-help"

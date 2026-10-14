@@ -59,7 +59,7 @@ for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writ
             extrusions: layers.filter(l => l.type === 'fill-extrusion').map(l => l.id) };
         })())`));
         assert.deepEqual(dark.extrusions, ['buildings-3d'], JSON.stringify(dark));
-        assert.equal(dark.background, '#18263b', JSON.stringify(dark));
+        assert.equal(dark.background, '#202a32', JSON.stringify(dark));
         for (const zoom of [12, 16]) {
           await browser.evaluate(`window.__liveMap.jumpTo({ center: [-16.9, 32.65], zoom: ${zoom} }) && 0`);
           await browser.until('window.__liveMap.isStyleLoaded() && window.__liveMap.areTilesLoaded()', 30000);

@@ -324,9 +324,9 @@ func parseDaysAndStart(ctx *fiber.Ctx, dayKey, startKey string, today time.Time)
 // an unplanned one just invites planning one.
 func tripPageTitle(city string, days int, planned bool) string {
 	if !planned {
-		return fmt.Sprintf("Plan a trip to %s — TravelTab", city)
+		return fmt.Sprintf("Plan a trip to %s — TravelTabByPatronFragas", city)
 	}
-	return fmt.Sprintf("%d %s in %s — TravelTab", days, dayUnit(days), city)
+	return fmt.Sprintf("%d %s in %s — TravelTabByPatronFragas", days, dayUnit(days), city)
 }
 
 // tripPageDescription is the page's meta description, matching tripPageTitle's two cases.

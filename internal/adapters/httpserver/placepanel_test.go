@@ -14,11 +14,11 @@ import (
 
 // As a traveler, I want to see which writers mention a place and open their posts,
 // so that I can read their full take on the writer's own site.
-func TestPlacePanel_ListsEveryWriterPostOnceExpanded(t *testing.T) {
+func TestPlacePanel_ListsEveryWriterPost(t *testing.T) {
 	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
 
-	writers := section(t, body, `<details class="map-panel-writers"`, `</details>`)
-	assert.Contains(t, writers, "View writers' posts (2)")
+	writers := section(t, body, `<section class="map-panel-writers"`, `</section>`)
+	assert.Contains(t, writers, "Writers' posts (2)")
 	assert.Contains(t, writers, `href="https://www.saltinourhair.com/madeira/pico-ruivo/"`)
 	assert.Contains(t, writers, "Hiking Pico Ruivo")
 	assert.Contains(t, writers, "Salt in our Hair")
@@ -33,8 +33,9 @@ func TestPlacePanel_ShowsPartsInMockupOrder(t *testing.T) {
 
 	order := []string{
 		`class="map-panel-close"`, "<h3>Pico Ruivo</h3>", `class="map-panel-meta"`,
-		"Mentioned by 2 writers", "AI summary", `class="map-panel-description"`,
-		`data-save-qid="Q473169"`, "View writers' posts (2)",
+		"Mentioned by 2 writers", `class="map-panel-summary"`,
+		`data-add-qid="Q473169"`,
+		`class="map-panel-save"`, `data-map-share`, "Writers' posts (2)",
 	}
 	last := -1
 	for _, part := range order {
@@ -43,6 +44,14 @@ func TestPlacePanel_ShowsPartsInMockupOrder(t *testing.T) {
 		assert.Greater(t, index, last, "%q is out of order", part)
 		last = index
 	}
+}
+
+func TestPlacePanel_WithoutSummaryOffersDetailsOnly(t *testing.T) {
+	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q1192102")
+
+	assert.NotContains(t, body, `role="tablist"`)
+	assert.NotContains(t, body, "AI summary")
+	assert.NotContains(t, body, `role="tablist"`)
 }
 
 func TestPlacePanel_WriterPlaceWithoutSummaryHasNoSummaryBox(t *testing.T) {
@@ -85,7 +94,7 @@ func TestPlacePanel_BaseOnlyDestinationSaysNoWriterMentions(t *testing.T) {
 
 	body := placePanel(t, source, "Q1")
 
-	assert.Contains(t, body, "No writer mentions here yet")
+	assert.Contains(t, body, "No writer mentions yet")
 	assert.Contains(t, body, "A fortified tower.")
 	assert.Contains(t, body, `src="https://upload.wikimedia.org/photos/belem.jpg"`)
 	assert.Contains(t, body, "Photo: A. Person, CC BY-SA 4.0")
@@ -104,6 +113,18 @@ func TestPlacePanel_PhotoSrcIsAnImageURLNotACommonsPage(t *testing.T) {
 
 	assert.Contains(t, body, `<img src="`+thumb+`"`)
 	assert.NotContains(t, body, "commons.wikimedia.org/wiki/File:")
+}
+
+// As a traveler, I want a photo that fails to load to disappear, so that I never see a broken image.
+func TestPlacePanel_PhotoHidesItselfWhenItFailsToLoad(t *testing.T) {
+	thumb := "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Pico_Ruivo.jpg/640px-Pico_Ruivo.jpg"
+	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{
+		Places: []writermap.Place{{QID: "Q1", Names: []string{"Pico Ruivo"}, PhotoURL: thumb}},
+	}}
+
+	body := placePanel(t, source, "Q1")
+
+	assert.Contains(t, body, `onerror="this.closest('.map-panel-photo').hidden = true"`)
 }
 
 // As a traveler, I want a stale Commons page URL to leave the photo out of the panel and map,
@@ -182,4 +203,24 @@ func section(t *testing.T, body, start, end string) string {
 	to := strings.Index(body[from:], end)
 	require.NotEqual(t, -1, to, "missing %q after %q", end, start)
 	return body[from : from+to]
+}
+
+// As a traveller, I want the story and useful links together without tabs.
+func TestPlacePanel_StoryAndDirectionsCards(t *testing.T) {
+	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
+	assert.NotContains(t, body, `role="tablist"`)
+	assert.Contains(t, body, `class="map-panel-bookmark"`)
+	assert.Contains(t, body, `class="map-panel-writer-card"`)
+	assert.Contains(t, body, `openstreetmap.org/directions?route=`)
+	assert.Contains(t, body, `map-panel-post-tile`)
+}
+
+func TestPlacePanel_HasExistingWriterSourceNamesForItineraryCard(t *testing.T) {
+	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
+	assert.Contains(t, body, `data-writer-source-host="www.earthtrekkers.com" data-writer-source-name="Earth Trekkers"`)
+}
+
+func TestPlacePanel_HasAreaForSelectedCallout(t *testing.T) {
+	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
+	assert.Contains(t, body, `data-place-area="Santana"`)
 }

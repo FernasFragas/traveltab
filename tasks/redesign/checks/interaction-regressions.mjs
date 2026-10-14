@@ -135,6 +135,7 @@ try {
   await until('document.readyState === "complete" && !!window.htmx && !!window.travelTabPlannerWired && !!window.travelTabDiscoveryWired');
   assert.equal(await evaluate('htmx.version'), dependencies['htmx.org']);
   console.log(`Environment: ${(await call('Browser.getVersion')).product}; HTMX ${await evaluate('htmx.version')}`);
+  await evaluate('document.querySelector("[data-tt-section=videos]").click()');
   await activateVideo();
   console.log('PASS: valid initial video, title, expected embed URL, repeated activation');
   await evaluate(`
@@ -146,6 +147,7 @@ try {
     });
     document.body.addEventListener('htmx:historyRestore', () => window.restores++);
   `);
+  await evaluate('document.querySelector("[data-tt-section=itinerary]").click()');
   const initialURL = await evaluate('location.href');
   const values = await evaluate('Object.fromEntries(new FormData(document.querySelector(".trip-form")))');
   assert.equal(values.country, 'pt', 'Fixture must use the ISO country code');
@@ -155,6 +157,7 @@ try {
   const expectedURL = new URL('/trip/lisbon-pt', base);
   expectedURL.searchParams.set('days', values.days);
   expectedURL.searchParams.set('from', values.start);
+  expectedURL.hash = 'itinerary';
   assert.equal(plannedURL, expectedURL.href);
   await travelHistory('back');
   await assertRestored(false, initialURL, values);
@@ -196,6 +199,7 @@ try {
     button.dataset.videoId = original;
     return player.querySelectorAll('iframe').length;
   })()`), 0, 'Invalid video IDs must never create a player');
+  await evaluate('document.querySelector("[data-tt-section=videos]").click()');
   await activateVideo(true);
   assert.equal(await evaluate(`(() => {
     const button = document.querySelector('[data-video-expand]');

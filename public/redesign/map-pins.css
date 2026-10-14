@@ -1,0 +1,93 @@
+/* TravelTab places stay bright above the dark vector basemap. */
+.map-pin-notable {
+    width: 32px;
+    height: 32px;
+    background: #cf795b;
+    color: #fff;
+    font-size: 16px;
+}
+
+.map-pin-selected { z-index: 3; }
+
+.plan-pin { position: relative; }
+
+.map-pin-photo,
+.plan-pin-photo {
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 50%;
+    width: 48px;
+    height: 38px;
+    border: 2px solid #fff;
+    border-radius: 5px;
+    object-fit: cover;
+    box-shadow: 0 2px 6px #0008;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.travelmap-cluster-list {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+.travelmap-cluster-list:focus-within {
+    position: static;
+    width: min(240px, 70vw);
+    height: auto;
+    max-height: 200px;
+    overflow: auto;
+    clip-path: none;
+    padding: 6px;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.travelmap-cluster-list button {
+    display: block;
+    width: 100%;
+    min-height: 36px;
+    border: 0;
+    background: #fff;
+    color: #222;
+    text-align: left;
+    cursor: pointer;
+}
+
+.travelmap-cluster-list button:focus-visible { outline: 2px solid #cf795b; }
+
+.map-pin-notable, .map-pin-writer, .plan-pin { width: 32px; height: 36px; border-radius: 55% 55% 55% 8%; background: #cf795b; color: #fff; border: 2px solid #fff; }
+.map-pin-nature { background: #459b6b; }
+.map-pin-writer { background: #a582d4; }
+.plan-pin { background: #a56824; }
+.map-pin-label { border-radius: 5px; color: #fff; background: #202a32ed; }
+.map-pin-selected { width: auto; height: 48px; display: flex; gap: 8px; padding: 5px 10px; border: 3px solid #cf795b; border-radius: 10px; background: #fff; color: #292b30; box-shadow: 0 0 0 3px #fff9; }
+.map-pin-selected .map-pin-photo { position: static; width: 45px; height: 34px; transform: none; border: 0; }
+.map-selected-name { max-width: 180px; font-size: 12px; font-weight: 700; }
+
+.map-pin.is-selected { background: #cf795b; box-shadow: 0 0 0 4px #fff, 0 0 0 7px #cf795b; }
+.map-pin-selected { margin-top: -65px; }
+
+.map-pin[hidden] { display: none; }
+.map-pin-notable, .map-pin-writer, .plan-pin { --pin-fill: #cf795b; border-radius: 50% 50% 48% 48%; }
+.map-pin-nature { --pin-fill: #459b6b; }
+.map-pin-writer { --pin-fill: #a582d4; }
+.plan-pin { --pin-fill: #a56824; }
+.map-pin-notable::after, .map-pin-writer::after, .plan-pin::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 12px; height: 12px; background: var(--pin-fill); border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateX(-50%) rotate(45deg); z-index: -1; }
+.map-pin.is-selected { --pin-fill: #cf795b; }
+
+/* "Your plan" stop popup: name | day, stop and distance | View details. Wraps on narrow maps. */
+.travelmap-popup:has(.plan-popup) { max-width: min(460px, calc(100vw - 80px)) !important; }
+.travelmap-popup:has(.plan-popup) .maplibregl-popup-content,
+.travelmap-popup:has(.plan-popup) .leaflet-popup-content-wrapper { border-radius: 16px; }
+.map-popup.plan-popup { display: flex; flex-flow: row wrap; align-items: center; gap: 12px 16px; min-width: 0; max-width: none; padding: 16px 18px; }
+.plan-popup .map-popup-name { flex: 1 1 120px; min-width: 120px; font: 700 19px / 1.15 var(--tt-font-heading); overflow-wrap: break-word; hyphens: auto; }
+.plan-popup-facts { display: grid; flex: 0 1 auto; gap: 6px; margin: 0; padding: 0 0 0 16px; border-left: 1px solid var(--tt-border); color: var(--tt-ink); font-size: 14px; list-style: none; }
+.plan-popup-facts li { display: grid; grid-template-columns: 18px 1fr; column-gap: 8px; align-items: baseline; white-space: nowrap; }
+.plan-popup-facts .bi { color: var(--tt-accent); }
+.plan-popup-facts small { grid-column: 2; color: var(--tt-muted); font-size: 12px; }
+.plan-popup .map-popup-details { display: inline-flex; flex: 1 0 auto; justify-content: center; align-items: center; gap: 6px; min-width: 44px; padding: 0 18px; border-radius: 999px; background: var(--tt-accent); color: #fff; font-size: 15px; }
+.plan-popup .map-popup-details:hover { background: var(--tt-accent-hover); }

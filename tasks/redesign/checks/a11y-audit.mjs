@@ -258,7 +258,6 @@ try {
       ['videos-10-expanded', async () => { await b.navigate(`${wideVideos.url}/?a=${Date.now()}`); await evaluate("document.querySelector('[data-video-expand]').click()"); }],
       ['video-activated', async () => { await b.navigate(`${preview.url}/?a=${Date.now()}`); await evaluate("document.querySelector('[data-video-activate]').click()"); await until("!!document.querySelector('.video-embed')"); }],
     ];
-    if (width === 375) states.push(['mobile-menu-open', async () => { await b.navigate(`${preview.url}/?a=${Date.now()}`); await evaluate("document.querySelector('.tt-menu-button').click()"); }]);
     // Last: every third-party image request fails, so each image-error fallback (stop, thumbnail) shows.
     states.push(['images-blocked-planned', async () => { b.state.imageMode = 'block'; await b.navigate(`${preview.url}/?a=${Date.now()}`); await planDays(3); }]);
     for (const [name, setup] of states.filter(([n]) => want('contrast') || ['lisbon-initial', 'lisbon-planned-5d-open'].includes(n))) {
@@ -326,13 +325,13 @@ try {
     if (s.dupIds.length) structFailures.push(`${label}: duplicate ids ${s.dupIds}`);
     if (s.refs.length) structFailures.push(`${label}: dangling ARIA refs ${s.refs}`);
     if (s.positiveTabindex.length) structFailures.push(`${label}: positive tabindex`);
-    for (const i of s.images) if (i.alt === null) structFailures.push(`${label}: img without alt attribute ${i.src}`); else if (!i.hidden && !i.alt && !i.inButton) structFailures.push(`${label}: visible img with empty alt outside a button ${i.src}`);
+    for (const i of s.images) if (i.alt === null) structFailures.push(`${label}: img without alt attribute ${i.src}`); else if (!i.hidden && !i.alt && !i.inButton && !i.inLink) structFailures.push(`${label}: visible img with empty alt outside a named control ${i.src}`);
     for (const f of s.iframes) if (!f.title) structFailures.push(`${label}: iframe without title ${f.src}`);
     for (const c of s.controls) if (!c.labelled) structFailures.push(`${label}: control without a label ${c.id || c.name}`);
     for (const a of s.external) if (!/noopener/.test(a.rel)) structFailures.push(`${label}: target=_blank without noopener ${a.href}`);
     for (const h of s.headings) seenHeadings.add(`h${h.level} ${h.text}`);
   }
-  if (Object.keys(structureByState).length && want('contrast')) record('structure.headings-lang-ids-refs', structFailures.length === 0, structFailures.length ? structFailures.slice(0, 8).join(' | ') : `${Object.keys(structureByState).length} states: one h1, no skipped levels, lang=en, no duplicate ids, no dangling ARIA references, no positive tabindex`);
+  if (Object.keys(structureByState).length && (want('contrast') || want('contrast-quick'))) record('structure.headings-lang-ids-refs', structFailures.length === 0, structFailures.length ? structFailures.slice(0, 8).join(' | ') : `${Object.keys(structureByState).length} states: one h1, no skipped levels, lang=en, no duplicate ids, no dangling ARIA references, no positive tabindex`);
   structFailures.forEach(f => findings.push({ area: 'structure', detail: f }));
 
   // Accessibility tree at both widths on the planned page: landmarks and accessible names.
@@ -396,8 +395,7 @@ try {
       if (c.y < p.y - 120 && !inLaterColumn && !/tt-section-navigation/.test(stops[i].el) && stops[i].inViewport) order.push(`${stops[i - 1].el} "${stops[i - 1].text}" -> ${stops[i].el} "${stops[i].text}"`);
     }
     focusResults[width + 'order'] = order;
-    const orderLimitation = width === 375 ? 'Below 900px the planner is shown before the map through CSS order (the design puts the form first on phones), while the DOM keeps the map first for the two-column desktop reading order. Reordering the DOM would only move the mismatch to desktop.' : null;
-    record(`focus-order-matches-visual@${width}`, order.length === 0, order.length ? `${order.length} jumps against the visual order: ${order.join(' | ')}` : 'no tab stop moves backwards up the page without moving to a later column', orderLimitation);
+    record(`focus-order-matches-visual@${width}`, order.length === 0, order.length ? `${order.length} jumps against the visual order: ${order.join(' | ')}` : 'no tab stop moves backwards up the page without moving to a later column');
     if (order.length) findings.push({ area: 'focus-order', width, detail: order.join(' | ') });
     record(`focus-visible@${width}`, problems.length === 0, problems.length ? `${problems.length} problems: ${problems.slice(0, 6).join(' | ')}` : `${stops.length} tab stops (${stops.reduce((n, s) => n + (s.segments || 0), 0)} extra date-field segments): skip link first, none covered, every one shows a focus change of at least 3:1 (weakest ${Math.min(...stops.map(s => s.indicatorContrast))}:1)`);
     problems.forEach(p => findings.push({ area: 'focus', width, detail: p }));
@@ -443,6 +441,7 @@ try {
   if (want('behaviour')) {
     await b.viewport(1440, 1000);
     await b.navigate(`${wideVideos.url}/?vid=${Date.now()}`);
+    await evaluate("document.querySelector('[data-tt-section=videos]').click()");
     await evaluate("document.querySelector('[data-video-expand]').focus()");
     await b.key('Enter', 'Enter', 13, 0, '\r'); await sleep(100);
     const opened = await evaluate("({ expanded: document.querySelector('[data-video-expand]').getAttribute('aria-expanded'), hidden: document.querySelector('#video-extra').hidden, label: document.querySelector('[data-video-expand-label]').textContent })");
@@ -584,6 +583,7 @@ try {
     const selectors = ['.tt-header-navigation a', '.tt-section-navigation a', '.tt-brand', '.trip-submit', '.itinerary-action', '.itinerary-directions', '.itinerary-day-summary', '.stay-prices', '.stay-website', '.video-title', '.video-watch', '.map-action', '.tt-footer-links a', '.guide-attribution a', '.destination-photo-credit a'];
     const rows = [];
     for (const selector of selectors) {
+      await evaluate(`(() => { const view = document.querySelector(${JSON.stringify(selector)})?.closest('[data-tt-view]'); if (view?.hidden) document.querySelector('[data-tt-section="' + view.id + '"]')?.click(); })()`);
       const target = await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - 220), behavior: 'instant' }); const r = el.getBoundingClientRect(); return { x: r.left + Math.min(r.width / 2, 40), y: r.top + r.height / 2 }; })()`);
       if (!target) { rows.push({ selector, missing: true }); continue; }
       await waitScrollSettled(); await sleep(100);
@@ -612,10 +612,9 @@ try {
   // ---- 8b. The current section is not shown by colour alone ---------------------------------------------------------
   if (want('current')) {
     const rows = [];
-    for (const [width, height, open] of [[1440, 1000, false], [375, 812, true]]) {
+    for (const [width, height] of [[1440, 1000], [375, 812]]) {
       await b.viewport(width, height);
       await b.navigate(`${preview.url}/?current=${Date.now()}`);
-      if (open) await evaluate("document.querySelector('.tt-menu-button').click()");
       const nav = await evaluate(`(() => {
         const read = (root) => { const links = [...document.querySelectorAll(root + ' a[data-tt-section]')].filter(a => a.getBoundingClientRect().width > 0); const cur = links.find(a => a.hasAttribute('aria-current')); const other = links.find(a => !a.hasAttribute('aria-current'));
           if (!cur || !other) return null; const pick = a => { const cs = getComputedStyle(a); return { color: cs.color, decoration: cs.textDecorationLine, weight: cs.fontWeight, borderBottom: cs.borderBottomWidth === '0px' ? 'none' : cs.borderBottomWidth + ' ' + cs.borderBottomStyle + ' ' + cs.borderBottomColor, borderTop: cs.borderTopWidth === '0px' ? 'none' : cs.borderTopWidth + ' ' + cs.borderTopStyle + ' ' + cs.borderTopColor }; };
@@ -633,24 +632,20 @@ try {
     bad.forEach(r => findings.push({ area: 'colour-only', width: r.width, detail: `${r.nav} shows the current section by colour only` }));
   }
 
-  // ---- 9. Menu, focus after an error, control names, text spacing ---------------------------------------------------
+  // ---- 9. Phone tabs, focus after an error, control names, text spacing ---------------------------------------------
   if (want('misc')) {
     await b.viewport(375, 812);
-    await b.navigate(`${preview.url}/?menu=${Date.now()}`);
-    await evaluate("document.querySelector('.tt-menu-button').focus()");
-    const closed = await evaluate("({ expanded: document.querySelector('.tt-menu-button').getAttribute('aria-expanded'), hidden: document.getElementById('header-navigation').hidden, label: document.querySelector('.tt-menu-button').getAttribute('aria-label') })");
+    await b.navigate(`${preview.url}/?tabs=${Date.now()}`);
+    await evaluate("document.querySelector('.tt-bottom-navigation [data-tt-section=itinerary]').focus()");
     await b.key('Enter', 'Enter', 13, 0, '\r'); await sleep(100);
-    const open = await evaluate("({ expanded: document.querySelector('.tt-menu-button').getAttribute('aria-expanded'), hidden: document.getElementById('header-navigation').hidden, label: document.querySelector('.tt-menu-button').getAttribute('aria-label') })");
-    await b.tab(); await sleep(60);
-    const firstLink = await evaluate("document.activeElement.textContent.trim()");
-    await b.key('Escape', 'Escape', 27); await sleep(100);
-    const escaped = await evaluate("({ expanded: document.querySelector('.tt-menu-button').getAttribute('aria-expanded'), hidden: document.getElementById('header-navigation').hidden, focus: document.activeElement.className })");
-    record('mobile-menu-keyboard', closed.expanded === 'false' && closed.hidden && open.expanded === 'true' && !open.hidden && firstLink === 'Overview' && escaped.expanded === 'false' && escaped.hidden && /tt-menu-button/.test(escaped.focus),
-      `375px: closed (aria-expanded=${closed.expanded}, hidden=${closed.hidden}); Enter opens it (aria-expanded=${open.expanded}, label "${open.label}"), the next Tab reaches "${firstLink}"; Escape closes it and returns focus to the menu button`);
+    const state = await evaluate("({ hash: location.hash, itinerary: !document.querySelector('#itinerary').hidden, overview: document.querySelector('#overview').hidden, current: document.querySelector('.tt-bottom-navigation [data-tt-section=itinerary]').getAttribute('aria-current') })");
+    record('mobile-tabs-keyboard', state.hash === '#itinerary' && state.itinerary && state.overview && state.current === 'location',
+      `375px: Enter activates Itinerary (hash=${state.hash}, itinerary visible=${state.itinerary}, Overview hidden=${state.overview}, aria-current=${state.current})`);
   }
   if (want('misc')) {
     await b.viewport(1440, 1000);
     await b.navigate(`${preview.url}/?names=${Date.now()}`);
+    await evaluate("document.querySelector('[data-tt-section=itinerary]').click()");
     const named = await evaluate(`(() => { const o = document.querySelector('#trip-end-value'); const label = o.getAttribute('aria-labelledby'); return { labelledby: label, name: label ? label.split(' ').map(id => document.getElementById(id)?.textContent.trim()).join(' ') : '' }; })()`);
     const { root } = await call('DOM.getDocument');
     const { nodeId } = await call('DOM.querySelector', { nodeId: root.nodeId, selector: '#trip-end-value' });
@@ -663,14 +658,15 @@ try {
     // Focus after a failed plan: the form controls are replaced, so where does the next Tab go?
     await b.viewport(1440, 1000);
     await b.navigate(`${preview.url}/?errfocus=${Date.now()}`);
+    await evaluate("document.querySelector('[data-tt-section=itinerary]').click()");
     await evaluate("document.querySelector('.trip-form').elements.days.value = '4'; document.querySelector('.trip-submit').focus()");
     await b.key('Enter', 'Enter', 13, 0, '\r');
     await until("!!document.querySelector('.trip-error')"); await sleep(300);
     const afterSwap = await evaluate("({ tag: document.activeElement.tagName, inTrip: !!document.activeElement.closest('#trip-card'), cls: document.activeElement.className })");
     await b.tab(); await sleep(150);
-    const nextStop = await evaluate("({ tag: document.activeElement.tagName, cls: document.activeElement.className, inOverview: !!document.activeElement.closest('#overview'), skip: document.activeElement.classList.contains('tt-skip-link'), text: document.activeElement.textContent.trim().slice(0, 30) })");
-    record('focus-after-plan-error', afterSwap.inTrip || (nextStop.inOverview && !nextStop.skip),
-      `after a keyboard-submitted failing plan focus is on <${afterSwap.tag.toLowerCase()}> (inside the form card: ${afterSwap.inTrip}); the next Tab reaches ${nextStop.tag.toLowerCase()}.${nextStop.cls.split(' ')[0]} "${nextStop.text}" (inside #overview: ${nextStop.inOverview})`);
+    const nextStop = await evaluate("({ tag: document.activeElement.tagName, cls: document.activeElement.className, inItinerary: !!document.activeElement.closest('#itinerary'), skip: document.activeElement.classList.contains('tt-skip-link'), text: document.activeElement.textContent.trim().slice(0, 30) })");
+    record('focus-after-plan-error', afterSwap.inTrip || (nextStop.inItinerary && !nextStop.skip),
+      `after a keyboard-submitted failing plan focus is on <${afterSwap.tag.toLowerCase()}> (inside the form card: ${afterSwap.inTrip}); the next Tab reaches ${nextStop.tag.toLowerCase()}.${nextStop.cls.split(' ')[0]} "${nextStop.text}" (inside #itinerary: ${nextStop.inItinerary})`);
   }
   if (want('misc')) {
     // WCAG 1.4.12 text spacing: override spacing and confirm nothing overflows or is clipped.
@@ -678,6 +674,7 @@ try {
     for (const [width, height] of WIDTHS) {
       await b.viewport(width, height);
       await b.navigate(`${preview.url}/trip/lisbon-pt?days=3&from=${tomorrow}`);
+      await evaluate("document.querySelector('[data-tt-section=itinerary]').click()");
       await evaluate("document.querySelectorAll('.itinerary-day').forEach(d => { d.open = true; })");
       await evaluate("(() => { const s = document.createElement('style'); s.id = 'spacing'; s.textContent = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }'; document.head.appendChild(s); })()");
       await sleep(200);
@@ -721,10 +718,10 @@ try {
         record(`writers-map-axe-${engine}@${width}`, violations.length === 0, violations.length ? violations.join(', ') : 'axe-core: 0 violations');
       }
       // A pin opens a named popup; focus moves into it, and Escape closes it and returns to the pin.
-      await evaluate("document.querySelector('.map-pin-writer').click()");
+      await evaluate("document.querySelector('.map-pin-notable').click()");
       await until("document.querySelector('.map-popup .map-popup-details')");
       const popup = await evaluate(`(() => { const box = document.querySelector('.map-popup'); const details = box.querySelector('.map-popup-details');
-        return { role: box.getAttribute('role'), name: box.getAttribute('aria-label'), text: box.textContent, focused: document.activeElement === details, button: details.textContent.trim() }; })()`);
+        return { role: box.getAttribute('role'), name: box.getAttribute('aria-label'), text: box.textContent, focused: document.activeElement === details, button: details.getAttribute('aria-label') || details.textContent.trim() }; })()`);
       const popupUnnamed = (await axTree()).filter(n => NAMED_ROLES.has(n.role) && n.role !== 'image' && !n.name && n.backend);
       let popupViolations = [];
       if (axeSource) {

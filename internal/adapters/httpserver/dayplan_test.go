@@ -33,3 +33,17 @@ func TestDayPlan_EmitsNothingWithoutAPlan(t *testing.T) {
 	assert.NotContains(t, body, "data-plan-day")
 	assert.NotContains(t, body, "data-plan-stop")
 }
+
+func TestDayPlan_EmitsPopupFieldsEscaped(t *testing.T) {
+	body := renderPlan(t, func(req planner.Request) *planner.Plan {
+		stop := stayPhotos[0]
+		stop.Kind = `indoor`
+		stop.Description = `Art & "history"`
+		return &planner.Plan{Request: req, Days: []planner.Day{{Date: req.Start, Stops: []planner.Place{stop, {Name: "Unknown", Lat: 1, Lon: 2}}}}}
+	})
+
+	assert.Contains(t, body, `data-qid="Q193386"`)
+	assert.Contains(t, body, `data-kind="indoor"`)
+	assert.Contains(t, body, `data-description="Art &amp; &#34;history&#34;"`)
+	assert.Contains(t, body, `data-qid="" data-kind="" data-description=""`)
+}

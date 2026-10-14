@@ -25,9 +25,9 @@
     var majorRoadOpacity = ['interpolate', ['linear'], ['zoom'], 10, byClass(1, 0.4), 14, 1];
     var majorSubtleWidth = ['interpolate', ['linear'], ['zoom'], 6, 0, 8, byClass(1.5, 0.5)];
     var palette = [
-        [['background', 'landcover_ice_shelf', 'landcover_glacier', 'landuse_residential', 'road_area_pier', 'road_pier'], { 'background-color': '#18263b', 'fill-color': '#18263b', 'line-color': '#18263b' }],
+        [['background', 'landcover_ice_shelf', 'landcover_glacier', 'landuse_residential', 'road_area_pier', 'road_pier'], { 'background-color': '#202a32', 'fill-color': '#202a32', 'line-color': '#202a32' }],
         [['water', 'waterway'], { 'fill-color': '#000e29', 'line-color': '#000e29' }],
-        [['landcover_wood', 'landuse_park'], { 'fill-color': '#203838', 'fill-pattern': null }],
+        [['landcover_wood', 'landuse_park'], { 'fill-color': '#29382f', 'fill-pattern': null }],
         [['building'], { 'fill-color': '#2c3044', 'fill-outline-color': '#232b3d' }],
         [['highway_path', 'railway_transit', 'railway_minor', 'railway', 'aeroway-taxiway'], { 'line-color': '#2c3550' }],
         [['highway_minor', 'highway_major_subtle', 'highway_motorway_subtle'], { 'line-color': '#404860' }],
@@ -38,7 +38,7 @@
         [['highway_major_inner'], { 'line-color': '#4c576c' }],
         [['highway_motorway_inner', 'aeroway-runway'], { 'line-color': '#5a6274' }],
         [['highway_major_casing', 'highway_motorway_casing', 'aeroway-runway-casing'], { 'line-color': '#101c2e' }],
-        [['highway_name_other', 'highway_name_motorway'], { 'text-color': '#9aa3b5', 'text-halo-color': '#18263b' }],
+        [['highway_name_other', 'highway_name_motorway'], { 'text-color': '#9aa3b5', 'text-halo-color': '#202a32' }],
         [['water_name'], { 'text-color': '#6f7f9c', 'text-halo-color': '#000e29' }],
         [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city', 'place_city_large', 'place_state',
             'place_country_other', 'place_country_minor', 'place_country_major'], { 'text-color': '#e0e0e0', 'text-halo-color': '#101820' }],
@@ -158,6 +158,7 @@
         if (!context) return;
         var feature = context.features.find(function (item) { return item.properties && item.properties.qid === qid; });
         if (!feature) return;
+        if (engine && engine.draw && engine.draw.flyTo) engine.draw.flyTo(feature.geometry.coordinates, 15);
         document.dispatchEvent(new CustomEvent('travelmap:place-selected', {
             detail: { qid: qid, place: feature }
         }));
@@ -203,10 +204,69 @@
             engine: engine.name, destination: shell.dataset.mapDestination || shell.dataset.mapUrl,
             features: [], shell: shell, selectPlace: selectPlace, draw: engine.draw
         };
+        installControls();
         document.dispatchEvent(new CustomEvent('travelmap:ready', {
             detail: { map: engine.map, destination: context.destination, engine: engine.name }
         }));
         loadPlaces(currentRequest);
+    }
+
+    function installControls() {
+        var tools = document.createElement('div');
+        tools.className = 'travelmap-tools';
+        if (engine.name === 'maplibre') {
+            var compass = document.createElement('button');
+            compass.type = 'button';
+            compass.className = 'travelmap-compass';
+            compass.textContent = 'N';
+            compass.setAttribute('aria-label', 'Reset bearing');
+            compass.addEventListener('click', function () { engine.map.easeTo({ bearing: 0 }); });
+            tools.appendChild(compass);
+        }
+        var locate = document.createElement('button');
+        locate.type = 'button';
+        locate.className = 'travelmap-locate';
+        locate.setAttribute('aria-label', 'Locate me');
+        locate.textContent = '⌖';
+        locate.addEventListener('click', function () {
+            var geolocation = window.navigator && window.navigator.geolocation;
+            if (!geolocation) { showStatus(shell, 'Location unavailable.'); locate.disabled = true; return; }
+            geolocation.getCurrentPosition(function (position) {
+                var point = [position.coords.longitude, position.coords.latitude];
+                var dot = document.createElement('span');
+                dot.className = 'travelmap-location-dot';
+                context.draw.markers('location', [{ lngLat: point, element: dot, title: 'Your location' }]);
+                context.draw.flyTo(point, 15);
+            }, function () {
+                showStatus(shell, 'Location unavailable.');
+                locate.disabled = true;
+            }, { enableHighAccuracy: true, timeout: 10000 });
+        });
+        tools.appendChild(locate);
+        if (engine.set3D) {
+            var dimension = document.createElement('button');
+            dimension.type = 'button';
+            dimension.className = 'travelmap-dimension';
+            dimension.textContent = '2D';
+            dimension.setAttribute('aria-label', 'Switch to 2D map');
+            var threeD = true;
+            dimension.addEventListener('click', function () {
+                threeD = !threeD;
+                engine.set3D(threeD);
+                dimension.textContent = threeD ? '2D' : '3D';
+                dimension.setAttribute('aria-label', 'Switch to ' + (threeD ? '2D' : '3D') + ' map');
+            });
+            tools.appendChild(dimension);
+        }
+        ['+', '−'].forEach(function (label, index) {
+            var zoom = document.createElement('button');
+            zoom.type = 'button'; zoom.textContent = label;
+            zoom.setAttribute('aria-label', index ? 'Zoom out' : 'Zoom in');
+            zoom.addEventListener('click', function () { if (index) engine.map.zoomOut(); else engine.map.zoomIn(); });
+            tools.appendChild(zoom);
+        });
+        if (window.TravelMapLayers) tools.appendChild(window.TravelMapLayers.createMenu());
+        context.draw.control('map-tools', tools, 'top-right');
     }
 
     function unavailable(currentRequest) {
@@ -252,6 +312,7 @@
                         center: [longitude, latitude], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing });
                 } catch (error) { reject(error); return; }
                 var drawing = newMaplibreDrawing(map);
+                var threeD = true;
                 var settled = false;
                 var failedTiles = {};
                 var timer = setTimeout(function () { fail(new Error('Map style timed out')); }, loadTimeout);
@@ -270,10 +331,14 @@
                     if (settled) return;
                     settled = true;
                     clearTimeout(timer);
-                    map.addControl(new window.maplibregl.NavigationControl(), 'top-right');
-                    map.addControl(new window.maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+                    map.addControl(new window.maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
                     resolve({ name: 'maplibre', map: map, draw: drawing.draw, clearAll: drawing.clearAll,
-                        reset: function (lat, lon) { drawing.clearAll(); map.resize(); map.jumpTo({ center: [lon, lat], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing }); },
+                        set3D: function (enabled) {
+                            threeD = enabled;
+                            map.setPitch(enabled ? camera.pitch : 0);
+                            map.setTerrain(enabled && map.getSource('terrain-dem') ? { source: 'terrain-dem', exaggeration: 1 } : null);
+                        },
+                        reset: function (lat, lon) { drawing.clearAll(); threeD = true; map.resize(); map.jumpTo({ center: [lon, lat], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing }); if (map.getSource('terrain-dem')) map.setTerrain({ source: 'terrain-dem', exaggeration: 1 }); },
                         destroy: function () { drawing.clearAll(); map.remove(); } });
                 });
 
@@ -284,7 +349,7 @@
                         type: 'raster-dem', tiles: [(url || defaultTerrain).replace(/%7B([zxy])%7D/gi, '{$1}')],
                         tileSize: 512, encoding: 'terrarium', attribution: '© Mapterhorn'
                     });
-                    map.setTerrain({ source: 'terrain-dem', exaggeration: 1 });
+                    if (threeD) map.setTerrain({ source: 'terrain-dem', exaggeration: 1 });
                 }
 
                 // The default style only: each layer takes the properties of its own type (a fill
@@ -307,6 +372,11 @@
                             });
                         });
                     });
+                    (map.getStyle().layers || []).forEach(function (layer) {
+                        if (layer.type === 'symbol' && /^poi(?:_|$)/.test(layer.id) && !/^poi_(?:major|landmark)(?:_|$)/.test(layer.id)) {
+                            map.setLayoutProperty(layer.id, 'visibility', 'none');
+                        }
+                    });
                 }
 
                 // The dark style has no 3D buildings, so draw them from its vector source. A style
@@ -324,7 +394,7 @@
                     map.addLayer({ id: 'buildings-3d', type: 'fill-extrusion', source: name, 'source-layer': 'building', minzoom: 14,
                         paint: {
                             'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 0], 0, buildingLow, 80, buildingHigh],
-                            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 0],
+                            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 8],
                             'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
                             'fill-extrusion-opacity': 0.85
                         } }, below);
@@ -351,6 +421,7 @@
             engine = created;
             context.engine = created.name;
             context.draw = created.draw;
+            installControls();
             addLayers();
             document.dispatchEvent(new CustomEvent('travelmap:ready', {
                 detail: { map: created.map, destination: context.destination, engine: created.name }
@@ -361,7 +432,7 @@
     function newMaplibreDrawing(map) {
         var groups = new Map();
         function group(id) {
-            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null, popup: null });
+            if (!groups.has(id)) groups.set(id, { markers: [], line: null, clusters: null, control: null, popup: null });
             return groups.get(id);
         }
         function clearMarkers(entry) { entry.markers.forEach(function (marker) { marker.remove(); }); entry.markers = []; }
@@ -376,11 +447,26 @@
             entry.line = null;
         }
         function clearControl(entry) { if (entry.control) map.removeControl(entry.control); entry.control = null; }
+        function clearClusters(entry, id) {
+            if (!entry.clusters) return;
+            var prefix = 'draw-clusters-' + id;
+            ['label', 'single-count', 'single', 'count', 'group'].forEach(function (part) {
+                if (map.getLayer(prefix + '-' + part)) map.removeLayer(prefix + '-' + part);
+            });
+            if (map.getSource(prefix)) map.removeSource(prefix);
+            map.off('click', prefix + '-group', entry.clusters.groupClick);
+            map.off('click', prefix + '-single', entry.clusters.singleClick);
+            map.off('idle', entry.clusters.updateList);
+            map.off('moveend', entry.clusters.updateList);
+            if (entry.clusters.control) map.removeControl(entry.clusters.control);
+            entry.clusters = null;
+        }
         function clear(id) {
             var entry = groups.get(id);
             if (!entry) return;
             clearMarkers(entry);
             clearLine(entry, id);
+            clearClusters(entry, id);
             clearControl(entry);
             clearPopup(entry);
             groups.delete(id);
@@ -399,10 +485,110 @@
                 if (map.getSource('draw-line-' + id)) map.removeSource('draw-line-' + id);
             }
         }
+        function drawClusters(id, entry) {
+            if (!entry.clusters || map.getSource('draw-clusters-' + id)) return;
+            var prefix = 'draw-clusters-' + id;
+            var cluster = entry.clusters;
+            map.addSource(prefix, { type: 'geojson', data: { type: 'FeatureCollection', features: cluster.features }, cluster: true, clusterRadius: 50 });
+            map.addLayer({ id: prefix + '-group', type: 'circle', source: prefix, filter: ['has', 'point_count'],
+                paint: { 'circle-color': '#9197a1', 'circle-radius': 22,
+                    'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+            map.addLayer({ id: prefix + '-count', type: 'symbol', source: prefix, filter: ['has', 'point_count'],
+                layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-size': 13 },
+                paint: { 'text-color': '#202a32' } });
+            map.addLayer({ id: prefix + '-single', type: 'circle', source: prefix, filter: ['!', ['has', 'point_count']],
+                paint: { 'circle-color': cluster.style.color || '#a582d4', 'circle-radius': 14, 'circle-opacity': cluster.style.pinElement ? 0 : 1,
+                    'circle-stroke-color': '#fff', 'circle-stroke-width': 2 } });
+            map.addLayer({ id: prefix + '-single-count', type: 'symbol', source: prefix, filter: ['!', ['has', 'point_count']],
+                layout: { 'text-field': ['to-string', ['get', 'writer_count']], 'text-size': 12 },
+                paint: { 'text-color': '#fff', 'text-opacity': cluster.style.pinElement ? 0 : 1 } });
+            if (!cluster.style.pinElement && cluster.style.labelled && cluster.style.labelled.length) {
+                map.addLayer({ id: prefix + '-label', type: 'symbol', source: prefix, minzoom: 15,
+                    filter: ['all', ['!', ['has', 'point_count']], ['in', ['get', 'qid'], ['literal', cluster.style.labelled]]],
+                    layout: { 'text-field': ['get', 'name'], 'text-size': 12, 'text-anchor': 'left', 'text-offset': [2, 0] },
+                    paint: { 'text-color': '#fff', 'text-halo-color': '#202a32', 'text-halo-width': 2 } });
+            }
+        }
         return {
             clearAll: function () { Array.from(groups.keys()).forEach(clear); },
-            restoreLines: function () { groups.forEach(function (entry, id) { drawLine(id, entry); }); },
+            restoreLines: function () { groups.forEach(function (entry, id) { drawLine(id, entry); drawClusters(id, entry); }); },
             draw: {
+                clusters: function (id, features, style, onClick) {
+                    var entry = group(id);
+                    clearClusters(entry, id);
+                    var prefix = 'draw-clusters-' + id;
+                    var cluster = { features: features || [], style: style || {}, control: null };
+                    cluster.groupClick = function (event) {
+                        var feature = event.features && event.features[0];
+                        if (!feature) return;
+                        map.getSource(prefix).getClusterExpansionZoom(feature.properties.cluster_id).then(function (zoom) {
+                            map.flyTo({ center: feature.geometry.coordinates, zoom: zoom });
+                        }).catch(function () { /* cluster changed while zooming */ });
+                    };
+                    cluster.singleClick = function (event) {
+                        var feature = event.features && event.features[0];
+                        if (feature) onClick(feature);
+                    };
+                    cluster.updateList = function () {
+                        if (!cluster.clusterButtons || !map.queryRenderedFeatures || !map.getLayer(prefix + '-group')) return;
+                        if (cluster.style.pinElement) {
+                            var visible = {};
+                            map.queryRenderedFeatures({ layers: [prefix + '-single'] }).forEach(function (feature) { visible[feature.properties.qid] = true; });
+                            (cluster.pins || []).forEach(function (pin) {
+                                pin.element.hidden = !visible[pin.qid];
+                                var label = pin.element.querySelector('.map-pin-label');
+                                if (label) label.hidden = map.getZoom() < 15;
+                            });
+                        }
+                        cluster.clusterButtons.replaceChildren();
+                        var seen = {};
+                        map.queryRenderedFeatures({ layers: [prefix + '-group'] }).forEach(function (feature) {
+                            if (seen[feature.properties.cluster_id]) return;
+                            seen[feature.properties.cluster_id] = true;
+                            var button = document.createElement('button');
+                            button.type = 'button';
+                            button.textContent = 'Zoom to ' + feature.properties.point_count + ' writer places';
+                            button.addEventListener('click', function () { cluster.groupClick({ features: [feature] }); });
+                            cluster.clusterButtons.appendChild(button);
+                        });
+                    };
+                    entry.clusters = cluster;
+                    drawClusters(id, entry);
+                    if (cluster.style.pinElement) {
+                        cluster.pins = cluster.features.map(function (feature) {
+                            var element = cluster.style.pinElement(feature);
+                            element.hidden = true;
+                            element.addEventListener('click', function () { onClick(feature, element); });
+                            var marker = new window.maplibregl.Marker({ element: element, anchor: 'center' }).setLngLat(feature.geometry.coordinates).addTo(map);
+                            entry.markers.push(marker);
+                            return { qid: feature.properties.qid, element: element };
+                        });
+                    }
+                    map.on('click', prefix + '-group', cluster.groupClick);
+                    map.on('click', prefix + '-single', cluster.singleClick);
+                    cluster.list = document.createElement('div');
+                    cluster.list.className = 'travelmap-cluster-list';
+                    cluster.clusterButtons = document.createElement('div');
+                    cluster.list.appendChild(cluster.clusterButtons);
+                    var placeButtons = document.createElement('div');
+                    cluster.features.forEach(function (feature) {
+                        var button = document.createElement('button');
+                        button.type = 'button';
+                        button.textContent = 'Open ' + feature.properties.name;
+                        button.setAttribute('data-qid', feature.properties.qid);
+                        button.addEventListener('click', function () {
+                            map.jumpTo({ center: feature.geometry.coordinates, zoom: Math.max(map.getZoom(), 15) });
+                            onClick(feature);
+                        });
+                        placeButtons.appendChild(button);
+                    });
+                    cluster.list.appendChild(placeButtons);
+                    cluster.control = { onAdd: function () { return cluster.list; }, onRemove: function () { cluster.list.remove(); } };
+                    map.addControl(cluster.control, 'bottom-left');
+                    map.on('idle', cluster.updateList);
+                    map.on('moveend', cluster.updateList);
+                    cluster.updateList();
+                },
                 markers: function (id, items) {
                     var entry = group(id);
                     clearMarkers(entry);
@@ -471,7 +657,22 @@
             var loading = data.loading === true;
             if (engine && context.features.length) removeLayers();
             context.features = Array.isArray(data.features) ? data.features : [];
+            context.itineraries = Array.isArray(data.itineraries) ? data.itineraries : [];
+            var fullMap = shell.querySelector('.map-action');
+            var city = context.features.find(function (feature) {
+                return feature.properties.photo_url && feature.properties.name.toLowerCase() === String(shell.dataset.mapDestination).replace(/-[^-]*$/, '').replace(/-/g, ' ');
+            });
+            if (fullMap && city && !fullMap.querySelector('.map-action-photo')) {
+                var thumbnail = document.createElement('img'); thumbnail.className = 'map-action-photo';
+                thumbnail.src = city.properties.photo_url; thumbnail.alt = ''; thumbnail.loading = 'lazy';
+                var icon = fullMap.querySelector('.bi-map');
+                if (icon) {
+                    thumbnail.addEventListener('error', function () { thumbnail.replaceWith(icon); });
+                    icon.replaceWith(thumbnail);
+                }
+            }
             if (engine) addLayers();
+            document.dispatchEvent(new CustomEvent('travelmap:places-loaded', { detail: { features: context.features } }));
             showStatus(shell, !engine ? 'Map unavailable.' :
                 loading ? 'Loading more places\u2026' :
                 data.complete === false ? 'Some map sources are unavailable.' : '');

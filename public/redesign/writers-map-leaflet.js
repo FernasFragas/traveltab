@@ -20,8 +20,8 @@
     // Resolves to { name, map, draw, reset(lat, lon, shell), clearAll(), destroy() }.
     function create(canvas, shell, latitude, longitude) {
         return loadLeaflet().then(function () {
-            var map = window.L.map(canvas, { scrollWheelZoom: false, maxZoom: maxZoom }).setView([latitude, longitude], startZoom);
-            window.L.control.scale({ imperial: false }).addTo(map);
+            var map = window.L.map(canvas, { scrollWheelZoom: false, maxZoom: maxZoom, zoomControl: false }).setView([latitude, longitude], startZoom);
+            window.L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
             var tileLayer = null;
             var drawing = newDrawing(map);
             setTiles();
@@ -67,7 +67,7 @@
         var positions = { 'top-left': 'topleft', 'top-right': 'topright', 'bottom-left': 'bottomleft', 'bottom-right': 'bottomright' };
 
         function group(id) {
-            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null, popup: null });
+            if (!groups.has(id)) groups.set(id, { markers: [], line: null, control: null, popup: null, labelUpdate: null });
             return groups.get(id);
         }
 
@@ -96,6 +96,7 @@
             var entry = groups.get(id);
             if (!entry) return;
             clearMarkers(entry);
+            if (entry.labelUpdate) map.off('zoomend', entry.labelUpdate);
             clearLine(entry);
             clearControl(entry);
             clearPopup(entry);
@@ -105,6 +106,33 @@
         return {
             clearAll: function () { Array.from(groups.keys()).forEach(clear); },
             draw: {
+                clusters: function (id, features, style, onClick) {
+                    var entry = group(id);
+                    if (entry.labelUpdate) map.off('zoomend', entry.labelUpdate);
+                    var labels = [];
+                    this.markers(id, (features || []).map(function (feature) {
+                        var pin = document.createElement('button');
+                        pin.type = 'button';
+                        pin.className = 'map-pin map-pin-writer';
+                        pin.setAttribute('data-qid', feature.properties.qid);
+                        var quill = document.createElement('i'); quill.className = 'bi bi-feather'; quill.setAttribute('aria-hidden', 'true'); pin.appendChild(quill);
+                        if (style && style.labelled && style.labelled.indexOf(feature.properties.qid) !== -1) {
+                            var label = document.createElement('span');
+                            label.className = 'map-pin-label';
+                            label.textContent = feature.properties.name;
+                            label.setAttribute('aria-hidden', 'true');
+                            pin.appendChild(label);
+                            labels.push(label);
+                        }
+                        return { lngLat: feature.geometry.coordinates, element: pin, title: feature.properties.name,
+                            onClick: function () { onClick(feature, pin); }, z: 1000 };
+                    }));
+                    entry.labelUpdate = function () {
+                        labels.forEach(function (label) { label.hidden = map.getZoom() < 15; });
+                    };
+                    map.on('zoomend', entry.labelUpdate);
+                    entry.labelUpdate();
+                },
                 markers: function (id, items) {
                     var entry = group(id);
                     clearMarkers(entry);

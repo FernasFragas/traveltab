@@ -32,7 +32,7 @@ function planRoots(body) {
   }
   assert.equal(stack.length, 0, 'fragment must close every root');
   assert.equal(roots.length, 3, 'plan response must contain exactly three sibling roots');
-  for (const [index, id] of ['trip-card', 'itinerary', 'stays'].entries()) {
+  for (const [index, id] of ['trip-card', 'itinerary-results', 'stays'].entries()) {
     assert.match(roots[index], new RegExp(`\\bid="${id}"`));
     if (index) assert.match(roots[index], /\bhx-swap-oob="outerHTML"/);
     else assert.doesNotMatch(roots[index], /\bhx-swap-oob=/);
@@ -95,7 +95,7 @@ for (const [city, why] of [['Coimbra', 'no photo for an unlisted city'], ['Nopho
   assert.equal(heroOf(body), undefined, why);
   assert.match(body, /Photo unavailable/);
   assert.doesNotMatch(body, /destination-photo-credit/);
-  assert.match(body, /class="weather-metrics"/, `${why}: weather stays usable`);
+  assert.match(body, /class="[^"]*\bweather-metrics\b/, `${why}: weather stays usable`);
   assert.match(body, /id="trip-card"/, `${why}: planning stays usable`);
 }
 const broken = (await request('/process-form/?city_name=Brokenimage', 200, {headers})).body;

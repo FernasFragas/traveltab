@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../../../public/redesign/map-layers.js', import.meta.url), 'utf8');
 const NAMES = ['notable', 'writers', 'plan', 'itineraries'];
-const LABELS = ["Notable places", "Writers' pins", 'Your day plan', "Writers' itineraries"];
+const LABELS = ["Notable places", "Writers' pins", 'Your plan', "Writers' itineraries"];
 
 test('upgrades the static chips into buttons with aria-pressed and keeps labels', () => {
   const app = browser();
@@ -35,6 +35,18 @@ test('a chip toggles only its own layer', () => {
   app.chip('writers').click();
   assert.deepEqual(app.calls.at(-1), ['writers', true]);
   assert.equal(app.chip('writers').attrs['aria-pressed'], 'true');
+});
+
+test('layers menu toggles the same flags and stays in sync with chips', () => {
+  const app = browser({ registered: NAMES });
+  app.run();
+  const menu = app.window.TravelMapLayers.createMenu();
+  const writers = menu.children.find(item => item.className.includes('writers-map-layer-writers'));
+  writers.click();
+  assert.deepEqual(app.calls.at(-1), ['writers', false]);
+  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
+  app.chip('writers').click();
+  assert.equal(writers.attrs['aria-pressed'], 'true');
 });
 
 test('all chips off is fine and never throws', () => {
@@ -102,9 +114,10 @@ function element(tagName) {
     setAttribute(k, v) { this.attrs[k] = String(v); },
     getAttribute(k) { return this.attrs[k] ?? null; },
     addEventListener(n, cb) { this.listeners[n] = cb; },
+    appendChild(child) { this.children.push(child); },
     click() { if (!this.disabled) this.listeners.click?.({ currentTarget: this }); },
     replaceChild(next, old) { this.children[this.children.indexOf(old)] = next; },
-    querySelectorAll(sel) { return sel === '.writers-map-layer' ? this.children.slice() : []; }
+    querySelectorAll(sel) { return sel === '.writers-map-layer' ? this.children.filter(child => child.className.includes('writers-map-layer')) : []; }
   };
 }
 
@@ -134,7 +147,7 @@ function browser({ registered = NAMES, stored = null, blockedStorage = false } =
   const context = vm.createContext({ document, window, sessionStorage, JSON });
   const chips = () => slot.children;
   return {
-    document, calls, store, registered: reg, chips,
+    document, window, calls, store, registered: reg, chips,
     chip: n => chips().find(c => c.className.includes('writers-map-layer-' + n)),
     run: () => vm.runInContext(source, context)
   };

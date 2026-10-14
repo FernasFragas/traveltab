@@ -1,0 +1,1032 @@
+{
+  "browser": "Chrome/155.0.8059.40",
+  "generated": "2026-10-14T20:39:41.881Z",
+  "axe": null,
+  "results": [
+    {
+      "id": "contrast.text",
+      "status": "pass",
+      "detail": "397 text/control-value pairs measured across 4 states; 0 distinct failing (see findings)"
+    },
+    {
+      "id": "contrast.ui-components-and-icons",
+      "status": "pass",
+      "detail": "150 icon/component pairs; 0 distinct failing (see findings)",
+      "advisory": [
+        ".itinerary-action 1.27:1 (border 1.27, fill 1.1)",
+        ".itinerary-directions 1.4:1 (border 1.4, fill 1)",
+        ".itinerary-day-summary 1.09:1 (border 0, fill 1.09)",
+        ".itinerary-day-marker 1.28:1 (border 1.28, fill 1.01)",
+        ".itinerary-chip 1.15:1 (border 0, fill 1.15)",
+        ".itinerary-stop-number 1.2:1 (border 1.16, fill 1.2)"
+      ]
+    },
+    {
+      "id": "structure.headings-lang-ids-refs",
+      "status": "pass",
+      "detail": "4 states: one h1, no skipped levels, lang=en, no duplicate ids, no dangling ARIA references, no positive tabindex"
+    },
+    {
+      "id": "js-exceptions",
+      "status": "pass",
+      "detail": "no uncaught JavaScript exceptions during the audit"
+    }
+  ],
+  "findings": [],
+  "shots": [
+    "lisbon-planned-5d-open@375.png",
+    "lisbon-planned-5d-open@1440.png"
+  ],
+  "contrastLowest": [
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-summary",
+      "required": 3,
+      "ratio": 1.09,
+      "border": 0,
+      "fill": 1.09,
+      "fg": [
+        248,
+        243,
+        234
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-summary",
+      "required": 3,
+      "ratio": 1.09,
+      "border": 0,
+      "fill": 1.09,
+      "fg": [
+        248,
+        243,
+        234
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-chip",
+      "required": 3,
+      "ratio": 1.15,
+      "border": 0,
+      "fill": 1.15,
+      "fg": [
+        234,
+        228,
+        213
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-chip",
+      "required": 3,
+      "ratio": 1.15,
+      "border": 0,
+      "fill": 1.15,
+      "fg": [
+        234,
+        228,
+        213
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-stop-number",
+      "required": 3,
+      "ratio": 1.2,
+      "border": 1.16,
+      "fill": 1.2,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        238,
+        232,
+        221
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-stop-number",
+      "required": 3,
+      "ratio": 1.2,
+      "border": 1.16,
+      "fill": 1.2,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        238,
+        232,
+        221
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-action",
+      "required": 3,
+      "ratio": 1.27,
+      "border": 1.27,
+      "fill": 1.1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-action",
+      "required": 3,
+      "ratio": 1.27,
+      "border": 1.27,
+      "fill": 1.1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-marker",
+      "required": 3,
+      "ratio": 1.28,
+      "border": 1.28,
+      "fill": 1.01,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-marker",
+      "required": 3,
+      "ratio": 1.28,
+      "border": 1.28,
+      "fill": 1.01,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-directions",
+      "required": 3,
+      "ratio": 1.4,
+      "border": 1.4,
+      "fill": 1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-directions",
+      "required": 3,
+      "ratio": 1.4,
+      "border": 1.4,
+      "fill": 1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 3.47,
+      "border": 3.47,
+      "fill": 1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 3.47,
+      "border": 3.47,
+      "fill": 1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".trip-input",
+      "required": 3,
+      "ratio": 3.47,
+      "border": 3.47,
+      "fill": 1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".trip-select",
+      "required": 3,
+      "ratio": 3.47,
+      "border": 3.47,
+      "fill": 1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "a",
+      "text": "Overview",
+      "size": 12,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.53,
+      "fg": [
+        167,
+        65,
+        39
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "a",
+      "text": "Itinerary",
+      "size": 12,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.53,
+      "fg": [
+        167,
+        65,
+        39
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "text",
+      "el": "p",
+      "text": "Made by Fernando Fragateiro",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "text",
+      "el": "p.tt-credits",
+      "text": "Places: Wikipedia & Wikidata · City guides: Wikivoyage (CC B",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "p.itinerary-subtitle",
+      "text": "Day-by-day stops and walking directions.",
+      "size": 13,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span.itinerary-day-date",
+      "text": "· Thu, 15 Oct",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span.itinerary-day-condition",
+      "text": "Mostly clear",
+      "size": 13,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span",
+      "text": "3.1 km walk",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span.itinerary-day-date",
+      "text": "· Fri, 16 Oct",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span.itinerary-day-condition",
+      "text": "Rain",
+      "size": 13,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span",
+      "text": "4.1 km walk",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "span.itinerary-day-date",
+      "text": "· Sat, 17 Oct",
+      "size": 12,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 5.6,
+      "fg": [
+        103,
+        96,
+        88
+      ],
+      "alpha": 1,
+      "bgLight": [
+        248,
+        243,
+        234
+      ],
+      "bgDark": [
+        248,
+        243,
+        234
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    }
+  ],
+  "pairCount": 547,
+  "states": [
+    "lisbon-initial@375",
+    "lisbon-planned-5d-open@375",
+    "lisbon-initial@1440",
+    "lisbon-planned-5d-open@1440"
+  ],
+  "axResults": {},
+  "focusResults": {},
+  "errors": []
+}

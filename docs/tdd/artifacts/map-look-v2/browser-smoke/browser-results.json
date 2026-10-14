@@ -1,0 +1,404 @@
+{
+  "browser": "Chrome/155.0.8059.40",
+  "htmx": "2.0.11",
+  "scenario": "default",
+  "base": "http://127.0.0.1:18442",
+  "results": [
+    {
+      "width": 375,
+      "height": 812,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 375,
+        "viewport": 375,
+        "map": {
+          "x": 14,
+          "y": 653.578125,
+          "width": 347,
+          "height": 196,
+          "top": 653.578125,
+          "right": 361,
+          "bottom": 849.578125,
+          "left": 14
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 375,
+        "viewport": 375,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 14,
+          "y": 642.578125,
+          "width": 347,
+          "height": 510.578125,
+          "top": 642.578125,
+          "right": 361,
+          "bottom": 1153.15625,
+          "left": 14
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 4,
+        "note": "",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 768,
+        "viewport": 768,
+        "map": {
+          "x": 33,
+          "y": 527,
+          "width": 702,
+          "height": 242,
+          "top": 527,
+          "right": 735,
+          "bottom": 769,
+          "left": 33
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 768,
+        "viewport": 768,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 33,
+          "y": 502,
+          "width": 702,
+          "height": 269.6875,
+          "top": 502,
+          "right": 735,
+          "bottom": 771.6875,
+          "left": 33
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 4,
+        "note": "",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    },
+    {
+      "width": 1100,
+      "height": 1000,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1085,
+        "viewport": 1100,
+        "map": {
+          "x": 49,
+          "y": 427,
+          "width": 987,
+          "height": 242,
+          "top": 427,
+          "right": 1036,
+          "bottom": 669,
+          "left": 49
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1085,
+        "viewport": 1100,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 49,
+          "y": 427,
+          "width": 987,
+          "height": 269.6875,
+          "top": 427,
+          "right": 1036,
+          "bottom": 696.6875,
+          "left": 49
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 4,
+        "note": "",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1425,
+        "viewport": 1440,
+        "map": {
+          "x": 147.5,
+          "y": 435,
+          "width": 1130,
+          "height": 242,
+          "top": 435,
+          "right": 1277.5,
+          "bottom": 677,
+          "left": 147.5
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 6,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1425,
+        "viewport": 1440,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 147.5,
+          "y": 435,
+          "width": 1130,
+          "height": 269.6875,
+          "top": 435,
+          "right": 1277.5,
+          "bottom": 704.6875,
+          "left": 147.5
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 4,
+        "note": "",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    }
+  ],
+  "errors": [],
+  "failedResources": [
+    "net::ERR_INTERNET_DISCONNECTED"
+  ]
+}

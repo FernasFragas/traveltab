@@ -1,0 +1,2834 @@
+{
+  "browser": "Chrome/155.0.8059.40",
+  "generated": "2026-10-14T20:38:03.314Z",
+  "axe": null,
+  "results": [
+    {
+      "id": "contrast.text",
+      "status": "pass",
+      "detail": "3145 text/control-value pairs measured across 40 states; 0 distinct failing (see findings)"
+    },
+    {
+      "id": "contrast.ui-components-and-icons",
+      "status": "pass",
+      "detail": "1072 icon/component pairs; 0 distinct failing (see findings)",
+      "advisory": [
+        ".itinerary-action 1.27:1 (border 1.27, fill 1.1)",
+        ".itinerary-directions 1.4:1 (border 1.4, fill 1)",
+        ".itinerary-day-summary 1.09:1 (border 0, fill 1.09)",
+        ".itinerary-day-marker 1.28:1 (border 1.28, fill 1.01)",
+        ".itinerary-chip 1.15:1 (border 0, fill 1.15)",
+        ".itinerary-stop-number 1.2:1 (border 1.16, fill 1.2)"
+      ]
+    },
+    {
+      "id": "structure.headings-lang-ids-refs",
+      "status": "fail",
+      "detail": "lisbon-initial@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg | porto-photo@375: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/porto.png | brokenimage-failed@375: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/missing.png | paris-texas@375: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/paris-texas.png | search-error@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg | submit-disabled@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg | videos-10-expanded@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg | video-activated@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "id": "landmarks-and-names@375",
+      "status": "pass",
+      "detail": "9 landmarks (banner:(unnamed), main:(unnamed), contentinfo:(unnamed), navigation:Quick section navigation, region:Destination and current weather, region:Your itinerary, navigation:Creator links, search:(unnamed), form:(unnamed)); every link, button, field, image and frame has a name"
+    },
+    {
+      "id": "landmarks-and-names@1440",
+      "status": "pass",
+      "detail": "9 landmarks (banner:(unnamed), main:(unnamed), contentinfo:(unnamed), navigation:Main navigation, region:Destination and current weather, region:Your itinerary, navigation:Creator links, search:(unnamed), form:(unnamed)); every link, button, field, image and frame has a name"
+    },
+    {
+      "id": "focus-order-matches-visual@375",
+      "status": "pass",
+      "detail": "no tab stop moves backwards up the page without moving to a later column"
+    },
+    {
+      "id": "focus-visible@375",
+      "status": "pass",
+      "detail": "22 tab stops (0 extra date-field segments): skip link first, none covered, every one shows a focus change of at least 3:1 (weakest 5.61:1)"
+    },
+    {
+      "id": "focus-order-matches-visual@1440",
+      "status": "pass",
+      "detail": "no tab stop moves backwards up the page without moving to a later column"
+    },
+    {
+      "id": "focus-visible@1440",
+      "status": "pass",
+      "detail": "22 tab stops (0 extra date-field segments): skip link first, none covered, every one shows a focus change of at least 3:1 (weakest 5.61:1)"
+    },
+    {
+      "id": "skip-link",
+      "status": "pass",
+      "detail": "first Tab lands on it at 8..53px from the top, text contrast 15.45:1; Enter focuses #overview with its top at 77px"
+    },
+    {
+      "id": "accordion-keyboard",
+      "status": "pass",
+      "detail": "Enter opens/closes, Space opens/closes ([true,false,true,false]); day 1 open by default, days independent ([true,false,false]); 3 summaries exposed with expanded=[true,false,false]; names [\"Day 1 · Thu, 15 Oct 23° Mostly\",\"Day 2 · Fri, 16 Oct 19° Rain R\",\"Day 3 · Sat, 17 Oct 21° Overca\"]"
+    },
+    {
+      "id": "video-expand-keyboard",
+      "status": "pass",
+      "detail": "Enter expands (aria-expanded=true, \"Show fewer videos\"), Space collapses (aria-expanded=false, \"View all videos\")"
+    },
+    {
+      "id": "live-regions",
+      "status": "pass",
+      "detail": "announcements observed in order: [\"Destination updated. Your overview is ready.\",\"Planning your trip…\",\"Your itinerary has been updated.\",\"Planning your trip…\",\"We could not plan your trip right now. Please try again in a moment.\",\"\",\"We could not load that destination. Check the city name and try again.\"]; regions [\"span#destination-search-spinner.tt-search-spinner[status]\",\"p#destination-search-error.tt-error[alert]\",\"p#destination-search-status.tt-visually-hidden[status]\",\"output#trip-end-value.trip-end[polite]\",\"span#trip-spinner.trip-spinner[status]\",\"p.trip-error[alert]\",\"p#trip-status.tt-visually-hidden[status]\"]",
+      "observed": [
+        [
+          "destination-search-status",
+          "Destination updated. Your overview is ready."
+        ],
+        [
+          "trip-status",
+          "Planning your trip…"
+        ],
+        [
+          "trip-status",
+          "Your itinerary has been updated."
+        ],
+        [
+          "trip-status",
+          "Planning your trip…"
+        ],
+        [
+          "inserted-alert",
+          "We could not plan your trip right now. Please try again in a moment."
+        ],
+        [
+          "destination-search-status",
+          ""
+        ],
+        [
+          "destination-search-error",
+          "We could not load that destination. Check the city name and try again."
+        ]
+      ]
+    },
+    {
+      "id": "reduced-motion",
+      "status": "pass",
+      "detail": "normal: longest transition 0.16s, longest animation 0.8s, scroll-behavior smooth; with prefers-reduced-motion: reduce: transition 0.00001s, animation 0.00001s, scroll-behavior auto"
+    },
+    {
+      "id": "zoom-200-and-reflow",
+      "status": "pass",
+      "detail": "no horizontal scroll or clipped text at 640px (1280px at 200%: scrollWidth 625), 720px (1440px at 200%: scrollWidth 705), 360px (1440px at 400% (360 CSS px): scrollWidth 345), 320px (1280px at 400% (WCAG 1.4.10, 320 CSS px): scrollWidth 305), 188px (375px at 200% (188 CSS px, below the 320px WCAG 1.4.10 reflow width: informational): scrollWidth 210)",
+      "rows": [
+        {
+          "name": "1280px at 200%",
+          "cssWidth": 640,
+          "scrollWidth": 625,
+          "innerWidth": 640,
+          "clipped": [],
+          "dpr": 2,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "1440px at 200%",
+          "cssWidth": 720,
+          "scrollWidth": 705,
+          "innerWidth": 720,
+          "clipped": [],
+          "dpr": 2,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "1440px at 400% (360 CSS px)",
+          "cssWidth": 360,
+          "scrollWidth": 345,
+          "innerWidth": 360,
+          "clipped": [],
+          "dpr": 4,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "1280px at 400% (WCAG 1.4.10, 320 CSS px)",
+          "cssWidth": 320,
+          "scrollWidth": 305,
+          "innerWidth": 320,
+          "clipped": [],
+          "dpr": 4,
+          "submitVisible": true,
+          "overflowing": []
+        },
+        {
+          "name": "375px at 200% (188 CSS px, below the 320px WCAG 1.4.10 reflow width: informational)",
+          "cssWidth": 188,
+          "scrollWidth": 210,
+          "innerWidth": 188,
+          "clipped": [],
+          "dpr": 2,
+          "submitVisible": true,
+          "overflowing": [
+            "a.tt-brand right=210",
+            "span.tt-wordmark right=210",
+            "strong. right=210",
+            "small. right=210",
+            "span.itinerary-stop-kind right=193"
+          ]
+        }
+      ],
+      "informational": [
+        "375px at 200% (188 CSS px, below the 320px WCAG 1.4.10 reflow width: informational): scrollWidth 210 vs 188 (a.tt-brand right=210, span.tt-wordmark right=210, strong. right=210, small. right=210, span.itinerary-stop-kind right=193)"
+      ]
+    },
+    {
+      "id": "touch-targets",
+      "status": "pass",
+      "detail": "{\"375\":29,\"1440\":29} interactive targets measured: every control is at least 44x44px except 2 photo-credit links (at least 24px, spacing-exempt below that) and 0 video-title sizes that duplicate 44px controls; 0 inline sentence links are under 24px and exempt (WCAG 2.5.8)",
+      "inlineUnder24": [],
+      "creditsUnder44": [
+        "375: \"Photo: Wikimedia Commons\" 48.9x37",
+        "1440: \"Photo: Wikimedia Commons\" 132.9x12"
+      ],
+      "videoTitleUnder24": []
+    },
+    {
+      "id": "hover-states",
+      "status": "pass",
+      "detail": "14 hovered controls: lowest text ratio 5.5:1 (photo credits are measured on the overlay in the pixel pass)",
+      "rows": [
+        {
+          "selector": ".tt-header-navigation a",
+          "hover": true,
+          "ratio": 5.5,
+          "color": [
+            167,
+            65,
+            39
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".tt-section-navigation a",
+          "missing": true
+        },
+        {
+          "selector": ".tt-brand",
+          "hover": true,
+          "ratio": 14.07,
+          "color": [
+            37,
+            35,
+            31
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".trip-submit",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            254,
+            253,
+            251
+          ],
+          "bg": [
+            135,
+            50,
+            31
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".itinerary-action",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".itinerary-directions",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".itinerary-day-summary",
+          "hover": true,
+          "ratio": 14.19,
+          "color": [
+            37,
+            35,
+            31
+          ],
+          "bg": [
+            248,
+            243,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".stay-prices",
+          "hover": true,
+          "ratio": 8.32,
+          "color": [
+            255,
+            254,
+            254
+          ],
+          "bg": [
+            135,
+            50,
+            31
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".stay-website",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".video-title",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".video-watch",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".map-action",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".tt-footer-links a",
+          "hover": true,
+          "ratio": 5.5,
+          "color": [
+            167,
+            65,
+            39
+          ],
+          "bg": [
+            247,
+            242,
+            234
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".guide-attribution a",
+          "hover": true,
+          "ratio": 8.24,
+          "color": [
+            135,
+            50,
+            31
+          ],
+          "bg": [
+            254,
+            253,
+            251
+          ],
+          "overPhoto": false
+        },
+        {
+          "selector": ".destination-photo-credit a",
+          "hover": true,
+          "ratio": 8.45,
+          "color": [
+            254,
+            253,
+            251
+          ],
+          "bg": [
+            79,
+            75.6,
+            70.79999999999998
+          ],
+          "overPhoto": true
+        }
+      ]
+    },
+    {
+      "id": "current-section-not-colour-only",
+      "status": "pass",
+      "detail": "2 navigation bars: the current section also differs by header-navigation decoration; bottom-navigation borderBottom",
+      "rows": [
+        {
+          "width": 1440,
+          "nav": ".tt-header-navigation",
+          "nonColourCues": [
+            "decoration"
+          ],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "underline",
+            "weight": "500",
+            "borderBottom": "none",
+            "borderTop": "none"
+          },
+          "other": {
+            "color": "rgb(36, 34, 31)",
+            "decoration": "none",
+            "weight": "500",
+            "borderBottom": "none",
+            "borderTop": "none"
+          }
+        },
+        {
+          "width": 375,
+          "nav": ".tt-bottom-navigation",
+          "nonColourCues": [
+            "borderBottom"
+          ],
+          "current": {
+            "color": "rgb(166, 64, 39)",
+            "decoration": "none",
+            "weight": "400",
+            "borderBottom": "3px solid rgb(166, 76, 53)",
+            "borderTop": "2px solid rgba(0, 0, 0, 0)"
+          },
+          "other": {
+            "color": "rgb(102, 97, 88)",
+            "decoration": "none",
+            "weight": "400",
+            "borderBottom": "3px solid rgba(0, 0, 0, 0)",
+            "borderTop": "2px solid rgba(0, 0, 0, 0)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-tabs-keyboard",
+      "status": "pass",
+      "detail": "375px: Enter activates Itinerary (hash=#itinerary, itinerary visible=true, Overview hidden=true, aria-current=location)"
+    },
+    {
+      "id": "end-date-output-named",
+      "status": "pass",
+      "detail": "the \"Ends\" read-only date is exposed as \"status\" named \"Ends\" (aria-labelledby=trip-end-label)"
+    },
+    {
+      "id": "focus-after-plan-error",
+      "status": "pass",
+      "detail": "after a keyboard-submitted failing plan focus is on <button> (inside the form card: true); the next Tab reaches a.tt-brand \"TravelTabByPatronFragas\" (inside #itinerary: false)"
+    },
+    {
+      "id": "text-spacing",
+      "status": "pass",
+      "detail": "with line-height 1.5, letter-spacing .12em, word-spacing .16em and 2em paragraph spacing: no horizontal scroll or clipped text ([[375,375],[1440,1425]])"
+    },
+    {
+      "id": "writers-map-maplibre@375",
+      "status": "pass",
+      "detail": "4 named toggle chips, 17 named focusable pins, no unnamed controls or overflow"
+    },
+    {
+      "id": "writers-map-popup-maplibre@375",
+      "status": "pass",
+      "detail": "named dialog popup, focus on Details, no unnamed controls, Escape closes and returns focus to the pin"
+    },
+    {
+      "id": "writers-map-maplibre@1440",
+      "status": "pass",
+      "detail": "4 named toggle chips, 17 named focusable pins, no unnamed controls or overflow"
+    },
+    {
+      "id": "writers-map-popup-maplibre@1440",
+      "status": "pass",
+      "detail": "named dialog popup, focus on Details, no unnamed controls, Escape closes and returns focus to the pin"
+    },
+    {
+      "id": "writers-map-leaflet@375",
+      "status": "pass",
+      "detail": "4 named toggle chips, 17 named focusable pins, no unnamed controls or overflow"
+    },
+    {
+      "id": "writers-map-popup-leaflet@375",
+      "status": "pass",
+      "detail": "named dialog popup, focus on Details, no unnamed controls, Escape closes and returns focus to the pin"
+    },
+    {
+      "id": "writers-map-leaflet@1440",
+      "status": "pass",
+      "detail": "4 named toggle chips, 17 named focusable pins, no unnamed controls or overflow"
+    },
+    {
+      "id": "writers-map-popup-leaflet@1440",
+      "status": "pass",
+      "detail": "named dialog popup, focus on Details, no unnamed controls, Escape closes and returns focus to the pin"
+    },
+    {
+      "id": "js-exceptions",
+      "status": "pass",
+      "detail": "no uncaught JavaScript exceptions during the audit"
+    }
+  ],
+  "findings": [
+    {
+      "area": "structure",
+      "detail": "lisbon-initial@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "porto-photo@375: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/porto.png"
+    },
+    {
+      "area": "structure",
+      "detail": "brokenimage-failed@375: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/missing.png"
+    },
+    {
+      "area": "structure",
+      "detail": "paris-texas@375: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/paris-texas.png"
+    },
+    {
+      "area": "structure",
+      "detail": "search-error@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "submit-disabled@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "videos-10-expanded@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "video-activated@375: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "lisbon-initial@1440: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "porto-photo@1440: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/porto.png"
+    },
+    {
+      "area": "structure",
+      "detail": "brokenimage-failed@1440: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/missing.png"
+    },
+    {
+      "area": "structure",
+      "detail": "paris-texas@1440: visible img with empty alt outside a button http://127.0.0.1:56033/fixture-photos/paris-texas.png"
+    },
+    {
+      "area": "structure",
+      "detail": "search-error@1440: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "submit-disabled@1440: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "videos-10-expanded@1440: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    },
+    {
+      "area": "structure",
+      "detail": "video-activated@1440: visible img with empty alt outside a button /images/destinations/lisbon-alfama.jpg"
+    }
+  ],
+  "shots": [
+    "lisbon-planned-5d-open@375.png",
+    "coimbra-no-photo-no-guide@375.png",
+    "brokenimage-failed@375.png",
+    "plan-error-500@375.png",
+    "lisbon-planned-5d-open@1440.png",
+    "coimbra-no-photo-no-guide@1440.png",
+    "brokenimage-failed@1440.png",
+    "plan-error-500@1440.png",
+    "worst-case-white-photos@375.png",
+    "worst-case-white-photos@1440.png",
+    "focus-375-focus-skip-link.png",
+    "focus-1440-focus-skip-link.png",
+    "zoom-200-1440.png",
+    "reflow-320.png",
+    "text-spacing-375.png"
+  ],
+  "contrastLowest": [
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-summary",
+      "required": 3,
+      "ratio": 1.09,
+      "border": 0,
+      "fill": 1.09,
+      "fg": [
+        248,
+        243,
+        234
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-summary",
+      "required": 3,
+      "ratio": 1.09,
+      "border": 0,
+      "fill": 1.09,
+      "fg": [
+        248,
+        243,
+        234
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-chip",
+      "required": 3,
+      "ratio": 1.15,
+      "border": 0,
+      "fill": 1.15,
+      "fg": [
+        234,
+        228,
+        213
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-chip",
+      "required": 3,
+      "ratio": 1.15,
+      "border": 0,
+      "fill": 1.15,
+      "fg": [
+        234,
+        228,
+        213
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-stop-number",
+      "required": 3,
+      "ratio": 1.2,
+      "border": 1.16,
+      "fill": 1.2,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        238,
+        232,
+        221
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-stop-number",
+      "required": 3,
+      "ratio": 1.2,
+      "border": 1.16,
+      "fill": 1.2,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        238,
+        232,
+        221
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-action",
+      "required": 3,
+      "ratio": 1.27,
+      "border": 1.27,
+      "fill": 1.1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-action",
+      "required": 3,
+      "ratio": 1.27,
+      "border": 1.27,
+      "fill": 1.1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-marker",
+      "required": 3,
+      "ratio": 1.28,
+      "border": 1.28,
+      "fill": 1.01,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-day-marker",
+      "required": 3,
+      "ratio": 1.28,
+      "border": 1.28,
+      "fill": 1.01,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        248,
+        243,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-labelled",
+      "el": ".itinerary-directions",
+      "required": 3,
+      "ratio": 1.4,
+      "border": 1.4,
+      "fill": 1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-labelled",
+      "el": ".itinerary-directions",
+      "required": 3,
+      "ratio": 1.4,
+      "border": 1.4,
+      "fill": 1,
+      "fg": [
+        222,
+        216,
+        204
+      ],
+      "bgLight": [
+        254,
+        253,
+        251
+      ]
+    },
+    {
+      "label": "coimbra-no-photo-no-guide@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "p.destination-photo-fallback",
+      "text": "Photo unavailable",
+      "size": 14,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 4.74,
+      "fg": [
+        254,
+        253,
+        251
+      ],
+      "alpha": 1,
+      "bgLight": [
+        121,
+        113,
+        100
+      ],
+      "bgDark": [
+        99,
+        93,
+        83
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "brokenimage-failed@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "p.destination-photo-fallback",
+      "text": "Photo unavailable",
+      "size": 14,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 4.74,
+      "fg": [
+        254,
+        253,
+        251
+      ],
+      "alpha": 1,
+      "bgLight": [
+        121,
+        113,
+        100
+      ],
+      "bgDark": [
+        99,
+        93,
+        83
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "photoerror@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "p.destination-photo-fallback",
+      "text": "Photo unavailable",
+      "size": 14,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 4.74,
+      "fg": [
+        254,
+        253,
+        251
+      ],
+      "alpha": 1,
+      "bgLight": [
+        121,
+        113,
+        100
+      ],
+      "bgDark": [
+        99,
+        93,
+        83
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "longguide@1440",
+      "width": 1440,
+      "kind": "text",
+      "el": "p.destination-photo-fallback",
+      "text": "Photo unavailable",
+      "size": 14,
+      "weight": 400,
+      "required": 4.5,
+      "ratio": 4.74,
+      "fg": [
+        254,
+        253,
+        251
+      ],
+      "alpha": 1,
+      "bgLight": [
+        121,
+        113,
+        100
+      ],
+      "bgDark": [
+        99,
+        93,
+        83
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "plan-error-500@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "submit-disabled@375",
+      "width": 375,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-planned-5d-open@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "plan-error-500@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "submit-disabled@1440",
+      "width": 1440,
+      "kind": "component-field",
+      "el": ".tt-search",
+      "required": 3,
+      "ratio": 3.17,
+      "border": 3.17,
+      "fill": 1.1,
+      "fg": [
+        142,
+        136,
+        122
+      ],
+      "bgLight": [
+        247,
+        242,
+        234
+      ]
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-initial@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "lisbon-planned-5d-open@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "porto-photo@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "porto-photo@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "porto-planned@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "porto-planned@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "coimbra-no-photo-no-guide@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "coimbra-no-photo-no-guide@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "brokenimage-failed@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "brokenimage-failed@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "photoerror@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "photoerror@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "paris-texas@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    },
+    {
+      "label": "paris-texas@375",
+      "width": 375,
+      "kind": "text",
+      "el": "small",
+      "text": "ByPatronFragas",
+      "size": 11,
+      "weight": 500,
+      "required": 4.5,
+      "ratio": 5.12,
+      "fg": [
+        166,
+        76,
+        53
+      ],
+      "alpha": 1,
+      "bgLight": [
+        247,
+        243,
+        235
+      ],
+      "bgDark": [
+        247,
+        243,
+        235
+      ],
+      "disabled": false,
+      "iconOnlyControl": false
+    }
+  ],
+  "pairCount": 4217,
+  "states": [
+    "lisbon-initial@375",
+    "lisbon-planned-5d-open@375",
+    "porto-photo@375",
+    "porto-planned@375",
+    "coimbra-no-photo-no-guide@375",
+    "brokenimage-failed@375",
+    "photoerror@375",
+    "paris-texas@375",
+    "longguide@375",
+    "plan-error-500@375",
+    "plan-error-400@375",
+    "search-error@375",
+    "submit-disabled@375",
+    "fallback-planned@375",
+    "forecast-uncertain-planned@375",
+    "stays-6-planned@375",
+    "videos-10-expanded@375",
+    "video-activated@375",
+    "images-blocked-planned@375",
+    "lisbon-initial@1440",
+    "lisbon-planned-5d-open@1440",
+    "porto-photo@1440",
+    "porto-planned@1440",
+    "coimbra-no-photo-no-guide@1440",
+    "brokenimage-failed@1440",
+    "photoerror@1440",
+    "paris-texas@1440",
+    "longguide@1440",
+    "plan-error-500@1440",
+    "plan-error-400@1440",
+    "search-error@1440",
+    "submit-disabled@1440",
+    "fallback-planned@1440",
+    "forecast-uncertain-planned@1440",
+    "stays-6-planned@1440",
+    "videos-10-expanded@1440",
+    "video-activated@1440",
+    "images-blocked-planned@1440",
+    "worst-case-white-photos@375",
+    "worst-case-white-photos@1440"
+  ],
+  "axResults": {
+    "375": {
+      "landmarks": [
+        "banner:(unnamed)",
+        "main:(unnamed)",
+        "contentinfo:(unnamed)",
+        "navigation:Quick section navigation",
+        "region:Destination and current weather",
+        "region:Your itinerary",
+        "navigation:Creator links",
+        "search:(unnamed)",
+        "form:(unnamed)"
+      ],
+      "unnamed": [],
+      "nodes": 424,
+      "names": {
+        "0:button": "Saved places",
+        "1:combobox": "Search destination, including country",
+        "2:button": "View on map",
+        "3:button": "Generate plan",
+        "4:DisclosureTriangle": "Day 1 · Thu, 15 Oct 23° Mostly clear under 1 mm rain 3.1 km walk",
+        "5:DisclosureTriangle": "Day 2 · Fri, 16 Oct 19° Rain Rain · 12 mm 4.1 km walk",
+        "6:DisclosureTriangle": "Day 3 · Sat, 17 Oct 21° Overcast 2 mm rain Forecast less certain 5.1 km walk",
+        "7:combobox": "Days",
+        "8:combobox": "Travelers",
+        "9:button": "Show date picker Show date picker"
+      },
+      "fields": [
+        "combobox:Search destination, including country",
+        "Date:Start",
+        "combobox:Days",
+        "combobox:Travelers"
+      ],
+      "endOutput": {
+        "text": "Sat, 17 Oct",
+        "name": "trip-end-label"
+      }
+    },
+    "1440": {
+      "landmarks": [
+        "banner:(unnamed)",
+        "main:(unnamed)",
+        "contentinfo:(unnamed)",
+        "navigation:Main navigation",
+        "region:Destination and current weather",
+        "region:Your itinerary",
+        "navigation:Creator links",
+        "search:(unnamed)",
+        "form:(unnamed)"
+      ],
+      "unnamed": [],
+      "nodes": 414,
+      "names": {
+        "0:button": "Saved places",
+        "1:combobox": "Search destination, including country",
+        "2:button": "View on map",
+        "3:button": "Generate plan",
+        "4:DisclosureTriangle": "Day 1 · Thu, 15 Oct 23° Mostly clear under 1 mm rain 3.1 km walk",
+        "5:DisclosureTriangle": "Day 2 · Fri, 16 Oct 19° Rain Rain · 12 mm 4.1 km walk",
+        "6:DisclosureTriangle": "Day 3 · Sat, 17 Oct 21° Overcast 2 mm rain Forecast less certain 5.1 km walk",
+        "7:combobox": "Days",
+        "8:combobox": "Travelers",
+        "9:button": "Show date picker Show date picker"
+      },
+      "fields": [
+        "combobox:Search destination, including country",
+        "Date:Start",
+        "combobox:Days",
+        "combobox:Travelers"
+      ],
+      "endOutput": {
+        "text": "Sat, 17 Oct",
+        "name": "trip-end-label"
+      }
+    }
+  },
+  "focusResults": {
+    "375": [
+      {
+        "tid": 1,
+        "el": "a.tt-skip-link",
+        "text": "Skip to trip overview",
+        "rect": {
+          "x": 12,
+          "y": 8,
+          "w": 167.234375,
+          "h": 45
+        },
+        "page": {
+          "x": 12,
+          "y": 8
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 8825,
+        "indicatorContrast": 15.63
+      },
+      {
+        "tid": 2,
+        "el": "a.tt-brand",
+        "text": "TravelTabByPatronFragas",
+        "rect": {
+          "x": 14,
+          "y": 12,
+          "w": 195.828125,
+          "h": 44.09375
+        },
+        "page": {
+          "x": 14,
+          "y": 12
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1572,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 3,
+        "el": "input#city_name",
+        "text": "",
+        "rect": {
+          "x": 49,
+          "y": 67.09375,
+          "w": 311,
+          "h": 44
+        },
+        "page": {
+          "x": 49,
+          "y": 67.09375
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2120,
+        "indicatorContrast": 15.63
+      },
+      {
+        "tid": 4,
+        "el": "button.tt-saved-toggle",
+        "text": "Saved places",
+        "rect": {
+          "x": 317,
+          "y": 12.046875,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 317,
+          "y": 12.046875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 668,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 5,
+        "el": "a",
+        "text": "Photo: Qiqritiq",
+        "rect": {
+          "x": 196.296875,
+          "y": 130.09375,
+          "w": 74.203125,
+          "h": 14
+        },
+        "page": {
+          "x": 196.296875,
+          "y": 130.09375
+        },
+        "outline": "solid 2px rgb(255, 253, 250)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 340,
+        "indicatorContrast": 12.41
+      },
+      {
+        "tid": 6,
+        "el": "a",
+        "text": "CC BY-SA 3.0",
+        "rect": {
+          "x": 279.859375,
+          "y": 130.09375,
+          "w": 72.140625,
+          "h": 14
+        },
+        "page": {
+          "x": 279.859375,
+          "y": 130.09375
+        },
+        "outline": "solid 2px rgb(255, 253, 250)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 328,
+        "indicatorContrast": 11.87
+      },
+      {
+        "tid": 7,
+        "el": "iframe.map-embed",
+        "text": "",
+        "rect": {
+          "x": 15,
+          "y": 585.578125,
+          "w": 345,
+          "h": 150
+        },
+        "page": {
+          "x": 15,
+          "y": 654.578125
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": false,
+        "focus": false,
+        "withinCard": false,
+        "changedPixels": 1991,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 8,
+        "el": "a.map-attribution",
+        "text": "Map by Waze",
+        "rect": {
+          "x": 27,
+          "y": 691.578125,
+          "w": 76.9375,
+          "h": 44
+        },
+        "page": {
+          "x": 27,
+          "y": 804.578125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 537,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 9,
+        "el": "a.map-action",
+        "text": "View full mapOpen Lisbon on a larger map",
+        "rect": {
+          "x": 194.671875,
+          "y": 691.578125,
+          "w": 153.328125,
+          "h": 44
+        },
+        "page": {
+          "x": 194.671875,
+          "y": 804.578125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 765,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 10,
+        "el": "a",
+        "text": "Lisbon",
+        "rect": {
+          "x": 184.390625,
+          "y": 400.265625,
+          "w": 37.671875,
+          "h": 15
+        },
+        "page": {
+          "x": 184.390625,
+          "y": 1651.265625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 450,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 11,
+        "el": "a",
+        "text": "revision 5364237",
+        "rect": {
+          "x": 229.828125,
+          "y": 400.265625,
+          "w": 98.890625,
+          "h": 15
+        },
+        "page": {
+          "x": 229.828125,
+          "y": 1651.265625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 816,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 12,
+        "el": "a",
+        "text": "Wikivoyage contributors",
+        "rect": {
+          "x": 48.234375,
+          "y": 419.453125,
+          "w": 137.765625,
+          "h": 15
+        },
+        "page": {
+          "x": 48.234375,
+          "y": 1670.453125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1047,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 13,
+        "el": "a",
+        "text": "CC BY-SA 4.0",
+        "rect": {
+          "x": 31,
+          "y": 419.453125,
+          "w": 306.515625,
+          "h": 34.1875
+        },
+        "page": {
+          "x": 31,
+          "y": 1670.453125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 891,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 14,
+        "el": "a.tt-brand.tt-footer-brand",
+        "text": "TravelTabByPatronFragas",
+        "rect": {
+          "x": 14,
+          "y": 552.203125,
+          "w": 139.53125,
+          "h": 44.09375
+        },
+        "page": {
+          "x": 14,
+          "y": 1803.203125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1236,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 15,
+        "el": "a",
+        "text": "GitHub (opens in new tab)",
+        "rect": {
+          "x": 14,
+          "y": 600.296875,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 14,
+          "y": 1851.296875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 16,
+        "el": "a",
+        "text": "LinkedIn (opens in new tab)",
+        "rect": {
+          "x": 62,
+          "y": 600.296875,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 62,
+          "y": 1851.296875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 17,
+        "el": "a",
+        "text": "Medium blog (opens in new tab)",
+        "rect": {
+          "x": 110,
+          "y": 600.296875,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 110,
+          "y": 1851.296875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 18,
+        "el": "a",
+        "text": "Fernando's website (opens in new tab)",
+        "rect": {
+          "x": 158,
+          "y": 600.296875,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 158,
+          "y": 1851.296875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 19,
+        "el": "a",
+        "text": "Overview",
+        "rect": {
+          "x": 12,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 12,
+          "y": 2003
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 681,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 20,
+        "el": "a",
+        "text": "Itinerary",
+        "rect": {
+          "x": 100.75,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 100.75,
+          "y": 2003
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 681,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 21,
+        "el": "a",
+        "text": "Stays",
+        "rect": {
+          "x": 189.5,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 189.5,
+          "y": 2003
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 678,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 22,
+        "el": "a",
+        "text": "Videos",
+        "rect": {
+          "x": 278.25,
+          "y": 752,
+          "w": 84.75,
+          "h": 56
+        },
+        "page": {
+          "x": 278.25,
+          "y": 2003
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 681,
+        "indicatorContrast": 6.11
+      }
+    ],
+    "1440": [
+      {
+        "tid": 1,
+        "el": "a.tt-skip-link",
+        "text": "Skip to trip overview",
+        "rect": {
+          "x": 12,
+          "y": 8,
+          "w": 167.234375,
+          "h": 45
+        },
+        "page": {
+          "x": 12,
+          "y": 8
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 8855,
+        "indicatorContrast": 14.34
+      },
+      {
+        "tid": 2,
+        "el": "a.tt-brand",
+        "text": "TravelTabByPatronFragas",
+        "rect": {
+          "x": 147.5,
+          "y": 37.953125,
+          "w": 195.828125,
+          "h": 44.09375
+        },
+        "page": {
+          "x": 147.5,
+          "y": 37.953125
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1566,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 3,
+        "el": "a",
+        "text": "Overview",
+        "rect": {
+          "x": 811.328125,
+          "y": 38,
+          "w": 70.453125,
+          "h": 44
+        },
+        "page": {
+          "x": 811.328125,
+          "y": 38
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 822,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 4,
+        "el": "a",
+        "text": "Itinerary",
+        "rect": {
+          "x": 885.78125,
+          "y": 38,
+          "w": 63.953125,
+          "h": 44
+        },
+        "page": {
+          "x": 885.78125,
+          "y": 38
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 780,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 5,
+        "el": "a",
+        "text": "Stays",
+        "rect": {
+          "x": 953.734375,
+          "y": 38,
+          "w": 47.890625,
+          "h": 44
+        },
+        "page": {
+          "x": 953.734375,
+          "y": 38
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 684,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 6,
+        "el": "a",
+        "text": "Videos",
+        "rect": {
+          "x": 1005.625,
+          "y": 38,
+          "w": 55.71875,
+          "h": 44
+        },
+        "page": {
+          "x": 1005.625,
+          "y": 38
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 726,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 7,
+        "el": "input#city_name",
+        "text": "",
+        "rect": {
+          "x": 402.328125,
+          "y": 38,
+          "w": 384,
+          "h": 44
+        },
+        "page": {
+          "x": 402.328125,
+          "y": 38
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 2555,
+        "indicatorContrast": 15.63
+      },
+      {
+        "tid": 8,
+        "el": "button.tt-saved-toggle",
+        "text": "Saved places",
+        "rect": {
+          "x": 1233.5,
+          "y": 38,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1233.5,
+          "y": 38
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 668,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 9,
+        "el": "a",
+        "text": "Photo: Qiqritiq",
+        "rect": {
+          "x": 1098.625,
+          "y": 393,
+          "w": 80.953125,
+          "h": 15
+        },
+        "page": {
+          "x": 1098.625,
+          "y": 393
+        },
+        "outline": "solid 2px rgb(255, 253, 250)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 368,
+        "indicatorContrast": 13.35
+      },
+      {
+        "tid": 10,
+        "el": "a",
+        "text": "CC BY-SA 3.0",
+        "rect": {
+          "x": 1189.796875,
+          "y": 393,
+          "w": 78.703125,
+          "h": 15
+        },
+        "page": {
+          "x": 1189.796875,
+          "y": 393
+        },
+        "outline": "solid 2px rgb(255, 253, 250)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 361,
+        "indicatorContrast": 16.58
+      },
+      {
+        "tid": 11,
+        "el": "iframe.map-embed",
+        "text": "",
+        "rect": {
+          "x": 148.5,
+          "y": 436,
+          "w": 1128,
+          "h": 196
+        },
+        "page": {
+          "x": 148.5,
+          "y": 436
+        },
+        "outline": "none 3px rgb(36, 34, 31)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": false,
+        "focus": false,
+        "withinCard": false,
+        "changedPixels": 4634,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 12,
+        "el": "a.map-attribution",
+        "text": "Map by Waze",
+        "rect": {
+          "x": 160.5,
+          "y": 632,
+          "w": 76.9375,
+          "h": 44
+        },
+        "page": {
+          "x": 160.5,
+          "y": 632
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 558,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 13,
+        "el": "a.map-action",
+        "text": "View full mapOpen Lisbon on a larger map",
+        "rect": {
+          "x": 1038.75,
+          "y": 632,
+          "w": 225.75,
+          "h": 44
+        },
+        "page": {
+          "x": 1038.75,
+          "y": 632
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": true,
+        "changedPixels": 1008,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 14,
+        "el": "a",
+        "text": "Lisbon",
+        "rect": {
+          "x": 1150.890625,
+          "y": 792.6875,
+          "w": 37.671875,
+          "h": 15
+        },
+        "page": {
+          "x": 1150.890625,
+          "y": 792.6875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 450,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 15,
+        "el": "a",
+        "text": "revision 5364237",
+        "rect": {
+          "x": 997.5,
+          "y": 792.6875,
+          "w": 243.09375,
+          "h": 34.1875
+        },
+        "page": {
+          "x": 997.5,
+          "y": 792.6875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1026,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 16,
+        "el": "a",
+        "text": "Wikivoyage contributors",
+        "rect": {
+          "x": 1077.203125,
+          "y": 811.875,
+          "w": 137.765625,
+          "h": 15
+        },
+        "page": {
+          "x": 1077.203125,
+          "y": 811.875
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1047,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 17,
+        "el": "a",
+        "text": "CC BY-SA 4.0",
+        "rect": {
+          "x": 1084.734375,
+          "y": 831.0625,
+          "w": 78.59375,
+          "h": 15
+        },
+        "page": {
+          "x": 1084.734375,
+          "y": 831.0625
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 684,
+        "indicatorContrast": 6.11
+      },
+      {
+        "tid": 18,
+        "el": "a.tt-brand.tt-footer-brand",
+        "text": "TravelTabByPatronFragas",
+        "rect": {
+          "x": 147.5,
+          "y": 892.4375,
+          "w": 139.53125,
+          "h": 44.09375
+        },
+        "page": {
+          "x": 147.5,
+          "y": 1198.4375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 1236,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 19,
+        "el": "a",
+        "text": "GitHub (opens in new tab)",
+        "rect": {
+          "x": 1089.5,
+          "y": 892.484375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1089.5,
+          "y": 1198.484375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 20,
+        "el": "a",
+        "text": "LinkedIn (opens in new tab)",
+        "rect": {
+          "x": 1137.5,
+          "y": 892.484375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1137.5,
+          "y": 1198.484375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 21,
+        "el": "a",
+        "text": "Medium blog (opens in new tab)",
+        "rect": {
+          "x": 1185.5,
+          "y": 892.484375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1185.5,
+          "y": 1198.484375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      },
+      {
+        "tid": 22,
+        "el": "a",
+        "text": "Fernando's website (opens in new tab)",
+        "rect": {
+          "x": 1233.5,
+          "y": 892.484375,
+          "w": 44,
+          "h": 44
+        },
+        "page": {
+          "x": 1233.5,
+          "y": 1198.484375
+        },
+        "outline": "solid 3px rgb(166, 64, 39)",
+        "boxShadow": null,
+        "inViewport": true,
+        "obscured": false,
+        "tabindex": null,
+        "focusVisible": true,
+        "focus": true,
+        "withinCard": false,
+        "changedPixels": 660,
+        "indicatorContrast": 5.61
+      }
+    ],
+    "375order": [],
+    "1440order": []
+  },
+  "errors": []
+}

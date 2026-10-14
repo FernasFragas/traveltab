@@ -1,8 +1,8 @@
 {
-  "browser": "Chrome/153.0.8010.53",
-  "htmx": "1.9.11",
+  "browser": "Chrome/155.0.8059.40",
+  "htmx": "2.0.11",
   "base": "http://127.0.0.1:8087",
-  "fallbackBase": "http://127.0.0.1:8089",
+  "fallbackBase": "",
   "results": [
     {
       "width": 375,
@@ -49,7 +49,7 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -117,7 +117,7 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -154,7 +154,7 @@
             "height": 44
           },
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -214,7 +214,7 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -251,7 +251,7 @@
             "height": 44
           },
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -277,7 +277,7 @@
           ".guide-link": 6.11
         },
         "rapid": {
-          "observations": 10,
+          "observations": 6,
           "settled": "Porto/pt"
         },
         "paris-fr": {
@@ -321,7 +321,7 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -358,7 +358,7 @@
             "height": 44
           },
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -417,7 +417,7 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 347,
@@ -483,14 +483,14 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -551,14 +551,14 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -588,14 +588,14 @@
             "height": 44
           },
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -648,14 +648,14 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -685,14 +685,14 @@
             "height": 44
           },
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -711,7 +711,7 @@
           ".guide-link": 6.11
         },
         "rapid": {
-          "observations": 9,
+          "observations": 6,
           "settled": "Porto/pt"
         },
         "paris-fr": {
@@ -755,14 +755,14 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -792,14 +792,14 @@
             "height": 44
           },
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -851,14 +851,14 @@
           ],
           "searchLink": null,
           "inOverview": true,
-          "afterGrid": true,
+          "afterMap": true,
           "visible": true,
           "box": {
             "width": 1130,
-            "left": 155,
-            "right": 1285
+            "left": 148,
+            "right": 1278
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "sections": [
             1,
@@ -871,14 +871,6 @@
           "weather": true
         }
       }
-    },
-    {
-      "fallback": 375,
-      "state": "missing"
-    },
-    {
-      "fallback": 1440,
-      "state": "missing"
     }
   ],
   "errors": []

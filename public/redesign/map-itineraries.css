@@ -82,3 +82,5 @@
 [data-writers-map]:not([data-itineraries]) .writers-map-layer-itineraries {
     display: none !important;
 }
+
+.itinerary-pin { width: 10px; height: 10px; background: #a582d4; border: 2px solid #fff; color: transparent; font-size: 0; }

@@ -100,7 +100,7 @@ func fixtureStyle(origin string) []byte {
 			},
 		},
 		"layers": []any{
-			map[string]any{"id": "land", "type": "background", "paint": map[string]any{"background-color": "#18263b"}},
+			map[string]any{"id": "land", "type": "background", "paint": map[string]any{"background-color": "#202a32"}},
 			map[string]any{"id": "water", "type": "fill", "source": "fixture", "source-layer": "water",
 				"paint": map[string]any{"fill-color": "#000e29"}},
 			map[string]any{"id": "road-secondary", "type": "line", "source": "fixture", "source-layer": "transportation",
@@ -118,6 +118,8 @@ func fixtureStyle(origin string) []byte {
 					"fill-extrusion-base":    []any{"get", "render_min_height"},
 					"fill-extrusion-opacity": 0.9,
 				}},
+			map[string]any{"id": "poi", "type": "symbol", "source": "fixture", "source-layer": "poi",
+				"layout": map[string]any{"visibility": "none", "text-field": []any{"get", "name"}}},
 		},
 	}
 	out, err := json.Marshal(style)

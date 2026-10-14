@@ -1,0 +1,99 @@
+{
+  "browser": "Chrome/155.0.8059.40",
+  "results": [
+    {
+      "width": 375,
+      "assets": [
+        {
+          "path": "bootstrap/dist/css/bootstrap.min.css",
+          "status": 200,
+          "size": 232111
+        },
+        {
+          "path": "bootstrap-icons/font/bootstrap-icons.min.css",
+          "status": 200,
+          "size": 87008
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff2",
+          "status": 200,
+          "size": 134044
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff",
+          "status": 200,
+          "size": 180288
+        },
+        {
+          "path": "htmx.org/dist/htmx.min.js",
+          "status": 200,
+          "size": 52182
+        }
+      ],
+      "overflow": 375,
+      "viewport": 375,
+      "bootstrap": true,
+      "icons": true,
+      "iconFamily": "bootstrap-icons",
+      "htmx": "/vendor/htmx.org/dist/htmx.min.js",
+      "map": {
+        "x": 14,
+        "y": 653.578125,
+        "width": 347,
+        "height": 196,
+        "top": 653.578125,
+        "right": 361,
+        "bottom": 849.578125,
+        "left": 14
+      }
+    },
+    {
+      "width": 1440,
+      "assets": [
+        {
+          "path": "bootstrap/dist/css/bootstrap.min.css",
+          "status": 200,
+          "size": 232111
+        },
+        {
+          "path": "bootstrap-icons/font/bootstrap-icons.min.css",
+          "status": 200,
+          "size": 87008
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff2",
+          "status": 200,
+          "size": 134044
+        },
+        {
+          "path": "bootstrap-icons/font/fonts/bootstrap-icons.woff",
+          "status": 200,
+          "size": 180288
+        },
+        {
+          "path": "htmx.org/dist/htmx.min.js",
+          "status": 200,
+          "size": 52182
+        }
+      ],
+      "overflow": 1425,
+      "viewport": 1440,
+      "bootstrap": true,
+      "icons": true,
+      "iconFamily": "bootstrap-icons",
+      "htmx": "/vendor/htmx.org/dist/htmx.min.js",
+      "map": {
+        "x": 147.5,
+        "y": 435,
+        "width": 1130,
+        "height": 242,
+        "top": 435,
+        "right": 1277.5,
+        "bottom": 677,
+        "left": 147.5
+      }
+    }
+  ],
+  "exceptions": [],
+  "consoleErrors": []
+}

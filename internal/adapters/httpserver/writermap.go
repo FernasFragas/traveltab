@@ -8,6 +8,7 @@ import (
 	"strings"
 	"weatherservice/internal/application"
 	"weatherservice/internal/writermap"
+	"weatherservice/writerdata"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -144,9 +145,17 @@ func (s *Server) writerMapPlace(ctx *fiber.Ctx) error {
 		visiblePlace.PhotoURL = ""
 		visiblePlace.PhotoCredit = ""
 	}
+	sourceJSON, err := writerdata.Files.ReadFile("sources.json")
+	if err != nil {
+		return err
+	}
+	sources, err := writermap.ParseSources(sourceJSON)
+	if err != nil {
+		return err
+	}
 	return ctx.Render("place_panel", fiber.Map{
 		"Place": &visiblePlace, "Name": name, "Summary": summary,
-		"WriterCount": result.WriterCounts[qid], "Mentions": result.Mentions[qid],
+		"WriterCount": result.WriterCounts[qid], "Mentions": result.Mentions[qid], "WriterSources": sources,
 	})
 }
 

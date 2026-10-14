@@ -24,3 +24,13 @@
 }
 
 .writers-map-saved a:hover { color: var(--tt-accent-hover); }
+
+.tt-saved-list { position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: 260px; max-height: 300px; overflow-y: auto; padding: 10px; background: #fff; border: 1px solid var(--tt-border); border-radius: 12px; box-shadow: 0 4px 16px #0003; }
+.tt-saved-list[hidden] { display: none; }
+.tt-saved-list button { display: block; width: 100%; min-height: 44px; border: 0; border-radius: 6px; background: #fff; text-align: left; }
+.tt-saved-list button:hover { background: #f7f3eb; }
+/* Fixed to the screen, not the map, so the confirmation shows wherever the page is scrolled. */
+.writers-map-toast { position: fixed; z-index: 30; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; padding: 10px 16px; border-radius: 10px; background: #202a32f5; color: #fff; font-size: 13px; }
+.writers-map-toast[hidden] { display: none; }
+.writers-map-toast button { min-height: 44px; border: 0; background: transparent; color: #fff; font-weight: 700; text-decoration: underline; }
+@media (max-width: 600px) { .writers-map-toast { left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); transform: none; } }

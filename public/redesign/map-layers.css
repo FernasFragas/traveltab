@@ -29,3 +29,62 @@ button.writers-map-layer:focus-visible {
 button.writers-map-layer[hidden] {
     display: none;
 }
+
+.travelmap-tools {
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 10px;
+}
+
+.travelmap-tools > button,
+.travelmap-layers-menu > summary {
+    display: grid;
+    place-items: center;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px;
+    border: 1px solid #e6e1d9;
+    border-radius: 10px;
+    background: #fff;
+    color: #26272b;
+    box-shadow: 0 2px 8px #0003;
+    font: inherit;
+    cursor: pointer;
+}
+
+.travelmap-layers-menu { position: relative; }
+
+.writers-map-card .maplibregl-ctrl-group,
+.writers-map-card .leaflet-bar { border: 1px solid #e6e1d9; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px #0003; }
+.travelmap-layers-menu > summary { list-style: none; padding: 6px 10px; }
+.travelmap-layers-menu > summary::-webkit-details-marker { display: none; }
+.travelmap-layers-menu[open] { display: flex; align-items: flex-end; flex-direction: column; gap: 4px; }
+.travelmap-layers-menu > .writers-map-layer { width: 100%; cursor: pointer; }
+.travelmap-layers-menu > .writers-map-layer[aria-pressed="false"] { opacity: 0.6; }
+
+.travelmap-location-dot {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background: #2685ee;
+    box-shadow: 0 0 0 2px #2685ee;
+}
+
+@media (max-width: 600px) {
+    .travelmap-layers-menu { display: none; }
+    .travelmap-locate { border-radius: 50% !important; width: 48px; height: 48px; }
+}
+
+.travelmap-tools > button, .travelmap-layers-menu > summary { min-width: 44px; min-height: 44px; background: #222c39e8; border-color: #ffffff40; color: #fff; }
+.travelmap-compass { border-radius: 50% !important; }
+.travelmap-tools > button:focus-visible, .travelmap-layers-menu > summary:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.plan-day-toggle { display: flex; overflow: hidden; margin: 8px 0 0 10px; border: 1px solid #ffffff40; border-radius: 10px; background: #222c39e8; box-shadow: 0 2px 8px #0003; }
+.plan-day-toggle button { min-width: 44px; min-height: 44px; padding: 6px 12px; border: 0; background: transparent; color: #fff; font: 600 12px / 1 var(--tt-font-body); white-space: nowrap; cursor: pointer; }
+.plan-day-toggle button + button { border-left: 1px solid #ffffff26; }
+.plan-day-toggle button[aria-pressed="true"] { background: #a56824; }
+.plan-day-toggle button:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+@media (max-width: 600px) { .travelmap-layers-menu { display: block; } }
