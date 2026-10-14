@@ -10,7 +10,7 @@
     </figure>
     <div class="destination-information">
         <div class="destination-heading">
-            <h1 class="destination-title">{{ .GeneralInfo.City }}</h1>
+            {{ if .WriterMap }}<h2 class="destination-title">{{ .GeneralInfo.City }}</h2>{{ else }}<h1 class="destination-title">{{ .GeneralInfo.City }}</h1>{{ end }}
             {{ with .Presentation.Location }}<p class="destination-country">{{ . }}</p>{{ end }}
         </div>
         {{ with .Presentation.HeroLine }}<p class="destination-tagline">{{ . }}</p>{{ end }}

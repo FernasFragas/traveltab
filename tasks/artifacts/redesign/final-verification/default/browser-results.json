@@ -1,15 +1,15 @@
 {
-  "browser": "Chrome/153.0.8010.53",
-  "htmx": "1.9.11",
+  "browser": "Chrome/155.0.8059.40",
+  "htmx": "2.0.11",
   "scenario": "default",
-  "base": "http://127.0.0.1:8097",
+  "base": "http://127.0.0.1:8087",
   "results": [
     {
       "width": 375,
       "height": 812,
       "initial": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -23,24 +23,27 @@
         "viewport": 375,
         "map": {
           "x": 14,
-          "y": 977.828125,
+          "y": 653.578125,
           "width": 347,
           "height": 196,
-          "top": 977.828125,
+          "top": 653.578125,
           "right": 361,
-          "bottom": 1173.828125,
+          "bottom": 849.578125,
           "left": 14
         },
         "form": {
-          "x": 14,
-          "y": 510.453125,
-          "width": 347,
-          "height": 451.375,
-          "top": 510.453125,
-          "right": 361,
-          "bottom": 961.828125,
-          "left": 14
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
+        "visible": [
+          "overview"
+        ],
         "days": 0,
         "openDays": [],
         "stays": 0,
@@ -51,7 +54,7 @@
       },
       "planned": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -64,25 +67,28 @@
         "overflow": 375,
         "viewport": 375,
         "map": {
-          "x": 14,
-          "y": 977.828125,
-          "width": 347,
-          "height": 196,
-          "top": 977.828125,
-          "right": 361,
-          "bottom": 1173.828125,
-          "left": 14
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
         "form": {
           "x": 14,
-          "y": 510.453125,
+          "y": 642.578125,
           "width": 347,
-          "height": 451.375,
-          "top": 510.453125,
+          "height": 510.578125,
+          "top": 642.578125,
           "right": 361,
-          "bottom": 961.828125,
+          "bottom": 1153.15625,
           "left": 14
         },
+        "visible": [
+          "itinerary"
+        ],
         "days": 3,
         "openDays": [
           true,
@@ -101,7 +107,7 @@
       "height": 1024,
       "initial": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -115,24 +121,27 @@
         "viewport": 768,
         "map": {
           "x": 33,
-          "y": 842.84375,
+          "y": 527,
           "width": 702,
           "height": 242,
-          "top": 842.84375,
+          "top": 527,
           "right": 735,
-          "bottom": 1084.84375,
+          "bottom": 769,
           "left": 33
         },
         "form": {
-          "x": 33,
-          "y": 536.359375,
-          "width": 702,
-          "height": 290.484375,
-          "top": 536.359375,
-          "right": 735,
-          "bottom": 826.84375,
-          "left": 33
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
+        "visible": [
+          "overview"
+        ],
         "days": 0,
         "openDays": [],
         "stays": 0,
@@ -143,7 +152,7 @@
       },
       "planned": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -156,25 +165,28 @@
         "overflow": 768,
         "viewport": 768,
         "map": {
-          "x": 33,
-          "y": 840.84375,
-          "width": 702,
-          "height": 242,
-          "top": 840.84375,
-          "right": 735,
-          "bottom": 1082.84375,
-          "left": 33
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
         "form": {
           "x": 33,
-          "y": 534.359375,
+          "y": 502,
           "width": 702,
-          "height": 290.484375,
-          "top": 534.359375,
+          "height": 269.6875,
+          "top": 502,
           "right": 735,
-          "bottom": 824.84375,
+          "bottom": 771.6875,
           "left": 33
         },
+        "visible": [
+          "itinerary"
+        ],
         "days": 3,
         "openDays": [
           true,
@@ -193,7 +205,7 @@
       "height": 1000,
       "initial": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -203,28 +215,31 @@
           1,
           1
         ],
-        "overflow": 1100,
+        "overflow": 1085,
         "viewport": 1100,
         "map": {
           "x": 49,
-          "y": 467.890625,
-          "width": 493,
-          "height": 307.875,
-          "top": 467.890625,
-          "right": 542,
-          "bottom": 775.765625,
+          "y": 427,
+          "width": 987,
+          "height": 242,
+          "top": 427,
+          "right": 1036,
+          "bottom": 669,
           "left": 49
         },
         "form": {
-          "x": 558,
-          "y": 467.890625,
-          "width": 493,
-          "height": 307.875,
-          "top": 467.890625,
-          "right": 1051,
-          "bottom": 775.765625,
-          "left": 558
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
+        "visible": [
+          "overview"
+        ],
         "days": 0,
         "openDays": [],
         "stays": 0,
@@ -235,7 +250,7 @@
       },
       "planned": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -245,28 +260,31 @@
           1,
           1
         ],
-        "overflow": 1100,
+        "overflow": 1085,
         "viewport": 1100,
         "map": {
-          "x": 49,
-          "y": 467.890625,
-          "width": 493,
-          "height": 307.875,
-          "top": 467.890625,
-          "right": 542,
-          "bottom": 775.765625,
-          "left": 49
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
         "form": {
-          "x": 558,
-          "y": 467.890625,
-          "width": 493,
-          "height": 307.875,
-          "top": 467.890625,
-          "right": 1051,
-          "bottom": 775.765625,
-          "left": 558
+          "x": 49,
+          "y": 427,
+          "width": 987,
+          "height": 269.6875,
+          "top": 427,
+          "right": 1036,
+          "bottom": 696.6875,
+          "left": 49
         },
+        "visible": [
+          "itinerary"
+        ],
         "days": 3,
         "openDays": [
           true,
@@ -285,7 +303,7 @@
       "height": 1000,
       "initial": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -295,28 +313,31 @@
           1,
           1
         ],
-        "overflow": 1440,
+        "overflow": 1425,
         "viewport": 1440,
         "map": {
-          "x": 155,
-          "y": 475.890625,
-          "width": 557,
-          "height": 290.484375,
-          "top": 475.890625,
-          "right": 712,
-          "bottom": 766.375,
-          "left": 155
+          "x": 147.5,
+          "y": 435,
+          "width": 1130,
+          "height": 242,
+          "top": 435,
+          "right": 1277.5,
+          "bottom": 677,
+          "left": 147.5
         },
         "form": {
-          "x": 728,
-          "y": 475.890625,
-          "width": 557,
-          "height": 290.484375,
-          "top": 475.890625,
-          "right": 1285,
-          "bottom": 766.375,
-          "left": 728
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
+        "visible": [
+          "overview"
+        ],
         "days": 0,
         "openDays": [],
         "stays": 0,
@@ -327,7 +348,7 @@
       },
       "planned": {
         "title": "Lisbon",
-        "htmx": "1.9.11",
+        "htmx": "2.0.11",
         "planner": true,
         "photo": 1280,
         "videos": 6,
@@ -337,28 +358,31 @@
           1,
           1
         ],
-        "overflow": 1440,
+        "overflow": 1425,
         "viewport": 1440,
         "map": {
-          "x": 155,
-          "y": 473.890625,
-          "width": 557,
-          "height": 290.484375,
-          "top": 473.890625,
-          "right": 712,
-          "bottom": 764.375,
-          "left": 155
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
         },
         "form": {
-          "x": 728,
-          "y": 473.890625,
-          "width": 557,
-          "height": 290.484375,
-          "top": 473.890625,
-          "right": 1285,
-          "bottom": 764.375,
-          "left": 728
+          "x": 147.5,
+          "y": 435,
+          "width": 1130,
+          "height": 269.6875,
+          "top": 435,
+          "right": 1277.5,
+          "bottom": 704.6875,
+          "left": 147.5
         },
+        "visible": [
+          "itinerary"
+        ],
         "days": 3,
         "openDays": [
           true,

@@ -94,7 +94,7 @@ const state = () => evaluate(`(() => {
     links,
     searchLink: document.querySelector('.guide-link') ? { href: document.querySelector('.guide-link').getAttribute('href'), text: document.querySelector('.guide-link').textContent.trim(), height: Math.round(document.querySelector('.guide-link').getBoundingClientRect().height) } : null,
     inOverview: !!document.querySelector('#overview .guide-card'),
-    afterGrid: !!document.querySelector('#overview .tt-overview-grid + .guide-card'),
+    afterMap: !!document.querySelector('#overview .tt-overview-map + .guide-card'),
     visible: visible(card),
     box: rect ? { width: Math.round(rect.width), left: Math.round(rect.left), right: Math.round(rect.right) } : null,
     overflow: document.documentElement.scrollWidth, viewport: innerWidth,
@@ -126,7 +126,7 @@ const assertCoherent = (s, context) => {
 };
 const assertLayout = (s, width, context) => {
   assert.ok(s.visible, `${context}: card visible`);
-  assert.ok(s.inOverview && s.afterGrid, `${context}: the card follows the overview grid inside #overview`);
+  assert.ok(s.inOverview && s.afterMap, `${context}: the card follows the overview map inside #overview`);
   assert.deepEqual(s.sections, [1, 1, 1, 1], `${context}: each section id exactly once`);
   assert.equal(s.tripCards, 1, `${context}: one #trip-card`);
   assert.ok(s.weather && s.planner, `${context}: weather and planner render`);
@@ -285,7 +285,9 @@ try {
     await evaluate("document.querySelector('.trip-form').requestSubmit()");
     await until("document.querySelectorAll('.itinerary-day').length === 3 && !document.querySelector('.trip-submit').disabled");
     const planned = await state();
-    assertReviewed(planned, width, 'after planning');
+    // Planning opens the Itinerary tab, so the guide stays in the hidden Overview.
+    assertCoherent(planned, 'after planning');
+    assert.ok(planned.inOverview && !planned.visible, 'after planning: guide kept in the hidden Overview');
     assert.deepEqual(planned.paragraphs, beforePlan.paragraphs, 'planning leaves the guide untouched');
     await evaluate('history.back()');
     await until('window.restores === 1');
@@ -293,7 +295,8 @@ try {
     assert.deepEqual(back.paragraphs, beforePlan.paragraphs);
     await evaluate('history.forward()');
     await until('window.restores === 2');
-    const forward = await state(); assertReviewed(forward, width, 'after Forward');
+    const forward = await state(); assertCoherent(forward, 'after Forward');
+    assert.ok(forward.inOverview && !forward.visible, 'after Forward: guide kept in the hidden Overview');
     assert.equal(await evaluate("document.querySelectorAll('.itinerary-day').length"), 3, 'Forward restores the plan');
     check(width, 'plan → Back → Forward: one guide card, same text, planner sections intact');
 

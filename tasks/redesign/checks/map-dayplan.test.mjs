@@ -11,7 +11,7 @@ test('registers one layer named plan and reports valid stops after swaps', () =>
   assert.deepEqual(app.registered, ['plan']);
   app.swap([[['Tower', 38.69, -9.21], ['Invalid', 0, 0]]]);
   assert.deepEqual(JSON.parse(JSON.stringify(app.updates.at(-1))), [
-    { number: 1, stops: [{ name: 'Tower', lat: 38.69, lon: -9.21 }] }
+    { number: 1, stops: [{ name: 'Tower', lat: 38.69, lon: -9.21, qid: 'Q1', kind: 'indoor', description: 'Old tower', distance: '2 km from previous' }] }
   ]);
 });
 
@@ -25,7 +25,7 @@ test('does nothing when the core or map shell is missing', () => {
   assert.equal(noShell.updates.length, 0);
 });
 
-test('uses drawing API for green, numbered, focusable pins and a day control', () => {
+test('uses drawing API for orange, numbered, focusable pins and a day control', () => {
   const app = browser();
   app.run();
   app.mount();
@@ -33,11 +33,22 @@ test('uses drawing API for green, numbered, focusable pins and a day control', (
   assert.deepEqual(JSON.parse(JSON.stringify(app.pins().map(pin => pin.lngLat))), [[-9.21, 38.69], [-9.11, 38.72], [-9.1, 38.7]]);
   assert.deepEqual(Array.from(app.pins(), pin => pin.element.textContent), ['1', '2', '1']);
   assert.ok(app.pins().every(pin => pin.element.tagName === 'BUTTON' && pin.element.className === 'plan-pin'));
-  assert.ok(app.pins().every(pin => pin.element.style.background === '#43a047'));
+  assert.ok(app.pins().every(pin => pin.element.style.background === '#a56824'));
   assert.match(app.pins()[0].title, /Day 1: Tower/);
   assert.deepEqual(Array.from(app.control().buttons(), button => button.textContent), ['All', 'Day 1', 'Day 2']);
-  assert.equal(app.control().position, 'top-right');
+  assert.equal(app.control().position, 'top-left', 'a row beside, not under, the control column');
   assert.deepEqual(app.drawCalls().map(call => call.method).slice(-2), ['markers', 'control']);
+});
+
+test('the day control takes its look from the stylesheet, not the old turquoise inline colours', () => {
+  const app = browser();
+  app.run();
+  app.mount();
+  app.swap([[['Tower', 38.69, -9.21]], [['Park', 38.7, -9.1]]]);
+  const control = app.control();
+  assert.equal(control.element.className, 'plan-day-toggle');
+  assert.ok(!control.element.style.background, 'no inline background on the group');
+  assert.ok(control.buttons().every(button => !button.style.cssText && !button.style.background), 'no inline button styles');
 });
 
 test('generate, regenerate, day toggle, clear and enable leave one current set', () => {
@@ -84,8 +95,51 @@ test('View on map activates the plan chip and scrolls to the shell', () => {
   app.run();
   app.viewOnMap();
   assert.equal(app.chipPressed(), 'true');
+  assert.equal(app.hash(), '#overview');
   assert.equal(app.scrolls(), 1);
 });
+
+test('day pin opens a popup with details and Escape returns focus', () => {
+  const app = browser();
+  app.run();
+  app.mount();
+  app.swap([[['Tower', 38.69, -9.21]]]);
+  const pin = app.pins()[0];
+  assert.equal(pin.element.getAttribute('aria-label'), 'Day 1, stop 1: Tower');
+  pin.onClick();
+  const popup = app.popup().element;
+  assert.match(popup.className, /\bplan-popup\b/);
+  assert.equal(popup.children[0].textContent, 'Tower');
+  const facts = popup.children.find(child => child.className === 'plan-popup-facts');
+  assert.deepEqual(facts.children.map(text), ['Day 1', 'Stop 1', '2 km from previous'], 'day, stop and distance rows');
+  assert.equal(facts.children[2].children.find(child => child.tagName === 'SMALL').textContent, 'from previous');
+  assert.doesNotMatch(text(popup), /Old tower|indoor/, 'kind and description stay in the details panel');
+  assert.equal(popup.children.at(-1).textContent, 'View details');
+  app.keydown('Escape');
+  assert.equal(app.popup(), null);
+  assert.equal(pin.element.focused, true);
+});
+
+test('Details selects known place; unknown place has no Details; redraw clears popup', () => {
+  const app = browser();
+  app.run();
+  app.mount();
+  app.swap([[['Tower', 38.69, -9.21]]]);
+  app.pins()[0].onClick();
+  app.popup().element.children.at(-1).click();
+  assert.equal(app.selected(), 'Q1');
+  assert.equal(app.popup(), null);
+  app.swap([[['Unknown', 1, 2, 'Q999']]]);
+  app.pins()[0].onClick();
+  assert.notEqual(app.popup().element.children.at(-1).textContent, 'View details');
+  app.swap([[['Another', 3, 4]]]);
+  assert.equal(app.popup(), null);
+});
+
+// The text a reader sees: an element's own text followed by its children's, space-separated.
+function text(node) {
+  return [node.textContent, ...node.children.map(text)].filter(Boolean).join(' ');
+}
 
 function browser({ core = true, shell = true } = {}) {
   const registered = [];
@@ -95,6 +149,7 @@ function browser({ core = true, shell = true } = {}) {
   let enabled = true;
   let days = [];
   let drawing = drawContext();
+  let selected = null;
   let scrollCount = 0;
   let chip = element('button');
   chip.setAttribute('aria-pressed', 'false');
@@ -108,7 +163,7 @@ function browser({ core = true, shell = true } = {}) {
     addEventListener(n, cb) { listeners.set('doc:' + n, cb); }
   };
   document.dispatchEvent = event => listeners.get('doc:' + event.type)?.(event);
-  const window = {};
+  const window = { location: { hash: '#itinerary' } };
   if (core) window.TravelMap = {
     registerLayer(name, value) { registered.push(name); layer = value; },
     setLayerEnabled(name, on) {
@@ -126,17 +181,17 @@ function browser({ core = true, shell = true } = {}) {
   return {
     registered, updates,
     run: () => vm.runInContext(source, vmContext),
-    mount() { layer.add({}, { draw: drawing.draw }); },
+    mount() { layer.add({}, { draw: drawing.draw, features: [{ properties: { qid: 'Q1' } }], selectPlace: qid => { selected = qid; } }); },
     remount() {
       layer.remove({}, { draw: drawing.draw });
       drawing = drawContext();
-      layer.add({}, { draw: drawing.draw });
+      layer.add({}, { draw: drawing.draw, features: [{ properties: { qid: 'Q1' } }], selectPlace: qid => { selected = qid; } });
     },
     context: () => drawing,
     swap(dayStops) {
       days = dayStops.map((stops, i) => ({
         dataset: { planDay: String(i + 1) },
-        querySelectorAll: () => stops.map(([name, lat, lon]) => ({ dataset: { name, lat: String(lat), lon: String(lon) } }))
+        querySelectorAll: () => stops.map(([name, lat, lon, qid = 'Q1']) => ({ dataset: { name, lat: String(lat), lon: String(lon), qid, kind: 'indoor', description: 'Old tower' }, querySelector: () => ({ textContent: '2 km from previous' }) }))
       }));
       listeners.get('htmx:afterSwap')?.({});
     },
@@ -146,20 +201,26 @@ function browser({ core = true, shell = true } = {}) {
     drawCalls: () => drawing.calls,
     viewOnMap() { listeners.get('doc:click')?.({ target: { closest: selector => selector === '[data-view-on-map]' } }); },
     chipPressed: () => chip.attrs['aria-pressed'],
-    scrolls: () => scrollCount
+    hash: () => window.location.hash,
+    scrolls: () => scrollCount,
+    popup: () => drawing.popups.get('pin-popup') || null,
+    selected: () => selected,
+    keydown(key) { listeners.get('doc:keydown')?.({ key, preventDefault() {} }); }
   };
 }
 
 function drawContext() {
   const markers = new Map();
   const controls = new Map();
+  const popups = new Map();
   const calls = [];
   return {
-    markers, controls, calls,
+    markers, controls, popups, calls,
     draw: {
       markers(id, items) { calls.push({ method: 'markers', id }); markers.set(id, items); },
       control(id, element, position) { calls.push({ method: 'control', id }); controls.set(id, { element, position, buttons: () => element.children }); },
-      clear(id) { calls.push({ method: 'clear', id }); markers.delete(id); controls.delete(id); }
+      popup(id, lngLat, element, options) { popups.set(id, { lngLat, element, options }); },
+      clear(id) { calls.push({ method: 'clear', id }); markers.delete(id); controls.delete(id); const popup = popups.get(id); popups.delete(id); popup?.options?.onClose?.(); }
     }
   };
 }
@@ -167,10 +228,11 @@ function drawContext() {
 function element(tagName) {
   const listeners = new Map();
   return {
-    tagName: tagName.toUpperCase(), children: [], className: '', textContent: '', style: {}, attrs: {},
+    tagName: tagName.toUpperCase(), children: [], className: '', textContent: '', style: {}, attrs: {}, focused: false,
     setAttribute(n, v) { this.attrs[n] = v; },
     getAttribute(n) { return this.attrs[n]; },
     appendChild(child) { this.children.push(child); return child; },
+    focus() { this.focused = true; },
     addEventListener(n, cb) { listeners.set(n, cb); },
     click() { listeners.get('click')?.({ preventDefault() {}, stopPropagation() {} }); }
   };

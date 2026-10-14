@@ -31,17 +31,17 @@ try {
         await browser.until(`window.__mapEngine === '${engine}' && document.querySelectorAll('.itinerary-pin').length > 0`, 30000);
         browser.errors.length = 0;
         const count = selector => browser.evaluate(`document.querySelectorAll('${selector}').length`);
-        const chip = "[...document.querySelectorAll('[data-map-slot=\"layers\"] button')].find(b => b.textContent.includes('itineraries'))";
+        const chip = `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label') === "Writers' itineraries")`;
         const lineCount = engine === 'maplibre'
           ? "Number(Boolean(window.__itineraryMap?.getLayer('draw-line-itineraries')))"
-          : "[...document.querySelectorAll('.leaflet-overlay-pane path')].filter(p => p.getAttribute('stroke') === '#b794f6').length";
+          : "[...document.querySelectorAll('.leaflet-overlay-pane path')].filter(p => p.getAttribute('stroke') === '#a582d4').length";
         const first = await count('.itinerary-pin');
         const look = await browser.evaluate(`({ colour: getComputedStyle(document.querySelector('.itinerary-pin')).backgroundColor,
           numbers: [...document.querySelectorAll('.itinerary-pin')].map(p => p.textContent).join(','),
           buttons: [...document.querySelectorAll('.itinerary-pin')].every(p => p.tagName === 'BUTTON' && p.title),
           lines: ${lineCount}, chip: ${chip}.hidden === false && getComputedStyle(${chip}).display !== 'none',
           overflow: document.documentElement.scrollWidth })`);
-        assert.equal(look.colour, 'rgb(142, 91, 214)', JSON.stringify(look));
+        assert.equal(look.colour, 'rgb(165, 130, 212)', JSON.stringify(look));
         assert.equal(look.numbers, Array.from({ length: first }, (_, i) => i + 1).join(','));
         assert.ok(look.buttons, JSON.stringify(look));
         assert.equal(look.lines, 1, JSON.stringify(look));
@@ -90,7 +90,7 @@ try {
         assert.equal(await browser.evaluate(`getComputedStyle(${chip}).display`), 'none');
         assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
         assert.deepEqual(browser.errors, []);
-        console.log(`PASS ${engine} ${width}px: ${first}/${second} numbered pins, one line, picker, popup, toggle, empty route, console clean`);
+        console.log(`PASS ${engine} ${width}px: ${first}/${second} accessible stop dots, one line, picker, popup, toggle, empty route, console clean`);
       }
     } finally {
       preview.stop();

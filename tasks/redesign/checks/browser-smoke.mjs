@@ -77,8 +77,8 @@ const screenshot = async name => {
       frame.src = frame.src;
     });
   })()`);
-  await evaluate("window.scrollTo({top: 0, behavior: 'instant'})");
-  await until('window.scrollY === 0');
+  // Planning smooth-scrolls to the itinerary heading a moment later; keep asking for the top until it holds.
+  await until("(window.scrollTo({ top: 0, behavior: 'instant' }), window.scrollY === 0)");
   const viewport = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   await writeFile(new URL(`${name}-viewport.png`, output), Buffer.from(viewport.data, 'base64'));
   await evaluate(`(() => {
@@ -103,7 +103,8 @@ const inspect = () => evaluate(`(() => {
     videos: document.querySelectorAll('[data-video-activate]').length,
     sections: ['overview','itinerary','stays','videos'].map(id => document.querySelectorAll('#' + id).length),
     overflow: document.documentElement.scrollWidth, viewport: innerWidth,
-    map: rect('.tt-overview-map'), form: rect('.tt-overview-planner'),
+    map: rect('.tt-overview-map'), form: rect('#itinerary .trip-card'),
+    visible: [...document.querySelectorAll('[data-tt-view]')].filter(section => !section.hidden).map(section => section.id),
     days: days.length, openDays: days.map(day => day.open),
     stays: document.querySelectorAll('.stay-item').length,
     note: document.querySelector('.stay-note')?.textContent.trim() || '',
@@ -125,14 +126,18 @@ try {
     const initial = await inspect();
     assert.equal(initial.title, 'Lisbon'); assert.ok(initial.photo > 0, 'Lisbon hero must load');
     assert.deepEqual(initial.sections, [1,1,1,1]); assert.equal(initial.idsUnique, true);
+    assert.deepEqual(initial.visible, ['overview'], 'The map is the initial view');
     assert.equal(initial.planner, true); assert.ok(initial.videos > 0 || scenario === 'fallback');
     assert.ok(initial.overflow <= width, `${width}px initial overflow: ${initial.overflow}`);
-    if (width === 375) assert.ok(initial.form.y < initial.map.y, 'Mobile form precedes map');
     await screenshot(`${width}-initial`);
+    await evaluate("document.querySelector('[data-tt-section=itinerary]').click()");
+    assert.deepEqual((await inspect()).visible, ['itinerary'], 'The form appears in the Itinerary tab');
     await evaluate("document.querySelector('.trip-form').requestSubmit()");
     await until("document.querySelectorAll('.itinerary-day').length === 3 && document.querySelector('.trip-submit')?.disabled === false");
     assert.equal(await evaluate("document.activeElement?.id"), 'itinerary-title', 'Planning focuses the current itinerary heading');
     const planned = await inspect();
+    assert.deepEqual(planned.visible, ['itinerary'], 'Planning keeps the Itinerary tab');
+    assert.equal(await evaluate('location.hash'), '#itinerary');
     assert.equal(planned.days, 3); assert.deepEqual(planned.openDays, [true,false,false]);
     assert.ok(planned.overflow <= width, `${width}px planned overflow: ${planned.overflow}`);
     if (scenario === 'fallback') {
@@ -179,7 +184,7 @@ try {
     await until(`document.readyState === 'complete' && window.htmx?.version === ${JSON.stringify(htmxVersion)} && document.querySelectorAll('.itinerary-day').length === 3`);
     assert.equal((await inspect()).title, 'Lisbon', 'Shared page reload keeps selected trip');
     assert.equal(await evaluate("document.querySelector('.trip-form').elements.start.value"), links.start);
-    await evaluate("document.querySelector('.trip-select').focus()");
+    await evaluate("document.querySelector('#trip-travelers').focus()");
     await call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 });
     await call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
     assert.equal(await evaluate("document.activeElement?.classList.contains('trip-submit')"), true, 'Keyboard Tab reaches submit');
@@ -210,6 +215,7 @@ try {
     await evaluate("document.querySelector('#city_name').value = 'Porto'; document.querySelector('#destination-search').requestSubmit()");
     await until("document.querySelector('.destination-title')?.textContent.trim() === 'Porto'");
     const porto = await inspect(); assert.equal(porto.videos, 0); assert.equal(porto.days, 0);
+    assert.deepEqual(porto.visible, ['overview'], 'A new destination opens its map');
     await screenshot('375-porto-empty-videos');
     await evaluate("document.querySelector('#city_name').value = 'error'; document.querySelector('#destination-search').requestSubmit()");
     await until("document.querySelector('#destination-search-error')?.textContent.trim().length > 0");

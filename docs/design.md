@@ -1,29 +1,36 @@
 # Design reference
 
-The implemented interface follows the central website and phone screen in the
-[reference image](../goalimg.png). The poster around them (slogans, scenery, phone hardware) is not
-site content. This file covers the visual target, the template contracts, and the data rules that
-changes must keep. Verification evidence is in the [results](../tasks/project-fix-results.md).
+The destination page follows the [desktop map-look-v2 reference](../Unknown.png) and
+[phone reference](../Unknown-2.png), using the data already available to the app.
+The earlier [reference image](../goalimg.png) still informs the light TravelTab controls and
+content cards. This file covers the layout, template contracts and data rules. Map-first
+verification is in [the TDD evidence](tdd/map-first.tdd.md); the updated appearance and journeys
+are recorded in [map-look-v2 evidence](tdd/map-look-v2.tdd.md).
 
 ## Layout
 
-**Desktop:** a centered cream shell, about 1120–1200px wide, with these sections in order:
+**Brand:** solid terracotta peaks sit beside a two-line wordmark: bold serif “TravelTab” above
+smaller terracotta “ByPatronFragas”. The accessible name, document and trip titles, and calendar
+text remain `TravelTabByPatronFragas`. Search submits with Enter or a suggestion; the rounded
+field has no clear or arrow button. A bordered bookmark button opens saved places.
 
-1. Header: compact wordmark, section links and a pill-shaped search field.
-2. Destination hero: photo on the left (about 58%) and city, tagline and three current weather
-   metrics on the right. About 220–260px tall.
-3. Section shortcuts: Overview, Itinerary, Stays, Videos.
-4. Overview: map on the left and the "Plan your trip" form on the right, in equal columns, with the city guide card full width below them.
-5. Itinerary: a day accordion with calendar/map export actions beside the heading. Up to four
-   stop photos per row.
-6. Where to stay: image-left cards, about three per row, with a "Check prices" link.
-7. Videos: thumbnail cards, four shown at first, with a "View all" expansion.
-8. Footer, defined once outside the swapped region.
+**Desktop:** a soft rounded frame contains the header, search and section tabs. White layer
+pills sit above a 16 px rounded map card, beside a separate roughly 400 px place panel that
+scrolls independently. The panel shows compact weather,
+city guide and a planning shortcut until a place is selected. Itinerary, Stays and Videos replace
+the visible view when selected; the map stays mounted. Overview opens with the destination banner
+(city photo, name, country, tagline and current weather) between the header and the map; the map
+below it keeps a full screen of height. The banner replaces the footer, which is hidden on the map
+page only. The footer remains outside the swapped
+content region. With a plan on the map, a dark "All · Day 1 · Day 2 …" row at the map's top left
+filters the plan pins; the selected day uses the plan orange.
 
-**Mobile:** the search field moves to its own row. The city name sits over the photo and the
-weather metrics below it. The form comes **before** the map. Stops, stays and videos become
-image-left rows. A fixed bottom navigation bar links to the four sections. Below about 900px the
-overview has one column; below about 640px the page uses the mobile header and bottom bar.
+**Mobile:** the search has its own row. The map fills the space above the fixed bottom navigation.
+Layer pills use short labels (Notable, Writers, Itineraries, Your plan) while keeping their full
+accessible names. Selecting a place opens a half-height sheet with an inset rounded photo;
+its handle expands or collapses it by tap, drag or keyboard. Escape closes it and restores focus
+to the pin. The bottom navigation uses text tabs with an underline on the active section.
+Itinerary stops, stays and videos use compact rows.
 
 ## Visual tokens
 
@@ -41,6 +48,46 @@ Defined in `public/styles.css`. Component stylesheets load after it, in this ord
 | `--tt-radius` | `8px` |
 | Fonts | Georgia for headings, Inter for body text |
 
+### Map palette and controls
+
+The destination map uses a separate dark vector palette while the page controls and place panel
+keep the light TravelTab tokens above. The default OpenFreeMap style is tuned in
+`public/redesign/writers-map.js`: navy `#202A32` background, muted olive `#29382F` parks, deep
+blue `#000E29` water, and subdued purple-grey buildings. Major roads, streets, district and
+water labels remain legible; generic shop, parking and amenity POIs are hidden. Untagged
+buildings have an 8 m extrusion fallback, and Mapterhorn terrain remains available in 3D.
+Notable places use terracotta (`#cf795b`) teardrops with white category icons; nature places use
+green (`#459b6b`). Writer places use purple (`#a582d4`) teardrops with a quill, and clusters use
+grey circles with dark counts. Day-plan stops use orange (`#a56824`) numbered teardrops and an orange dotted route; writers' itineraries
+use purple dashed routes with small stop dots. Every pin colour has at least 3:1 contrast on
+the dark map. Place labels use white text on dark translucent rounded boxes (at least 4.5:1).
+The selected place uses a terracotta pin with a ring and a white callout with its name, area,
+optional photo and a keyboard-accessible action to open the panel.
+
+Dark translucent map controls sit in a column at the top right: compass N, locate, 3D, zoom
+and layers. The compass resets bearing and, like 3D, is hidden for Leaflet. Targets are at
+least 44 px and the scale sits at the bottom right. The “View full map” card uses the existing
+external map URL, with the city photo or a map icon. The Leaflet fallback uses EOX imagery
+and keeps its attribution.
+
+### Place panel and saving
+
+The place panel shows a photo with a close button, serif title and bookmark toggle, kind and
+area, writer card, and one paragraph (AI summary when available, otherwise the description).
+It then offers Add to plan, Save to visit and Share, followed by Wikipedia and OpenStreetMap
+Directions link cards, stored hours when available, and writers' post cards. There are no
+summary/details tabs. Hours can expand when long; no computed “Open now” claim is shown.
+
+The writer card first reports membership in loaded writers' itineraries, using stop QIDs and
+existing source names; otherwise it reports writer mentions with monograms, or “No writer
+mentions yet”. Its arrow scrolls to the posts. Post cards link the title, blog and language;
+a neutral quill tile substitutes for a thumbnail because post images and excerpts are not stored.
+
+Saving shows “Added to your saved places · Undo” in a polite live region on the map. Undo
+removes that place. The header bookmark opens the saved list; choosing an item opens its place
+on the map, and Escape closes the list and restores focus. The saved count and Clear action
+live inside the Itinerary planner.
+
 - Accessibility rules the audit enforces ([evidence](../tasks/artifacts/redesign/final-verification-2/README.md)): 4.5:1 text and 3:1 icons and field boundaries, focus rings of at least 3:1 that are not clipped by `overflow: hidden` (use an inset ring there, light on dark photo overlays), controls at least 44px, and the current section never shown by colour alone.
 - Spacing scale: 4/8/12/16/24/32px.
 - Icons: Bootstrap Icons only.
@@ -54,17 +101,19 @@ Defined in `public/styles.css`. Component stylesheets load after it, in this ord
 
 **Page composition.** `index` owns the document, header, `#content-area`, footer and bottom
 navigation. A search replaces `#content-area` with `content_fragment`, which renders:
-`weather_display` → shortcuts → `section#overview` (`map_card` + `trip_card`, then `guide_card`) →
-`section#itinerary` (`itinerary_body`) → `section#stays` (`stay_card`) → `section#videos`
-(`video`). All four anchor targets exist before a plan is generated, and IDs stay unique.
+`section#overview` (`map_card` with the map and place panel) → `section#itinerary` (`trip_card`
+and `itinerary_body`) → `section#stays` (`stay_card`) → `section#videos` (`video`). The weather
+and guide render in the default panel when a writer map is available, and `weather_display`
+renders inside `section#overview` before the map with an `h2` title (the page keeps one `h1`).
+Without a writer map, they retain their page fallback. All four anchor targets exist before a plan is generated, and IDs stay unique.
 
 **Planner response.** `/plan` targets `#trip-card` with `outerHTML`. Every response, including
 400 and 500 errors, renders `plan_response`, which has three sibling roots:
 
 ```html
 {{ template "trip_card" . }}
-<section id="itinerary" hx-swap-oob="outerHTML">{{ template "itinerary_body" . }}</section>
-<section id="stays" hx-swap-oob="outerHTML">{{ template "stay_card" .Plan }}</section>
+<div id="itinerary-results" hx-swap-oob="outerHTML">{{ template "itinerary_body" . }}</div>
+<section id="stays" data-tt-view hidden hx-swap-oob="outerHTML">{{ template "stay_card" .Plan }}</section>
 ```
 
 Full-page renders never include OOB attributes. A failed regeneration clears the old itinerary and
@@ -123,8 +172,8 @@ by the same builder as the photo, and only entries a person has reviewed are eve
   forecasts get explicit fallback states.
 - The first itinerary day is open initially and after each new plan. Days use independent native
   `details` elements.
-- Keep the real map embed and provider attribution. Never ship a static mock map or crops of the
-  reference image.
+- Keep live map sources and provider attribution. The Waze iframe remains only as the fallback
+  when the writer map is unavailable. Never ship a static mock map or crops of the reference image.
 - Don't add links to features that don't exist, such as accounts, saved trips, guide pages or legal
   pages. The guide card's links go to Wikivoyage, its source; there is no guide page of our own.
 - Never show generated or unreviewed guide text, and never show a guide without its Wikivoyage article,
@@ -134,12 +183,12 @@ by the same builder as the photo, and only entries a person has reviewed are eve
 
 | Reference | Implementation |
 | --- | --- |
-| Styled street map with pins | Waze embed; its tile style is controlled by the provider |
+| Photoreal map with dense pins | Dark vector writer map; the fallback still uses the Waze embed |
 | Daily temperature and sun icon | Rainfall and certainty; the planner has no daily temperatures |
 | Visit time ranges, video runtimes | Omitted; the data doesn't include them |
 | Hotel photos | Placeholder unless a curated, identity-matched image exists |
 | Date-range control | Start date and a day count, with the end date shown read-only |
-| Profile, Saved and broader site navigation | Section links only |
+| Profile and broader site navigation | Section tabs and a saved-places bookmark |
 
 The [final browser evidence](../tasks/artifacts/redesign/final-verification/README.md#reference-comparison)
 has a section-by-section comparison.

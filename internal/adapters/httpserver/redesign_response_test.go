@@ -39,13 +39,15 @@ func TestRedesignPlanResponseRoots(t *testing.T) {
 			assert.Equal(t, tc.pushURL, response.Header.Get("HX-Push-Url"))
 			roots := responseRoots(t, string(body))
 			require.Len(t, roots, 3, "planner must replace form, itinerary, and stays")
-			for i, id := range []string{"trip-card", "itinerary", "stays"} {
+			for i, id := range []string{"trip-card", "itinerary-results", "stays"} {
 				assert.Equal(t, id, nodeAttribute(roots[i], "id"))
 				assert.Equal(t, 1, strings.Count(string(body), `id="`+id+`"`))
 				if i > 0 {
 					assert.Equal(t, "outerHTML", nodeAttribute(roots[i], "hx-swap-oob"))
 				}
 			}
+			assert.True(t, nodeHasAttribute(roots[2], "data-tt-view"), "stays keeps its tab-view marker after the OOB swap")
+			assert.True(t, nodeHasAttribute(roots[2], "hidden"), "stays remains inactive after planning")
 			if tc.message != "" {
 				assert.Contains(t, string(body), tc.message)
 				assert.NotContains(t, string(body), "Hotel Alpha")
@@ -139,4 +141,13 @@ func nodeAttribute(node *html.Node, key string) string {
 		}
 	}
 	return ""
+}
+
+func nodeHasAttribute(node *html.Node, key string) bool {
+	for _, attribute := range node.Attr {
+		if attribute.Key == key {
+			return true
+		}
+	}
+	return false
 }

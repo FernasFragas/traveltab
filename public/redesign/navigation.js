@@ -4,16 +4,13 @@
     window.travelTabNavigationWired = true;
 
     var sectionIDs = ['overview', 'itinerary', 'stays', 'videos'];
-    var menuButton = document.querySelector('.tt-menu-button');
-    var headerNavigation = document.getElementById('header-navigation');
-    var mobile = window.matchMedia('(max-width: 639px)');
     var search = document.getElementById('destination-search');
     var searchError = document.getElementById('destination-search-error');
     var searchStatus = document.getElementById('destination-search-status');
-    var sections = [];
-    var offset = 76;
-    var frame = null;
-    var navigationObserver = null;
+    function currentSection() {
+        var id = location.hash.slice(1);
+        return sectionIDs.includes(id) ? id : 'overview';
+    }
 
     function setActive(id) {
         document.querySelectorAll('[data-tt-section]').forEach(function (link) {
@@ -25,69 +22,14 @@
         });
     }
 
-    function updateActive() {
-        frame = null;
-        var active = 'overview';
-        sections.forEach(function (section) {
-            if (section.getBoundingClientRect().top <= offset + 8) active = section.id;
+    function showSection(id) {
+        sectionIDs.forEach(function (sectionID) {
+            var section = document.getElementById(sectionID);
+            if (section) section.hidden = sectionID !== id;
         });
-        // The last sections may be too short to reach the top of the viewport.
-        if (window.scrollY > 0 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 3 && sections.length) {
-            active = sections[sections.length - 1].id;
-        }
-        setActive(active);
+        setActive(id);
     }
 
-    function scheduleActive() {
-        if (frame === null) frame = window.requestAnimationFrame(updateActive);
-    }
-
-    function measureNavigation() {
-        var navigation = document.querySelector('.tt-section-navigation');
-        offset = navigation ? Math.ceil(navigation.getBoundingClientRect().height) + 16 : 76;
-        document.documentElement.style.setProperty('--tt-anchor-offset', offset + 'px');
-        scheduleActive();
-    }
-
-    function refreshSections() {
-        sections = sectionIDs.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-        if (navigationObserver) navigationObserver.disconnect();
-        var navigation = document.querySelector('.tt-section-navigation');
-        if (navigation && window.ResizeObserver) {
-            navigationObserver = new ResizeObserver(measureNavigation);
-            navigationObserver.observe(navigation);
-        }
-        measureNavigation();
-    }
-
-    function closeMenu(returnFocus) {
-        if (!menuButton || !headerNavigation) return;
-        menuButton.setAttribute('aria-expanded', 'false');
-        menuButton.setAttribute('aria-label', 'Open section menu');
-        headerNavigation.hidden = mobile.matches;
-        if (returnFocus) menuButton.focus();
-    }
-
-    function configureMenu() {
-        if (!menuButton || !headerNavigation) return;
-        menuButton.hidden = !mobile.matches;
-        closeMenu(false);
-    }
-
-    if (menuButton && headerNavigation) {
-        menuButton.addEventListener('click', function () {
-            var open = menuButton.getAttribute('aria-expanded') === 'true';
-            menuButton.setAttribute('aria-expanded', String(!open));
-            menuButton.setAttribute('aria-label', open ? 'Open section menu' : 'Close section menu');
-            headerNavigation.hidden = open;
-        });
-    }
-    if (mobile.addEventListener) mobile.addEventListener('change', configureMenu);
-    else mobile.addListener(configureMenu);
-
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && menuButton && menuButton.getAttribute('aria-expanded') === 'true') closeMenu(true);
-    });
     document.addEventListener('click', function (event) {
         if (!(event.target instanceof Element)) return;
         var link = event.target.closest('a[data-tt-section], .tt-skip-link');
@@ -95,13 +37,10 @@
             var id = link.getAttribute('href').slice(1);
             var target = document.getElementById(id);
             if (target) {
-                closeMenu(false);
-                setActive(id);
+                showSection(id);
                 target.setAttribute('tabindex', '-1');
                 target.focus({ preventScroll: true });
             }
-        } else if (menuButton && menuButton.getAttribute('aria-expanded') === 'true' && !event.target.closest('.tt-header')) {
-            closeMenu(false);
         }
     });
 
@@ -158,15 +97,16 @@
         if (event.detail.target && event.detail.target.id === 'content-area') {
             if (searchError) searchError.textContent = '';
             if (searchStatus) searchStatus.textContent = 'Destination updated. Your overview is ready.';
-            closeMenu(false);
+            if (location.hash !== '#overview') history.replaceState(history.state, '', location.pathname + location.search + '#overview');
+            showSection('overview');
         }
-        refreshSections();
     });
-    document.body.addEventListener('htmx:afterSettle', refreshSections);
-    document.body.addEventListener('htmx:historyRestore', refreshSections);
-    window.addEventListener('scroll', scheduleActive, { passive: true });
-    window.addEventListener('resize', measureNavigation, { passive: true });
-    window.addEventListener('hashchange', scheduleActive);
-    configureMenu();
-    refreshSections();
+    document.body.addEventListener('htmx:afterSettle', function (event) {
+        if (!event.detail.target || event.detail.target.id !== 'trip-card') return;
+        if (location.hash !== '#itinerary') history.replaceState(history.state, '', location.pathname + location.search + '#itinerary');
+        showSection('itinerary');
+    });
+    document.body.addEventListener('htmx:historyRestore', function () { showSection(currentSection()); });
+    window.addEventListener('hashchange', function () { showSection(currentSection()); });
+    showSection(currentSection());
 })();

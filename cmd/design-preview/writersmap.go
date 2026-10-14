@@ -33,7 +33,7 @@ var _ application.WriterMapSource = (*writerMapPreviewSource)(nil)
 
 func newWriterMapPreviewSource() *writerMapPreviewSource {
 	return &writerMapPreviewSource{
-		writers: writermaptest.NewMadeiraSource(),
+		writers: newMadeiraPreviewSource(),
 		lisbon:  newLisbonPreviewSource(),
 		base: &writermaptest.FakeSource{Result: writermap.DestinationResult{
 			Places: []writermap.Place{{QID: "Q208954", Names: []string{"Clérigos Tower"},
@@ -46,6 +46,29 @@ func newWriterMapPreviewSource() *writerMapPreviewSource {
 				{Host: "fixture.writers", Status: "unavailable"}},
 		}},
 	}
+}
+
+// newMadeiraPreviewSource adds panel and category examples without changing the shared fixture.
+func newMadeiraPreviewSource() *writermaptest.FakeSource {
+	source := writermaptest.NewMadeiraSource()
+	for i := range source.Result.Places {
+		place := &source.Result.Places[i]
+		if place.QID == "Q25444" {
+			place.PhotoURL = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Funchal_Madeira_Portugal.jpg/640px-Funchal_Madeira_Portugal.jpg"
+			place.PhotoCredit = "Wikimedia Commons"
+			place.OpeningHours = "Visitor information: daily 09:00–18:00"
+		}
+	}
+	source.Result.Mentions["Q25444"] = []writermap.Mention{
+		{WriterHost: "www.earthtrekkers.com", BlogName: "Earth Trekkers", PostURL: "https://www.earthtrekkers.com/madeira-itinerary/", PostTitle: "Madeira Itinerary", Language: "en"},
+		{WriterHost: "viagensasolta.com", BlogName: "Viagens à Solta", PostURL: "https://viagensasolta.com/roteiro-madeira/", PostTitle: "Roteiro de 5 dias na Madeira", Language: "pt"},
+	}
+	source.Result.WriterCounts["Q25444"] = 2
+	source.Result.Places = append(source.Result.Places,
+		writermap.Place{QID: "Q900001", Names: []string{"Funchal museum"}, Lat: 32.651, Lon: -16.912, Kind: "museum", Area: "Funchal", Description: "Preview museum."},
+		writermap.Place{QID: "Q900002", Names: []string{"Funchal café"}, Lat: 32.649, Lon: -16.908, Kind: "cafe", Area: "Funchal", Description: "Preview café."},
+	)
+	return source
 }
 
 func (f *writerMapPreviewSource) Destination(ctx context.Context, area writermap.Area) (*writermap.DestinationResult, error) {

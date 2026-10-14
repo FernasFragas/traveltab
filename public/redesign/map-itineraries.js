@@ -79,7 +79,7 @@
         var stops = stopsOf(itinerary, data.features);
         if (stops.length > 1) {
             context.draw.line('itineraries', stops.map(function (stop) { return [stop.lon, stop.lat]; }),
-                { color: '#b794f6', width: 3, dash: [6, 6] });
+                { color: '#a582d4', width: 3, dash: [4, 4] });
         }
         context.draw.markers('itineraries', stops.map(function (stop, index) {
             var button = document.createElement('button');

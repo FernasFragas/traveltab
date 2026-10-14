@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const read = name => readFileSync(new URL(`../../../public/redesign/${name}`, import.meta.url), 'utf8');
 const sources = [read('writers-map-leaflet.js'), read('writers-map.js')];
-const drawCalls = ['clear', 'control', 'fit', 'flyTo', 'line', 'markers', 'popup'];
+const drawCalls = ['clear', 'clusters', 'control', 'fit', 'flyTo', 'line', 'markers', 'popup'];
 const eoxTiles = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg';
 
 // --- MapLibre engine ---
@@ -42,6 +42,69 @@ test('draws a 3D MapLibre map with the dark default style, terrain and camera', 
   assert.equal(app.events[0].detail.map, map);
 });
 
+test('MapLibre controls switch to 2D and restore 3D terrain, with navigation and scale at bottom right', async () => {
+  const app = browser();
+  app.run();
+  app.mount();
+  await app.flush();
+  const map = app.maplibre[0];
+  assert.deepEqual(map.controls.filter(item => !item.custom).map(item => item.position), ['bottom-right']);
+  const tools = map.controls.find(item => item.control.onAdd?.().className === 'travelmap-tools').control.onAdd();
+  const dimension = tools.children.find(item => item.className === 'travelmap-dimension');
+  dimension.click();
+  assert.equal(map.pitch, 0);
+  assert.equal(map.terrain, null);
+  dimension.click();
+  assert.equal(map.pitch, 55);
+  assert.equal(map.terrain.source, 'terrain-dem');
+});
+
+test('compass resets bearing and precedes locate, dimension and zoom controls', async () => {
+ const app = browser(); app.run(); app.mount(); await app.flush();
+ const map = app.maplibre[0];
+ const tools = map.controls.find(item => item.control.onAdd?.().className === 'travelmap-tools');
+ assert.equal(tools.position, 'top-right');
+ const buttons = tools.control.onAdd().children;
+ assert.equal(buttons[0].className, 'travelmap-compass');
+ assert.equal(buttons[1].className, 'travelmap-locate');
+ assert.equal(buttons[2].className, 'travelmap-dimension');
+ assert.deepEqual(buttons.slice(3, 5).map(button => button.textContent), ['+', '−']);
+ buttons[0].click(); assert.equal(map.ease.bearing, 0);
+});
+
+test('locate me shows a position dot and a denied request reports status without retrying', async () => {
+  let request;
+  let calls = 0;
+  const app = browser({ geolocation: { getCurrentPosition(ok, fail) { calls++; request = { ok, fail }; } } });
+  app.run();
+  const shell = app.mount();
+  await app.flush();
+  const tools = app.maplibre[0].controls.find(item => item.control.onAdd?.().className === 'travelmap-tools').control.onAdd();
+  const locate = tools.children.find(item => item.className === 'travelmap-locate');
+  locate.click();
+  request.ok({ coords: { latitude: 32.66, longitude: -16.91 } });
+  assert.deepEqual(Array.from(app.maplibre[0].fly.center), [-16.91, 32.66]);
+  assert.equal(app.maplibre[0].markers.at(-1).element.className, 'travelmap-location-dot');
+  locate.click();
+  request.fail({ code: 1 });
+  assert.match(shell.status.textContent, /Location unavailable/);
+  locate.click();
+  assert.equal(calls, 2);
+});
+
+test('Leaflet controls keep locate and hide the 2D/3D switch', async () => {
+  const app = browser({ webgl: false });
+  app.run();
+  app.mount();
+  await app.flush();
+  const map = app.leafletMaps[0];
+  assert.equal(map.options.zoomControl, false);
+  assert.equal(map.controls.filter(item => !item.custom).every(item => item.options.position === 'bottomright'), true);
+  const tools = map.controls.find(item => item.element?.className === 'travelmap-tools').element;
+  assert.ok(tools.children.some(item => item.className === 'travelmap-locate'));
+  assert.equal(tools.children.some(item => item.className === 'travelmap-dimension'), false);
+});
+
 test('adds one dark 3D building layer below the labels when the style has no fill-extrusion layer', async () => {
   const app = browser();
   app.run();
@@ -53,7 +116,7 @@ test('adds one dark 3D building layer below the labels when the style has no fil
   assert.equal(layer.source, 'openmaptiles');
   assert.equal(layer['source-layer'], 'building');
   assert.equal(layer.minzoom, 14);
-  assert.equal(JSON.stringify(layer.paint['fill-extrusion-height']), '["coalesce",["get","render_height"],0]');
+  assert.equal(JSON.stringify(layer.paint['fill-extrusion-height']), '["coalesce",["get","render_height"],8]');
   assert.equal(JSON.stringify(layer.paint['fill-extrusion-base']), '["coalesce",["get","render_min_height"],0]');
   assert.ok(layer.paint['fill-extrusion-opacity'] < 1 && layer.paint['fill-extrusion-opacity'] > 0.5);
   assert.equal(app.maplibre[0].addedBefore[layer.id], 'road-label', 'above the roads, below the first label after the buildings');
@@ -91,10 +154,10 @@ test('applies the Electroverse-like palette to the OpenFreeMap layers on style.l
   app.mount();
   await app.flush();
   const { paints } = app.maplibre[0];
-  assert.equal(paints.background['background-color'], '#18263b');
+  assert.equal(paints.background['background-color'], '#202a32');
   assert.equal(paints.water['fill-color'], '#000e29');
-  assert.equal(paints.landuse_park['fill-color'], '#203838');
-  assert.equal(paints.landcover_wood['fill-color'], '#203838');
+  assert.equal(paints.landuse_park['fill-color'], '#29382f');
+  assert.equal(paints.landcover_wood['fill-color'], '#29382f');
   assert.equal(paints.landcover_wood['fill-pattern'], null, 'the wood pattern would hide the colour');
   assert.equal(paints.highway_minor['line-color'], '#404860');
   assert.equal(paints.highway_major_inner['line-color'], '#4c576c');
@@ -150,6 +213,36 @@ test('applies no layout overrides to a custom style URL', async () => {
   app.mount('Madeira', { mapStyleUrl: '/map-fixtures/style.json' });
   await app.flush();
   assert.deepEqual(app.maplibre[0].layoutCalls, []);
+});
+
+test('hides generic POIs but retains major landmarks and geographic labels', async () => {
+  const app = browser({ style: openFreeMapStyle() });
+  app.run();
+  app.mount();
+  await app.flush();
+  const { layouts } = app.maplibre[0];
+  assert.equal(layouts.poi.visibility, 'none');
+  assert.equal(layouts.poi_z14.visibility, 'none');
+  for (const id of ['poi_major', 'place_city', 'highway_name_other', 'water_name']) {
+    assert.equal(layouts[id]?.visibility, undefined);
+  }
+});
+
+test('the four pin colours contrast with the map background by at least 3:1', async () => {
+  const app = browser({ style: openFreeMapStyle() });
+  app.run();
+  app.mount();
+  await app.flush();
+  const background = app.maplibre[0].paints.background['background-color'];
+  const luminance = hex => {
+    const rgb = hex.match(/[a-f\d]{2}/gi).map(value => parseInt(value, 16) / 255);
+    const linear = rgb.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  };
+  for (const pin of ['#cf795b', '#459b6b', '#a582d4', '#a56824']) {
+    const values = [luminance(pin), luminance(background)].sort((a, b) => b - a);
+    assert.ok((values[0] + 0.05) / (values[1] + 0.05) >= 3, `${pin} lacks contrast against ${background}`);
+  }
 });
 
 test('leaves a layer id the style does not have alone', async () => {
@@ -518,6 +611,60 @@ test('a style reload re-adds lines without duplicating markers', async () => {
   assert.equal(app.maplibre[0].sources['terrain-dem'] !== undefined, true);
 });
 
+test('MapLibre clusters writer places with a count and expands a clicked cluster', async () => {
+  const { app, draw } = await drawn('maplibre');
+  const features = [
+    { type: 'Feature', geometry: { type: 'Point', coordinates: [-16.9, 32.7] }, properties: { qid: 'Q1', name: 'First' } },
+    { type: 'Feature', geometry: { type: 'Point', coordinates: [-16.91, 32.71] }, properties: { qid: 'Q2', name: 'Second' } }
+  ];
+  const clicked = [];
+  draw.clusters('writers', features, { labelled: ['Q1'] }, feature => clicked.push(feature.properties.qid));
+  const map = app.maplibre[0];
+  assert.equal(map.sources['draw-clusters-writers'].cluster, true);
+  assert.equal(map.sources['draw-clusters-writers'].data.features.length, 2);
+  assert.deepEqual(map.layers.filter(layer => layer.source === 'draw-clusters-writers').map(layer => layer.id),
+    ['draw-clusters-writers-group', 'draw-clusters-writers-count', 'draw-clusters-writers-single', 'draw-clusters-writers-single-count', 'draw-clusters-writers-label']);
+  assert.equal(map.layers.find(layer => layer.id === 'draw-clusters-writers-label').minzoom, 15);
+  const group = { type: 'Feature', geometry: { coordinates: [-16.9, 32.7] }, properties: { cluster_id: 7, point_count: 2 } };
+  map.emitLayer('click', 'draw-clusters-writers-group', { features: [group] });
+  await app.flush();
+  assert.equal(map.fly.zoom, 16);
+  assert.deepEqual(Array.from(map.fly.center), [-16.9, 32.7]);
+  map.emitLayer('click', 'draw-clusters-writers-single', { features: [features[0]] });
+  assert.deepEqual(clicked, ['Q1']);
+  map.renderedFeatures = [group];
+  map.emit('moveend');
+  const list = map.controls.find(item => item.control.onAdd?.().className === 'travelmap-cluster-list').control.onAdd();
+  assert.equal(list.children[0].children[0].textContent, 'Zoom to 2 writer places');
+  list.children[0].children[0].click();
+  await app.flush();
+  assert.equal(map.fly.zoom, 16);
+  assert.equal(list.children[1].children[0]['data-qid'], 'Q1');
+  list.children[1].children[0].click();
+  assert.deepEqual(clicked, ['Q1', 'Q1']);
+  draw.clear('writers');
+  assert.equal(map.sources['draw-clusters-writers'], undefined);
+});
+
+test('Leaflet draws writer clusters as individual markers', async () => {
+  const { app, draw } = await drawn('leaflet');
+  const features = [
+    { type: 'Feature', geometry: { coordinates: [-16.9, 32.7] }, properties: { qid: 'Q1', name: 'First' } },
+    { type: 'Feature', geometry: { coordinates: [-16.91, 32.71] }, properties: { qid: 'Q2', name: 'Second' } }
+  ];
+  const clicked = [];
+  draw.clusters('writers', features, { labelled: ['Q1'] }, feature => clicked.push(feature.properties.qid));
+  const markers = app.leafletMaps[0].layers.filter(layer => layer.kind === 'marker');
+  assert.equal(markers.length, 2);
+  const label = markers[0].element.children.find(child => child.className === 'map-pin-label');
+  assert.equal(label.hidden, true);
+  app.leafletMaps[0].zoom = 16;
+  app.leafletMaps[0].emit('zoomend');
+  assert.equal(label.hidden, false);
+  markers[0].element.click();
+  assert.deepEqual(clicked, ['Q1']);
+});
+
 test('a line drawn while the style is reloading waits for style.load instead of throwing', async () => {
   const { app, draw } = await drawn('maplibre');
   app.maplibre[0].styleLoading = true;
@@ -541,7 +688,7 @@ test('a layer that throws in add is logged and skipped, and the others still dra
   assert.deepEqual(added.map(call => call[0]), ['add']);
   assert.match(app.warnings[0], /old.*L is not defined/);
   app.window.TravelMap.setLayerEnabled('old', false);
-  assert.equal(app.events.at(-1).type, 'travelmap:ready');
+  assert.equal(app.events.filter(event => event.type === 'travelmap:ready').length, 1);
 });
 
 test('gives layers the engine, destination, features and shell in the context', async () => {
@@ -556,6 +703,18 @@ test('gives layers the engine, destination, features and shell in the context', 
   assert.equal(seen.shell, shell.root);
   assert.equal(seen.features[0].properties.qid, 'Q1');
   assert.equal(typeof seen.selectPlace, 'function');
+});
+
+test('the full-map card shows the destination photo and restores the map icon when it fails to load', async () => {
+  const app = browser({ features: [{ properties: { qid: 'Q1', name: 'Funchal', photo_url: 'https://example.org/funchal.jpg' } }] });
+  app.run();
+  const shell = app.mount('funchal-pt');
+  await app.flush();
+  const thumbnail = shell.fullMapIcon.replacement;
+  assert.equal(thumbnail?.className, 'map-action-photo');
+  assert.equal(thumbnail.src, 'https://example.org/funchal.jpg');
+  thumbnail.dispatch('error');
+  assert.equal(thumbnail.replacement, shell.fullMapIcon, 'a broken photo gives the map icon back');
 });
 
 // --- Core behaviour kept from before ---
@@ -736,7 +895,7 @@ async function drawn(engine) {
 
 // options: webgl (default true); maplibre: null (not loaded yet) or { ready: false } (never loads on its own);
 // leaflet: null (not loaded yet); style: the stub MapLibre style's sources and layers.
-function browser({ failFetch = false, delayFirstFetch = false, webgl = true, maplibre = {}, leaflet = {}, style = {}, features = null, pages = null } = {}) {
+function browser({ failFetch = false, delayFirstFetch = false, webgl = true, maplibre = {}, leaflet = {}, style = {}, features = null, pages = null, geolocation = null } = {}) {
   const nodes = [];
   const events = [];
   const warnings = [];
@@ -755,12 +914,16 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
     const canvas = element('DIV');
     const list = element('DIV');
     const status = element('DIV');
+    const fullMapIcon = element('I');
+    const fullMap = element('A');
+    fullMap.querySelector = selector => (selector === '.bi-map' ? fullMapIcon : null);
     root.querySelector = selector => ({
       '[data-map-canvas]': canvas,
       '[data-map-slot="list"]': list,
-      '[data-map-slot="status"]': status
+      '[data-map-slot="status"]': status,
+      '.map-action': fullMap
     })[selector] || null;
-    return { root, canvas, list, status };
+    return { root, canvas, list, status, fullMapIcon };
   };
   const document = {
     body,
@@ -773,7 +936,7 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
     querySelector() { return null; },
     dispatchEvent(event) { events.push(event); }
   };
-  const window = {};
+  const window = { navigator: { geolocation } };
   if (maplibre) window.maplibregl = maplibreStub(maplibreMaps, maplibre.ready !== false, style);
   if (leaflet) window.L = leafletStub(leafletMaps);
   const context = vm.createContext({
@@ -809,14 +972,14 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
         return {
           markers: map.markers.filter(marker => !marker.removed).length,
           lines: map.layers.filter(layer => layer.id.startsWith('draw-line')).length,
-          controls: map.controls.filter(control => control.custom).length
+          controls: map.controls.filter(control => control.custom && control.control.onAdd().className !== 'travelmap-tools').length
         };
       }
       const map = leafletMaps.at(-1);
       return {
         markers: map.layers.filter(layer => layer.kind === 'marker').length,
         lines: map.layers.filter(layer => layer.kind === 'line').length,
-        controls: map.controls.filter(control => control.custom).length
+        controls: map.controls.filter(control => control.custom && control.element.className !== 'travelmap-tools').length
       };
     },
     popups() {
@@ -845,8 +1008,8 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
 
 // The OpenFreeMap dark layer ids the palette table targets.
 function openFreeMapStyle() {
-  const ids = ['background', 'water', 'landuse_park', 'landcover_wood', 'highway_minor', 'highway_major_inner', 'highway_major_casing', 'highway_major_subtle', 'highway_motorway_inner', 'highway_motorway_casing', 'building', 'place_city', 'place_town', 'place_suburb', 'place_city_large'];
-  return { layers: ids.map(id => ({ id, type: id.startsWith('place_') ? 'symbol' : id === 'background' ? 'background' : id.startsWith('highway') ? 'line' : 'fill', ...(id === 'building' ? { 'source-layer': 'building' } : {}) })) };
+  const ids = ['background', 'water', 'landuse_park', 'landcover_wood', 'highway_minor', 'highway_major_inner', 'highway_major_casing', 'highway_major_subtle', 'highway_motorway_inner', 'highway_motorway_casing', 'building', 'place_city', 'place_town', 'place_suburb', 'place_city_large', 'poi', 'poi_z14', 'poi_major', 'highway_name_other', 'water_name'];
+  return { layers: ids.map(id => ({ id, type: id.startsWith('place_') || id.startsWith('poi') || id.endsWith('_name_other') || id === 'water_name' ? 'symbol' : id === 'background' ? 'background' : id.startsWith('highway') ? 'line' : 'fill', ...(id === 'building' ? { 'source-layer': 'building' } : {}) })) };
 }
 
 function maplibreStub(maps, auto, style) {
@@ -861,11 +1024,13 @@ function maplibreStub(maps, auto, style) {
       maps.push(this);
       if (auto) setImmediate(() => { this.emit('style.load'); this.emit('load'); });
     }
-    on(name, callback) { (this.handlers[name] ??= []).push(callback); return this; }
-    off(name, callback) { this.handlers[name] = (this.handlers[name] || []).filter(item => item !== callback); return this; }
+    on(name, layer, callback) { (this.handlers[name + (callback ? ':' + layer : '')] ??= []).push(callback || layer); return this; }
+    off(name, layer, callback) { const key = name + (callback ? ':' + layer : ''); this.handlers[key] = (this.handlers[key] || []).filter(item => item !== (callback || layer)); return this; }
     emit(name, event) { (this.handlers[name] || []).slice().forEach(callback => callback(event)); }
-    addSource(id, source) { if (this.styleLoading) throw new Error('Style is not done loading.'); this.sources[id] = source; }
+    emitLayer(name, layer, event) { (this.handlers[name + ':' + layer] || []).slice().forEach(callback => callback(event)); }
+    addSource(id, source) { if (this.styleLoading) throw new Error('Style is not done loading.'); this.sources[id] = source; if (source.cluster) source.getClusterExpansionZoom = () => Promise.resolve(16); }
     getSource(id) { return this.sources[id]; }
+    queryRenderedFeatures() { return this.renderedFeatures || []; }
     removeSource(id) { delete this.sources[id]; }
     addLayer(layer, before) { this.layers.push(layer); this.addedBefore[layer.id] = before; }
     getStyle() { return { sources, layers: [...styleLayers, ...this.layers] }; }
@@ -875,12 +1040,15 @@ function maplibreStub(maps, auto, style) {
     setPaintProperty(id, name, value) { this.paintCalls.push([id, name, value]); (this.paints[id] ??= {})[name] = value; }
     setLayoutProperty(id, name, value) { this.layoutCalls.push([id, name, value]); (this.layouts[id] ??= {})[name] = value; }
     setTerrain(terrain) { this.terrain = terrain; }
+    setPitch(pitch) { this.pitch = pitch; }
     setSky() {}
     addControl(control, position) { this.controls.push({ control, position, custom: Boolean(control.onAdd && !control.native) }); }
     removeControl(control) { this.controls = this.controls.filter(item => item.control !== control); }
     fitBounds(bounds, options) { this.fit = [bounds, options]; }
     flyTo(options) { this.fly = options; }
+    easeTo(options) { this.ease = options; }
     jumpTo(options) { this.jumps.push(options); }
+    getZoom() { return this.jumps.at(-1)?.zoom || this.options.zoom; }
     resize() {}
     remove() { this.removed = true; }
   }
@@ -908,7 +1076,8 @@ function leafletStub(maps) {
     addTo(map) { this.map = map; this.element = this.onAdd(map); map.controls.push(this); return this; },
     remove() { this.map.controls = this.map.controls.filter(item => item !== this); return this; }
   });
-  control.scale = () => ({ addTo(map) { map.controls.push({ custom: false }); return this; } });
+  control.scale = options => ({ options, addTo(map) { map.controls.push({ custom: false, options }); return this; } });
+  control.zoom = options => ({ options, addTo(map) { map.controls.push({ custom: false, options }); return this; } });
   return {
     map(canvas, options) {
       const map = {
@@ -926,7 +1095,7 @@ function leafletStub(maps) {
         },
         fitBounds(bounds, options) { this.fit = [bounds, options]; },
         flyTo(point, zoom) { this.fly = [point, zoom]; },
-        getZoom() { return 12; },
+        getZoom() { return this.zoom || 12; },
         remove() { this.removed = true; }
       };
       maps.push(map);
@@ -971,7 +1140,8 @@ function element(tagName) {
     dataset: {},
     setAttribute(name, value) { this[name] = value; },
     addEventListener(name, callback) { listeners.set(name, callback); },
-    click() { listeners.get('click')(); },
+    click() { if (!this.disabled) listeners.get('click')(); },
+    dispatch(name) { listeners.get(name)?.(); },
     appendChild(child) { this.children.push(child); },
     replaceChildren() { this.children = []; },
     replaceWith(node) { this.replacement = node; },

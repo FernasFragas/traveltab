@@ -44,6 +44,7 @@ func TestICS_OneEventPerStopAtTheDefaultTimes(t *testing.T) {
 	assert.Contains(t, body, "SUMMARY:Belem Tower")
 	assert.Contains(t, body, "SUMMARY:Jeronimos Monastery")
 	assert.Contains(t, body, "SUMMARY:Castle of Sao Jorge")
+	assert.Contains(t, body, "DESCRIPTION:Part of your TravelTabByPatronFragas trip:")
 
 	// Day 1 (dry, req.Start = 2026-03-11) starts its first stop at 10:00 and its second at
 	// 12:00 local time. threeDayPlan's days carry no explicit location, so they default to

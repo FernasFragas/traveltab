@@ -11,14 +11,14 @@ test('registers the notable and writers pin layers with the map core', () => {
   assert.deepEqual([...app.layers.keys()], ['notable', 'writers']);
 });
 
-test('draws writer pins orange with their count, above blue notable pins', () => {
+test('draws purple writer quills above terracotta notable pins', () => {
   const app = browser();
   app.run();
   const map = app.addLayers();
   const writers = map.markers('writers');
   const notable = map.markers('notable');
   assert.deepEqual(writers.map(marker => marker.title), ['Pico Ruivo', 'Cabo Girão']);
-  assert.equal(writers[0].element.children[0].textContent, '2');
+  assert.equal(writers[0].element.children[0].className, 'bi bi-feather');
   assert.ok(writers.every(marker => marker.element.className.includes('map-pin-writer')));
   assert.deepEqual(notable.map(marker => marker.title), ['Funchal', 'Seixal']);
   assert.ok(notable.every(marker => marker.element.className.includes('map-pin-notable')));
@@ -61,11 +61,9 @@ test('a pin click opens a popup with the name, the writer count and the blog mon
   assert.deepEqual(popup.lngLat, [-16.9, 32.7]);
   assert.equal(popup.element.attributes.role, 'dialog');
   assert.equal(popup.element.attributes['aria-label'], 'Pico Ruivo');
-  assert.deepEqual(app.textOf(popup.element), ['Pico Ruivo', 'Mentioned by 2 writers']);
+  assert.deepEqual(app.textOf(popup.element), ['Pico Ruivo']);
   assert.deepEqual(app.selected, []);
   await app.flush();
-  const monograms = app.find(popup.element, node => node.className.startsWith('map-panel-monogram '.trim()) && node.className !== 'map-panel-monograms map-popup-monograms').map(node => node.textContent);
-  assert.deepEqual(monograms, ['SI', 'VÀ', 'C', '+1']);
   assert.deepEqual(app.requests.map(request => request[0]), ['/map/madeira-pt/Q1?lat=1&lon=2']);
 });
 
@@ -74,11 +72,11 @@ test('a popup says "1 writer" for one writer and shows the place kind for a nota
   app.run();
   const map = app.addLayers();
   map.markers('writers').find(marker => marker.title === 'Cabo Girão').onClick();
-  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Cabo Girão', 'Mentioned by 1 writer']);
+  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Cabo Girão']);
   map.markers('notable').find(marker => marker.title === 'Funchal').onClick();
   assert.equal(map.popups.size, 1, 'one popup at a time');
-  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Funchal', 'City']);
-  assert.equal(app.requests.length, 1, 'a notable pin has no writers to fetch');
+  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Funchal']);
+  assert.equal(app.requests.length, 2, 'panel metadata comes from existing place fragments');
 });
 
 test('the popup takes focus on its Details button and has no blog text beyond names', () => {
@@ -87,7 +85,8 @@ test('the popup takes focus on its Details button and has no blog text beyond na
   const map = app.addLayers();
   map.markers('notable').find(marker => marker.title === 'Seixal').onClick();
   const details = app.find(map.popups.get('pin-popup').element, node => node.tagName === 'BUTTON')[0];
-  assert.equal(details.textContent, 'Details');
+  assert.equal(details.textContent, '›');
+  assert.equal(details.getAttribute('aria-label'), 'Details');
   assert.equal(app.focused, details);
   assert.equal(app.textOf(map.popups.get('pin-popup').element).join(' ').includes('quote'), false);
 });
@@ -194,6 +193,26 @@ test('close returns the panel to its empty state', () => {
   assert.equal(app.panel.children[0].textContent, 'Pick a place on the map');
 });
 
+test('writer card arrow scrolls to the posts', () => {
+ const app = browser(); app.run(); let scrolled = false;
+ const root = { querySelector: () => ({ scrollIntoView() { scrolled = true; } }) };
+ const arrow = { closest: selector => selector === '[data-writer-posts]' ? arrow : selector === '.map-place-panel' ? root : null };
+ app.body.emit('click', { target: arrow }); assert.equal(scrolled, true);
+});
+
+test('Share copies a link to the selected place when Web Share is unavailable', async () => {
+  let copied = '';
+  const app = browser({ navigator: { clipboard: { writeText: text => { copied = text; return Promise.resolve(); } } } });
+  app.run();
+  const feedback = { textContent: '' };
+  const root = { dataset: { placeQid: 'Q1' }, querySelector: selector => selector === '.map-panel-feedback' ? feedback : { textContent: 'Pico Ruivo' } };
+  const share = { closest: selector => selector === '[data-map-share]' ? share : selector === '.map-place-panel' ? root : null };
+  app.body.emit('click', { target: share });
+  await app.flush();
+  assert.match(copied, /[?&]place=Q1/);
+  assert.equal(feedback.textContent, 'Link copied');
+});
+
 test('does nothing without the map core', () => {
   const app = browser({ core: false });
   assert.doesNotThrow(() => app.run());
@@ -234,8 +253,10 @@ function browser(options = {}) {
   const focus = { current: null };
   const writersOf = [['travel.example', 'Salt in our Hair'], ['viagens.example', 'Viagens à Solta'], ['c.example', 'Casa'], ['c.example', 'Casa'], ['d.example', 'Dias']];
   const window = {
+    location: { href: 'https://traveltab.example/trip/madeira-pt' },
+    navigator: options.navigator || {},
     fetch: url => { requests.push([url]); return Promise.resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(writersOf)) }); },
-    DOMParser: class { parseFromString(text) { return { querySelectorAll: () => JSON.parse(text).map(([host, blog]) => element('a', { dataset: { writerHost: host, blogName: blog } })) }; } },
+    DOMParser: class { parseFromString(text) { return { querySelector: () => null, querySelectorAll: () => JSON.parse(text).map(([host, blog]) => element('a', { dataset: { writerHost: host, blogName: blog } })) }; } },
     L: new Proxy({}, { get() { throw new Error('pin layer must not access Leaflet'); } }),
     htmx: { ajax: (method, url, slot) => { requests.push([method, url, slot]); return Promise.resolve(); } }
   };
@@ -256,7 +277,7 @@ function browser(options = {}) {
     flush: async () => { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); },
     find: (node, test) => [node, ...node.children.flatMap(child => app.find(child, test))].filter(test),
     textOf: node => app.find(node, item => item.textContent && item.tagName !== 'BUTTON' && !item.className.includes('monogram')).map(item => item.textContent),
-    run: () => vm.runInNewContext(source, { window, document, ...window, setTimeout }),
+    run: () => vm.runInNewContext(source, { window, document, ...window, URL, setTimeout }),
     addLayers() {
       layers.forEach(layer => layer.add(map, context));
       return map;

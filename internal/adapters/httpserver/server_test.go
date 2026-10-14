@@ -576,3 +576,21 @@ func TestCheckDatabase_LoadsOldRowsThatStillHaveHotels(t *testing.T) {
 	require.Len(t, data.Videos, 2)
 	assert.Equal(t, "Test Video 1", data.Videos[0].Title)
 }
+
+// As a traveller, I want to recognise the brand and submit destination searches with Enter.
+func TestIndex_BrandAndSearchField(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	server, weather, videos := createTestServer(ctrl)
+	forgetCity(t, "Lisbon")
+	weather.EXPECT().GenerateReport(gomock.Any(), "Lisbon, Portugal").Return(createTestGeneralWeatherInfo(), nil)
+	expectFreshData(videos, "Lisbon")
+	status, body := doRequest(t, server, httptest.NewRequest("GET", "/", nil))
+	require.Equal(t, 200, status)
+	assert.Contains(t, body, `aria-label="TravelTabByPatronFragas"`)
+	assert.Contains(t, body, `class="tt-brand-peaks"`)
+	assert.Contains(t, body, `<strong>TravelTab</strong><small>ByPatronFragas</small>`)
+	assert.NotContains(t, body, "tt-search-submit")
+	assert.NotContains(t, body, "bi-signpost-split-fill")
+	assert.Contains(t, body, `aria-label="Saved places"`)
+	waitForCache(t, "Lisbon")
+}

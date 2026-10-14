@@ -60,7 +60,7 @@
                         <div class="itinerary-stop-row">
                             <ol class="itinerary-stops">
                                 {{ range $i, $stop := $day.Stops }}
-                                <li class="itinerary-stop" data-plan-stop data-name="{{ $stop.Name }}" data-lat="{{ $stop.Lat }}" data-lon="{{ $stop.Lon }}">
+                                <li class="itinerary-stop" data-plan-stop data-name="{{ $stop.Name }}" data-lat="{{ $stop.Lat }}" data-lon="{{ $stop.Lon }}" data-qid="{{ $stop.ID }}" data-kind="{{ $stop.Kind }}" data-description="{{ $stop.Description }}">
                                     <figure class="itinerary-stop-media">
                                         <span class="itinerary-stop-fallback" aria-hidden="true"><i class="bi bi-image"></i></span>
                                         {{ if $stop.Image }}

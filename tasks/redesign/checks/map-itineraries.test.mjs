@@ -24,7 +24,7 @@ test('draws numbered buttons and one styled route through context.draw', async (
   assert.equal(app.pins()[0].element.className, 'itinerary-pin');
   assert.equal(app.pins()[0].title, 'Stop 1: Tower');
   assert.deepEqual(JSON.parse(JSON.stringify(app.line().coords)), [[-9.1, 38.1], [-9.2, 38.2], [-9.3, 38.3]]);
-  assert.deepEqual(JSON.parse(JSON.stringify(app.line().style)), { color: '#b794f6', width: 3, dash: [6, 6] });
+  assert.deepEqual(JSON.parse(JSON.stringify(app.line().style)), { color: '#a582d4', width: 3, dash: [4, 4] });
   assert.deepEqual(app.calls().filter(c => c !== 'clear'), ['line', 'markers']);
 });
 
@@ -37,7 +37,7 @@ test('an answer that is still loading is not kept, so the routes appear on the n
 
 test('the itineraries legend dot matches the route line colour', () => {
   const css = readFileSync(new URL('../../../public/redesign/writers-map-layout.css', import.meta.url), 'utf8');
-  assert.match(css, /\.writers-map-layer-itineraries \{ --layer-color: #b794f6; \}/);
+  assert.match(css, /\.writers-map-layer-itineraries \{ --layer-color: #a582d4; \}/);
 });
 
 test('a pin opens route details and a safe post link; switching closes them', async () => {

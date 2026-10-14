@@ -451,7 +451,7 @@ func TestTripPage_HasATitleAndDescription(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugtitle-pt?days=3&from=2026-03-11", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, body, "<title>3 days in Slugtitle — TravelTab</title>")
+	assert.Contains(t, body, "<title>3 days in Slugtitle — TravelTabByPatronFragas</title>")
 	assert.Contains(t, body, `<meta name="description" content="A day-by-day plan for a 3-day trip to Slugtitle, with weather-aware stops and places to stay.">`)
 }
 
@@ -469,7 +469,7 @@ func TestTripPage_UnplannedPageStillHasATitle(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/trip/slugnodate-pt", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, body, "<title>Plan a trip to Slugnodate — TravelTab</title>")
+	assert.Contains(t, body, "<title>Plan a trip to Slugnodate — TravelTabByPatronFragas</title>")
 	assert.NotContains(t, body, "<title>✈🌤️TravelTab</title>", "the slug page never falls back to the plain home-page title")
 }
 
@@ -485,7 +485,7 @@ func TestMainPage_KeepsItsPlainTitle(t *testing.T) {
 	status, body := doRequest(t, server, httptest.NewRequest("GET", "/?city_name=Titlecheck", nil))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, body, "<title>✈🌤️TravelTab</title>")
+	assert.Contains(t, body, "<title>TravelTabByPatronFragas</title>")
 	assert.NotContains(t, body, `<link rel="canonical"`)
 }
 

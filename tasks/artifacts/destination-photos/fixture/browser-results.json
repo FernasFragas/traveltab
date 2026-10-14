@@ -1,8 +1,8 @@
 {
-  "browser": "Chrome/153.0.8010.53",
-  "htmx": "1.9.11",
-  "base": "http://127.0.0.1:18087",
-  "slowBase": "http://127.0.0.1:18089",
+  "browser": "Chrome/155.0.8059.40",
+  "htmx": "2.0.11",
+  "base": "http://127.0.0.1:8087",
+  "slowBase": "",
   "results": [
     {
       "width": 375,
@@ -12,7 +12,7 @@
           "title": "Lisbon",
           "country": "pt",
           "state": "ready",
-          "src": "http://127.0.0.1:18087/images/destinations/lisbon-alfama.jpg",
+          "src": "http://127.0.0.1:8087/images/destinations/lisbon-alfama.jpg",
           "alt": "Terracotta rooftops of Lisbon's Alfama district, the dome of Santa Engracia, and the Tagus River",
           "loaded": true,
           "naturalWidth": 1280,
@@ -27,7 +27,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -38,7 +38,7 @@
           "title": "Paris",
           "country": "fr",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -53,7 +53,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -64,7 +64,7 @@
           "title": "Porto",
           "country": "pt",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/porto.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/porto.png",
           "alt": "View of Porto",
           "loaded": true,
           "naturalWidth": 1280,
@@ -79,7 +79,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -90,7 +90,7 @@
           "title": "Paris",
           "country": "us",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris-texas.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris-texas.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -105,7 +105,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -131,7 +131,7 @@
           "credits": 0,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -157,7 +157,7 @@
           "credits": 0,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -183,7 +183,7 @@
           "credits": 0,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -191,14 +191,14 @@
           "planner": true
         },
         "rapid": {
-          "observations": 10,
+          "observations": 6,
           "settled": "Porto/pt"
         },
         "paris-fr": {
           "title": "Paris",
           "country": "fr",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -213,7 +213,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -224,7 +224,7 @@
           "title": "Paris",
           "country": "us",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris-texas.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris-texas.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -239,7 +239,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -250,7 +250,7 @@
           "title": "Brokenimage",
           "country": "pt",
           "state": "failed",
-          "src": "http://127.0.0.1:18088/fixture-photos/missing.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/missing.png",
           "alt": "View of Brokenimage",
           "loaded": false,
           "naturalWidth": 0,
@@ -265,7 +265,7 @@
           "credits": 1,
           "frame": {
             "width": 345,
-            "height": 164
+            "height": 200
           },
           "overflow": 375,
           "viewport": 375,
@@ -282,7 +282,7 @@
           "title": "Lisbon",
           "country": "pt",
           "state": "ready",
-          "src": "http://127.0.0.1:18087/images/destinations/lisbon-alfama.jpg",
+          "src": "http://127.0.0.1:8087/images/destinations/lisbon-alfama.jpg",
           "alt": "Terracotta rooftops of Lisbon's Alfama district, the dome of Santa Engracia, and the Tagus River",
           "loaded": true,
           "naturalWidth": 1280,
@@ -296,10 +296,10 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -308,7 +308,7 @@
           "title": "Paris",
           "country": "fr",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -322,10 +322,10 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -334,7 +334,7 @@
           "title": "Porto",
           "country": "pt",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/porto.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/porto.png",
           "alt": "View of Porto",
           "loaded": true,
           "naturalWidth": 1280,
@@ -348,10 +348,10 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -360,7 +360,7 @@
           "title": "Paris",
           "country": "us",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris-texas.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris-texas.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -374,10 +374,10 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -400,10 +400,10 @@
           "images": 0,
           "credits": 0,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -426,10 +426,10 @@
           "images": 0,
           "credits": 0,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -452,23 +452,23 @@
           "images": 0,
           "credits": 0,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
         },
         "rapid": {
-          "observations": 10,
+          "observations": 6,
           "settled": "Porto/pt"
         },
         "paris-fr": {
           "title": "Paris",
           "country": "fr",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -482,10 +482,10 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -494,7 +494,7 @@
           "title": "Paris",
           "country": "us",
           "state": "ready",
-          "src": "http://127.0.0.1:18088/fixture-photos/paris-texas.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/paris-texas.png",
           "alt": "View of Paris",
           "loaded": true,
           "naturalWidth": 1280,
@@ -508,10 +508,10 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
@@ -520,7 +520,7 @@
           "title": "Brokenimage",
           "country": "pt",
           "state": "failed",
-          "src": "http://127.0.0.1:18088/fixture-photos/missing.png",
+          "src": "http://127.0.0.1:8088/fixture-photos/missing.png",
           "alt": "View of Brokenimage",
           "loaded": false,
           "naturalWidth": 0,
@@ -534,24 +534,14 @@
           "images": 1,
           "credits": 1,
           "frame": {
-            "width": 654,
-            "height": 240
+            "width": 1128,
+            "height": 318
           },
-          "overflow": 1440,
+          "overflow": 1425,
           "viewport": 1440,
           "weather": true,
           "planner": true
         }
-      }
-    },
-    {
-      "slow": {
-        "observations": 14,
-        "settled": "Porto",
-        "titles": [
-          "Paris",
-          "Porto"
-        ]
       }
     }
   ],

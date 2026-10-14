@@ -17,9 +17,9 @@ try {
     window.addEventListener('error', event => window.__previewErrors.push(event.message));
     window.addEventListener('unhandledrejection', event => window.__previewErrors.push(String(event.reason)));`;
   await browser.call('Page.addScriptToEvaluateOnNewDocument', { source: hook });
-  const requests = () => browser.events.filter(e => e.method === 'Network.responseReceived').map(e => e.params.response.url);
+  const requests = () => browser.events.filter(e => e.method === 'Network.responseReceived').map(e => e.params.response.url).filter(url => { const u = new URL(url); return u.origin === new URL(preview.url).origin && !/^\/(fixture-|redesign\/|vendor\/)/.test(u.pathname) && !/\.(css|js|png|jpg|webp|woff2?)$/.test(u.pathname); });
   const count = sel => browser.evaluate(`document.querySelectorAll('${sel}').length`);
-  const chip = label => `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.textContent.includes("${label}"))`;
+  const chip = label => `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label')?.includes("${label}"))`;
   const generate = async () => {
     await browser.evaluate("document.querySelector('#trip-card form').requestSubmit()");
     await browser.until("document.querySelectorAll('[data-plan-stop]').length > 0");
@@ -97,18 +97,18 @@ try {
 
     // 7g: View on map presses the plan chip only when needed, scrolls to the map, no inline handler.
     assert.equal(await count('[data-view-on-map][onclick]'), 0);
-    await browser.until(`${chip("day plan")}.getAttribute('aria-pressed') === 'true'`);
-    await browser.evaluate(`${chip("day plan")}.click()`);
+    await browser.until(`${chip("Your plan")}.getAttribute('aria-pressed') === 'true'`);
+    await browser.evaluate(`${chip("Your plan")}.click()`);
     assert.equal(await count('.plan-pin'), 0, 'plan chip off');
     await browser.evaluate('window.scrollTo(0, document.documentElement.scrollHeight)');
     const scrolled = await browser.evaluate('window.scrollY');
     await browser.evaluate("document.querySelector('[data-view-on-map]').click()");
     await browser.until("document.querySelectorAll('.plan-pin').length > 0");
-    assert.equal(await browser.evaluate(`${chip("day plan")}.getAttribute('aria-pressed')`), 'true');
+    assert.equal(await browser.evaluate(`${chip("Your plan")}.getAttribute('aria-pressed')`), 'true');
     await browser.until(`window.scrollY < ${scrolled}`);
     await browser.evaluate("document.querySelector('[data-view-on-map]').click()");
     await sleep(200);
-    assert.equal(await browser.evaluate(`${chip("day plan")}.getAttribute('aria-pressed')`), 'true', 'already pressed stays pressed');
+    assert.equal(await browser.evaluate(`${chip("Your plan")}.getAttribute('aria-pressed')`), 'true', 'already pressed stays pressed');
     assert.ok(await count('.plan-pin') > 0);
     assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
     console.log(`PASS 7g ${engine} ${width}px: View on map presses chip once, scrolls ${scrolled} -> ${await browser.evaluate('window.scrollY')}`);

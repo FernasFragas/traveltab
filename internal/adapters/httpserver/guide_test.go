@@ -86,7 +86,7 @@ func TestGuideCard_ShowsTheReviewedGuideWithItsAttributionOnEveryRoute(t *testin
 
 			require.Equal(t, http.StatusOK, status)
 			assert.Contains(t, body, `data-guide-state="reviewed"`)
-			assert.Contains(t, body, `<h3 id="guide-title" class="guide-title">About `+city+`</h3>`)
+			assert.Contains(t, body, `<h2 id="guide-title" class="guide-title">About `+city+`</h2>`)
 			assert.Contains(t, body, `<p class="guide-paragraph">Paris sits on the Seine.</p>`)
 			assert.Contains(t, body, `<p class="guide-paragraph">It has twenty arrondissements.</p>`)
 

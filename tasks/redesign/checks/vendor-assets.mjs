@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { connect, startPreview } from './lib/browser.mjs';
 
-const output = new URL('../../../docs/tdd/artifacts/dependabot-vendor-assets/', import.meta.url);
+const output = process.env.OUTPUT_DIR ? new URL(`file://${process.env.OUTPUT_DIR.replace(/\/?$/, '/')}`) : new URL('../../../docs/tdd/artifacts/dependabot-vendor-assets/', import.meta.url);
 await mkdir(output, { recursive: true });
 const preview = await startPreview();
 let browser;
@@ -47,7 +47,7 @@ try {
           icons: document.fonts.check('16px bootstrap-icons'),
           iconFamily: getComputedStyle(document.querySelector('.bi'), '::before').fontFamily,
           htmx: document.querySelector('script[src*="htmx"]').getAttribute('src'),
-          form: rect('.tt-overview-planner'), map: rect('.tt-overview-map') };
+          map: rect('.tt-overview-map') };
       })()`);
       for (const asset of state.assets) {
         assert.equal(asset.status, 200, asset.path);
@@ -58,7 +58,6 @@ try {
       assert.match(state.iconFamily, /bootstrap-icons/);
       assert.equal(state.htmx, '/vendor/htmx.org/dist/htmx.min.js');
       assert.ok(state.overflow <= width);
-      if (width === 375) assert.ok(state.form.y < state.map.y);
       await browser.evaluate("document.querySelector('.trip-form').requestSubmit()");
       await browser.until("document.querySelectorAll('.itinerary-day').length === 3 && !document.querySelector('.trip-submit').disabled");
       assert.ok(await browser.evaluate(`document.documentElement.scrollWidth <= ${width}`));

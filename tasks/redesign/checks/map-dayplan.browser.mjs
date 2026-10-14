@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
-// Generates, regenerates and clears a day plan on both engines at 375 and 1440 px.
+// Generates, opens and clears a day plan on both engines at 375 and 1440 px.
 import assert from 'node:assert/strict';
 import { connect, startPreview } from './lib/browser.mjs';
 
@@ -26,21 +26,36 @@ try {
         const generate = async () => {
           await browser.evaluate("document.querySelector('#trip-card form').requestSubmit()");
           await browser.until("document.querySelectorAll('[data-plan-stop]').length > 0");
+          // The planner focuses the itinerary heading once the swap settles; wait so it can't steal focus later.
+          await browser.until("document.activeElement?.id === 'itinerary-title'");
         };
         assert.equal(await pins(), 0);
         await generate();
+        await browser.evaluate("document.querySelector('[data-view-on-map]').click()");
+        await browser.until("location.hash === '#overview' && !document.querySelector('#overview').hidden");
         await browser.until("document.querySelectorAll('.plan-pin').length > 0");
         const first = await pins();
         assert.equal(first, await browser.evaluate("document.querySelectorAll('[data-plan-stop]').length"));
+        await browser.evaluate("document.querySelector('.plan-pin').click()");
+        await browser.until("Boolean(document.querySelector('.map-popup'))");
+        const facts = await browser.evaluate("[...document.querySelectorAll('.plan-popup .plan-popup-facts li')].map(li => li.innerText.replace(/\\s+/g, ' ').trim())");
+        assert.deepEqual(facts.slice(0, 2), ['Day 1', 'Stop 1'], JSON.stringify(facts));
+        assert.equal(await browser.evaluate("getComputedStyle(document.querySelector('.plan-popup')).display"), 'flex', 'plan card layout, not the generic popup grid');
+        await browser.key('Escape', 'Escape', 27);
+        await browser.until("!document.querySelector('.map-popup')");
+        const focus = await browser.evaluate("({ active: document.activeElement?.outerHTML?.slice(0, 250), pins: document.querySelectorAll('.plan-pin').length })");
+        assert.equal(await browser.evaluate("document.activeElement?.classList.contains('plan-pin')"), true, JSON.stringify(focus));
         await generate();
+        await browser.evaluate("document.querySelector('[data-view-on-map]').click()");
+        await browser.until("location.hash === '#overview' && !document.querySelector('#overview').hidden");
         await browser.until(`document.querySelectorAll('.plan-pin').length === ${first}`);
         const layout = await browser.evaluate(`({ overflow: document.documentElement.scrollWidth,
-          green: getComputedStyle(document.querySelector('.plan-pin')).backgroundColor,
+          orange: getComputedStyle(document.querySelector('.plan-pin')).backgroundColor,
           toggle: [...document.querySelectorAll('.plan-day-toggle button')].map(b => b.textContent),
           controls: document.querySelectorAll('.plan-day-toggle').length,
           focusable: [...document.querySelectorAll('.plan-pin')].every(pin => pin.tagName === 'BUTTON' && pin.getAttribute('aria-label')) })`);
         assert.ok(layout.overflow <= width, JSON.stringify(layout));
-        assert.equal(layout.green, 'rgb(67, 160, 71)');
+        assert.equal(layout.orange, 'rgb(165, 104, 36)');
         assert.deepEqual(layout.toggle.slice(0, 2), ['All', 'Day 1']);
         assert.equal(layout.controls, 1);
         assert.ok(layout.focusable);
@@ -56,7 +71,7 @@ try {
         assert.equal(await browser.evaluate("document.querySelectorAll('.plan-day-toggle').length"), 0);
         assert.deepEqual(await browser.evaluate('window.__previewErrors'), []);
         assert.deepEqual(browser.errors, []);
-        console.log(`PASS ${engine} ${width}px: ${first} green numbered pins, regenerate without duplicates, day toggle, View on map, clear, console clean`);
+        console.log(`PASS ${engine} ${width}px: ${first} orange numbered pins, popup and Escape, regenerate without duplicates, day toggle, View on map, clear, console clean`);
       }
     } finally {
       preview.stop();

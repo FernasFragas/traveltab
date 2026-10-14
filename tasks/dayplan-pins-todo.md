@@ -17,7 +17,7 @@ Source of truth for progress. Read [the plan](dayplan-pins-plan.md) first.
 ---
 
 ### P1. Put the stop's details in the markup
-- [ ] Done
+- [x] Done
 
 **Owns:** `views/itinerary_body.go.tpl` (the `data-plan-stop` line only), `internal/adapters/httpserver/dayplan_test.go`
 
@@ -27,7 +27,7 @@ Source of truth for progress. Read [the plan](dayplan-pins-plan.md) first.
 **Verify:** `go test ./internal/adapters/httpserver/ -run DayPlan`
 
 ### P2. Read the new fields
-- [ ] Done
+- [x] Done
 
 **Owns:** `public/redesign/map-dayplan.js`, `tasks/redesign/checks/map-dayplan.test.mjs`
 
@@ -37,7 +37,7 @@ Source of truth for progress. Read [the plan](dayplan-pins-plan.md) first.
 **Verify:** `node --test tasks/redesign/checks/map-dayplan.test.mjs`
 
 ### P3. Click a pin → popup
-- [ ] Done
+- [x] Done
 
 **Owns:** `public/redesign/map-dayplan.js`, `tasks/redesign/checks/map-dayplan.test.mjs`, `public/redesign/map-panel.css` (new rules only, if needed)
 
@@ -50,7 +50,7 @@ Source of truth for progress. Read [the plan](dayplan-pins-plan.md) first.
 **Verify:** `node --test tasks/redesign/checks/map-dayplan.test.mjs`
 
 ### P4. Details → place panel
-- [ ] Done
+- [x] Done
 
 **Owns:** `public/redesign/map-dayplan.js`, `tasks/redesign/checks/map-dayplan.test.mjs`
 
@@ -61,7 +61,7 @@ Source of truth for progress. Read [the plan](dayplan-pins-plan.md) first.
 **Verify:** `node --test tasks/redesign/checks/map-dayplan.test.mjs`
 
 ### P5. Browser check and evidence
-- [ ] Done
+- [x] Done
 
 **Owns:** `tasks/redesign/checks/map-dayplan.browser.mjs`, `docs/tdd/dayplan-pins.tdd.md` (new)
 

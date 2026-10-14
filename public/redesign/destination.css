@@ -225,7 +225,20 @@
 
 /* Header order is brand, search, tabs. The DOM keeps the tabs next to the menu button, so the menu's first Tab stop is its first link.
    Below 900px styles.css reorders the rows itself. */
+.tt-header > .tt-brand { font-size: clamp(18px, 2.2vw, 26px); letter-spacing: -0.06em; }
+.tt-footer-brand { font-size: 20px; }
+
 @media (min-width: 900px) {
     .tt-search-area { order: 1; margin-left: 0; flex: 1 1 320px; max-width: 420px; }
     .tt-header-navigation { order: 2; }
 }
+
+@media (max-width: 639px) {
+    .tt-header-navigation { display: none; }
+}
+
+.tt-header > .tt-brand { display: flex; align-items: center; gap: 8px; letter-spacing: 0; }
+.tt-brand-peaks { width: 42px; height: 38px; color: #c96649; flex-shrink: 0; }
+.tt-wordmark { display: flex; flex-direction: column; }
+.tt-wordmark strong { font: 800 28px/1 var(--tt-font-heading); }
+.tt-wordmark small { margin-top: 4px; font: 500 11px/1.1 var(--tt-font-body); color: #a64c35; }

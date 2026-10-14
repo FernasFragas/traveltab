@@ -42,7 +42,9 @@ try {
         panel: { x: panel.x, y: panel.y, width: panel.width, height: panel.height },
         info: { label: info?.getAttribute('aria-label'), description: document.getElementById(info?.getAttribute('aria-describedby'))?.textContent.trim() },
         layers: [...shell.querySelectorAll('[data-map-slot="layers"] > button')].map(el => el.textContent.trim()),
-        emptyPanel: shell.querySelector('[data-map-slot="panel"]')?.textContent.trim() };
+        emptyPanel: shell.querySelector('[data-map-slot="panel"]')?.textContent.trim(),
+        panelVisible: getComputedStyle(shell.querySelector('[data-map-slot="panel"]')).display !== 'none',
+        peekCount: shell.querySelectorAll('[data-map-panel-peek]').length };
     })()`);
     assert.equal(madeira.destination, 'madeira-pt');
     assert.ok(madeira.text.length > 0 && madeira.focused && !madeira.listSlot, JSON.stringify(madeira));
@@ -53,14 +55,17 @@ try {
     assert.ok(madeira.overflow <= width, JSON.stringify(madeira));
     assert.equal(madeira.info.label, 'About map layers');
     assert.match(madeira.info.description || '', /notable places.*writers.*day plan.*itineraries/i);
-    assert.deepEqual(madeira.layers, ['Notable places', "Writers' pins", 'Your day plan', "Writers' itineraries"]);
-    assert.equal(madeira.emptyPanel, 'Pick a place on the map');
+    assert.deepEqual(madeira.layers, width === 375 ? ['Notable', 'Writers', 'Itineraries', 'Your plan'] : ['Notable places', "Writers' pins", "Writers' itineraries", 'Your plan']);
+    assert.match(madeira.emptyPanel, /About Madeira/);
+    assert.match(madeira.emptyPanel, /Plan your trip/);
     if (width === 1440) {
       assert.ok(madeira.card.width >= 1000, JSON.stringify(madeira));
-      assert.ok(madeira.canvas.width / madeira.card.width >= 0.6 && madeira.canvas.width / madeira.card.width <= 0.7, JSON.stringify(madeira));
+      assert.ok(madeira.panel.width >= 380 && madeira.panel.width <= 420, JSON.stringify(madeira));
       assert.ok(madeira.panel.x >= madeira.canvas.right && Math.abs(madeira.panel.height - madeira.canvas.height) <= 1, JSON.stringify(madeira));
     } else {
-      assert.ok(madeira.canvas.width <= madeira.card.width && madeira.panel.y >= madeira.canvas.bottom, JSON.stringify(madeira));
+      assert.ok(madeira.canvas.width >= madeira.card.width - 20 && madeira.canvas.width <= madeira.card.width);
+      assert.equal(madeira.panelVisible, false);
+      assert.equal(madeira.peekCount, 0);
     }
     await browser.tab(true);
     await browser.tab();

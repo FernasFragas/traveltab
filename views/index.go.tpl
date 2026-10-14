@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    {{ if .PageTitle }}<title>{{ .PageTitle }}</title>{{ else }}<title>✈🌤️TravelTab</title>{{ end }}
+    {{ if .PageTitle }}<title>{{ .PageTitle }}</title>{{ else }}<title>TravelTabByPatronFragas</title>{{ end }}
     {{ if .PageDescription }}<meta name="description" content="{{ .PageDescription }}">{{ end }}
     {{ if .CanonicalURL }}<link rel="canonical" href="{{ .CanonicalURL }}">{{ end }}
     <meta name="theme-color" content="#F7F3EB">
@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/redesign/writers-map.css">
     <link rel="stylesheet" href="/redesign/writers-map-layout.css">
     <link rel="stylesheet" href="/redesign/map-panel.css">
+    <link rel="stylesheet" href="/redesign/map-pins.css">
     <link rel="stylesheet" href="/redesign/map-layers.css">
     <link rel="stylesheet" href="/redesign/map-itineraries.css">
     <link rel="stylesheet" href="/redesign/map-saved.css">
@@ -43,10 +44,7 @@
     <a class="tt-skip-link" href="#overview">Skip to trip overview</a>
     <div class="tt-shell">
         <header class="tt-header">
-            <a class="tt-brand" href="/" aria-label="TravelTab home"><i class="bi bi-signpost-split-fill" aria-hidden="true"></i>TravelTab</a>
-            <button class="tt-menu-button tt-button tt-button-quiet" type="button" aria-expanded="false" aria-controls="header-navigation" aria-label="Open section menu" hidden>
-                <i class="bi bi-list" aria-hidden="true"></i>
-            </button>
+            <a class="tt-brand" href="/" aria-label="TravelTabByPatronFragas"><svg class="tt-brand-peaks" viewBox="0 0 48 40" aria-hidden="true"><path d="M0 36 18 4 29 23 35 12 48 36Z" fill="currentColor"/></svg><span class="tt-wordmark"><strong>TravelTab</strong><small>ByPatronFragas</small></span></a>
             <nav id="header-navigation" class="tt-header-navigation" aria-label="Main navigation">
                 <a href="#overview" data-tt-section="overview" aria-current="location">Overview</a>
                 <a href="#itinerary" data-tt-section="itinerary">Itinerary</a>
@@ -63,13 +61,13 @@
                     <input id="country_code" type="hidden" name="country_code" value="">
                     <input id="place_lat" type="hidden" name="place_lat" value="">
                     <input id="place_lon" type="hidden" name="place_lon" value="">
-                    <button type="submit" class="tt-search-submit" aria-label="Search destination"><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
                     <span id="destination-search-spinner" class="tt-search-spinner htmx-indicator" role="status"><span class="tt-spinner" aria-hidden="true"></span><span class="tt-visually-hidden">Finding destination…</span></span>
                 </form>
                 <ul id="destination-suggestions" class="tt-suggestions" role="listbox" aria-label="Suggested destinations" hidden></ul>
                 <p id="destination-search-error" class="tt-error" role="alert" aria-atomic="true"></p>
                 <p id="destination-search-status" class="tt-visually-hidden" role="status" aria-atomic="true"></p>
             </div>
+            <div class="tt-saved-area"><button type="button" class="tt-saved-toggle" aria-label="Saved places" aria-expanded="false" aria-controls="saved-places-list"><i class="bi bi-bookmark" aria-hidden="true"></i></button><div id="saved-places-list" class="tt-saved-list" hidden></div></div>
         </header>
 
         <main id="content-area" class="tt-content">
@@ -78,7 +76,7 @@
 
         <footer class="tt-footer">
             <div class="tt-footer-main">
-                <a class="tt-brand tt-footer-brand" href="/">TravelTab</a>
+                <a class="tt-brand tt-footer-brand" href="/" aria-label="TravelTabByPatronFragas"><span class="tt-wordmark"><strong>TravelTab</strong><small>ByPatronFragas</small></span></a>
                 <p>Made by Fernando Fragateiro</p>
                 <nav class="tt-footer-links" aria-label="Creator links">
                     <a href="https://github.com/FernasFragas" target="_blank" rel="noopener noreferrer" aria-label="GitHub (opens in new tab)"><i class="bi bi-github" aria-hidden="true"></i></a>
@@ -91,7 +89,7 @@
         </footer>
     </div>
     <nav class="tt-bottom-navigation" aria-label="Quick section navigation">
-        {{ template "shell_section_links" . }}
+        <a href="#overview" data-tt-section="overview" aria-current="location">Overview</a><a href="#itinerary" data-tt-section="itinerary">Itinerary</a><a href="#stays" data-tt-section="stays">Stays</a><a href="#videos" data-tt-section="videos">Videos</a>
     </nav>
 </body>
 </html>

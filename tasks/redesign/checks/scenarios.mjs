@@ -59,7 +59,7 @@ const READ = `(() => {
     itineraryEmpty: txt(document.querySelector('.itinerary-empty')), itineraryNote: txt(document.querySelector('.itinerary-note')), days,
     exports: { ics: document.querySelector('.itinerary-action[href*=".ics"]')?.getAttribute('href') || null, kml: document.querySelector('.itinerary-action[href*=".kml"]')?.getAttribute('href') || null },
     stays, stayNote: txt(document.querySelector('.stay-note')), booking: document.querySelector('.stay-prices')?.getAttribute('href') || null,
-    videoTotal: document.querySelectorAll('[data-video-activate]').length, videoShown: cards.filter(c => shown(c)).length, videoNote: txt(document.querySelector('.video-note')), videoCount: txt(document.querySelector('.video-count')),
+    videoTotal: document.querySelectorAll('[data-video-activate]').length, videoShown: cards.filter(c => !c.closest('.video-extra[hidden]')).length, videoNote: txt(document.querySelector('.video-note')), videoCount: txt(document.querySelector('.video-count')),
     videoTitles: cards.map(c => txt(c.querySelector('.video-title'))), expandButton: document.querySelector('[data-video-expand]') ? { label: txt(document.querySelector('[data-video-expand]')), expanded: document.querySelector('[data-video-expand]').getAttribute('aria-expanded') } : null,
     failedThumbs: document.querySelectorAll('.video-thumbnail-failed').length,
     sections: ['overview', 'itinerary', 'stays', 'videos'].map(id => document.querySelectorAll('section#' + id).length),
@@ -276,7 +276,7 @@ try {
         await plan(3);
         await evaluate("document.querySelectorAll('.itinerary-day').forEach(d => { d.open = true; })"); // lazy photos in closed days load only when opened
         await until("document.querySelectorAll('.itinerary-stop-media-failed').length === 2", 8000);
-        await evaluate("document.querySelector('#videos').scrollIntoView({ behavior: 'instant' })"); // lazy thumbnails fail when they come into view
+        await evaluate("document.querySelector('[data-tt-section=videos]').click(); document.querySelector('#videos').scrollIntoView({ behavior: 'instant' })"); // lazy thumbnails fail when they come into view
         await until("document.querySelectorAll('.video-thumbnail-failed').length === 4", 8000);
         const blocked = await read();
         eq(blocked.days.map(d => d.failedPhotos).slice(0, 2), [1, 1], `${ctx}: broken stop photos fall back to the placeholder and hide their credit`);

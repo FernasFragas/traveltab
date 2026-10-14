@@ -60,9 +60,9 @@ try {
         // The Electroverse-like palette: the top-left corner is land, and land and water each cover
         // a visible share of the canvas (within 6 per channel).
         const near = (pixel, hex) => [1, 3, 5].every((o, i) => Math.abs(pixel[i] - parseInt(hex.slice(o, o + 2), 16)) <= 6);
-        assert.ok(near(at(12, 12), '#18263b'), `top-left canvas pixel is ${at(12, 12)}, not land #18263b`);
+        assert.ok(near(at(12, 12), '#202a32'), `top-left canvas pixel is ${at(12, 12)}, not land #202a32`);
         const share = hex => { let n = 0; for (let i = 0; i < picture.width * picture.height; i++) if (near(Array.from(picture.data.subarray(i * 4, i * 4 + 3)), hex)) n++; return n / (picture.width * picture.height); };
-        assert.ok(share('#18263b') > 0.05, `land share ${share('#18263b')}`);
+        assert.ok(share('#202a32') > 0.05, `land share ${share('#202a32')}`);
         assert.ok(share('#000e29') > 0.05, `water share ${share('#000e29')}`);
       }
       const state = await browser.evaluate(`(() => {

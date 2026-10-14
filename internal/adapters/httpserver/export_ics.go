@@ -79,7 +79,7 @@ func icsEvent(slug string, dayIndex, stopIndex int, stop planner.Place, date tim
 		"DTEND:" + end.UTC().Format(icsDateTimeLayout),
 		"SUMMARY:" + icsEscape(stop.Name),
 		"LOCATION:" + icsEscape(stop.Name),
-		"DESCRIPTION:" + icsEscape("Part of your TravelTab trip: /trip/"+slug),
+		"DESCRIPTION:" + icsEscape("Part of your TravelTabByPatronFragas trip: /trip/"+slug),
 		"END:VEVENT",
 	})
 }

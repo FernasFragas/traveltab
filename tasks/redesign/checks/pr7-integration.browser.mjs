@@ -18,6 +18,13 @@ try {
     window.__planURLs = [];
     const open = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, ...rest) { if (String(url).includes('/plan')) window.__planURLs.push(String(url)); return open.call(this, method, url, ...rest); };
+    Object.defineProperty(window, 'maplibregl', { configurable: true,
+      get() { return window.__maplibreLibrary; },
+      set(library) {
+        if (library?.Map) { const Original = library.Map; library.Map = class extends Original { constructor(options) { super(options); window.__testMap = this; } }; }
+        window.__maplibreLibrary = library;
+      }
+    });
   ` });
   for (const width of [375, 1440]) {
     await browser.viewport(width, 900);
@@ -26,15 +33,26 @@ try {
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.until("document.querySelectorAll('.map-pin').length > 0 && document.querySelectorAll('[data-map-slot=\"layers\"] button').length > 0");
     const count = sel => browser.evaluate(`document.querySelectorAll('${sel}').length`);
-    const chip = label => `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.textContent.includes("${label}"))`;
+    const writerSelector = engine === 'maplibre' ? '.travelmap-cluster-list button[data-qid]' : '.map-pin-writer';
+    const chip = label => `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label')?.includes("${label}"))`;
     const chips = await browser.evaluate(`[...document.querySelectorAll('[data-map-slot="layers"] button')].map(b => [b.textContent.trim(), b.getAttribute('aria-pressed'), b.disabled, b.hidden])`);
+    if (engine === 'maplibre' && width === 1440) {
+      await browser.evaluate('(window.__testMap.setZoom(8), true)');
+      const clusterSelector = '.travelmap-cluster-list > div:first-child button';
+      await browser.until(`[...document.querySelectorAll('${clusterSelector}')].some(button => /^Zoom to [2-9]\\d* writer places$/.test(button.textContent))`);
+      const before = await browser.evaluate(`(() => { const button = [...document.querySelectorAll('${clusterSelector}')].sort((a, b) => Number(b.textContent.match(/\\d+/)[0]) - Number(a.textContent.match(/\\d+/)[0]))[0]; window.__clusterButton = button; return { count: Number(button.textContent.match(/\\d+/)[0]), total: document.querySelectorAll('.travelmap-cluster-list button[data-qid]').length }; })()`);
+      assert.ok(before.count > 1 && before.count <= before.total, JSON.stringify(before));
+      await browser.evaluate('window.__clusterButton.click()');
+      await browser.until(`window.__testMap.getZoom() > 8 && ![...document.querySelectorAll('${clusterSelector}')].some(button => Number(button.textContent.match(/\\d+/)?.[0]) >= ${before.count})`);
+      assert.ok(await browser.evaluate(`window.__testMap.getZoom() > 8`), 'cluster expands to a closer view with smaller groups or individual pins');
+    }
 
     // 7f toggles 7a's layers.
-    const writers = await count('.map-pin-writer');
+    const writers = await count(writerSelector);
     const notable = await count('.map-pin-notable');
     await browser.evaluate("document.querySelectorAll('.map-pin-notable').forEach(pin => { pin.__kept = true; })");
     await browser.evaluate(`${chip("Writers")}.click()`);
-    assert.equal(await count('.map-pin-writer'), 0, 'writers chip off');
+    assert.equal(await count(writerSelector), 0, 'writers chip off');
     assert.equal(await browser.evaluate("[...document.querySelectorAll('.map-pin-notable')].every(pin => pin.__kept)"), true, 'notable pins not redrawn');
     assert.equal(await count('.map-pin-notable'), notable);
     assert.equal(await browser.evaluate(`${chip("Writers")}.getAttribute('aria-pressed')`), 'false');
@@ -42,42 +60,43 @@ try {
     assert.equal(await count('.map-pin-notable'), 0, 'notable chip off');
     await browser.evaluate(`${chip("Writers")}.click()`);
     await browser.evaluate(`${chip("Notable")}.click()`);
-    assert.equal(await count('.map-pin-writer'), writers);
+    assert.equal(await count(writerSelector), writers);
     assert.equal(await count('.map-pin-notable'), notable);
 
     // 7d saves from 7a's real panel.
     await openPlacePanel(browser, 'Pico Ruivo');
-    await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
-    await browser.evaluate("document.querySelector('.map-place-panel [data-save-qid]').click()");
-    const saved = await browser.evaluate("({ button: document.querySelector('.map-place-panel [data-save-qid]').textContent.trim(), line: document.querySelector('[data-map-slot=\"saved\"]').textContent.trim() })");
+    await browser.until("document.querySelector('.map-panel-save')");
+    await browser.evaluate("document.querySelector('.map-panel-save').click()");
+    const saved = await browser.evaluate("({ button: document.querySelector('.map-panel-save').textContent.trim(), line: document.querySelector('[data-map-slot=\"saved\"]').textContent.trim() })");
     assert.equal(saved.button, 'Saved', JSON.stringify(saved));
+    assert.equal(await browser.evaluate("document.querySelector('.map-panel-bookmark').getAttribute('aria-pressed')"), 'true');
     assert.match(saved.line, /1 saved place/, JSON.stringify(saved));
 
     // Reload keeps the save; reopening the panel shows it as saved.
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.until("document.querySelectorAll('.map-pin').length > 0");
     await openPlacePanel(browser, 'Pico Ruivo');
-    await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
-    await browser.until("document.querySelector('.map-place-panel [data-save-qid]').textContent.trim() === 'Saved'");
+    await browser.until("document.querySelector('.map-panel-save')");
+    await browser.until("document.querySelector('.map-panel-save').textContent.trim() === 'Saved'");
 
     // Plan request carries the save; 7f enables the plan chip; plan chip toggles 7b's pins.
-    assert.equal(await browser.evaluate(`${chip("day plan")}.disabled`), true, 'plan chip disabled before a plan');
+    assert.equal(await browser.evaluate(`${chip("Your plan")}.disabled`), true, 'plan chip disabled before a plan');
     await browser.evaluate("document.querySelector('#trip-card form').requestSubmit()");
     await browser.until("document.querySelectorAll('.plan-pin').length > 0");
     const planURL = await browser.evaluate('window.__planURLs.at(-1)');
     assert.match(planURL, /Q473169/, planURL);
-    await browser.until(`!${chip("day plan")}.disabled`);
-    await browser.evaluate(`${chip("day plan")}.click()`);
+    await browser.until(`!${chip("Your plan")}.disabled`);
+    await browser.evaluate(`${chip("Your plan")}.click()`);
     assert.equal(await count('.plan-pin'), 0, 'plan chip off');
-    await browser.evaluate(`${chip("day plan")}.click()`);
+    await browser.evaluate(`${chip("Your plan")}.click()`);
     assert.ok(await count('.plan-pin') > 0, 'plan chip on');
 
     // Every chip off leaves an empty map with no error; turning them back on restores the pins.
     const visibleChips = `[...document.querySelectorAll('[data-map-slot="layers"] button')].filter(b => !b.hidden && !b.disabled)`;
     await browser.evaluate(`${visibleChips}.forEach(b => { if (b.getAttribute('aria-pressed') === 'true') b.click(); })`);
-    assert.equal(await count('.map-pin') + await count('.plan-pin'), 0, 'all chips off');
+    assert.equal(await count('.map-pin-notable') + await count(writerSelector) + await count('.plan-pin'), 0, 'all chips off');
     await browser.evaluate(`${visibleChips}.forEach(b => { if (b.getAttribute('aria-pressed') === 'false') b.click(); })`);
-    assert.equal(await count('.map-pin-writer'), writers);
+    assert.equal(await count(writerSelector), writers);
     assert.ok(await count('.plan-pin') > 0);
 
     // Opening a panel (an htmx swap) keeps the chosen day (7b fix) and doesn't duplicate layers.
@@ -88,7 +107,7 @@ try {
     await browser.until("document.querySelector('.map-place-panel h3')?.textContent === 'Funchal'");
     assert.equal(await count('.plan-pin'), dayOne, 'day survives panel swap');
     assert.ok(dayOne < before);
-    assert.equal(await count('.map-pin-writer'), writers, 'no duplicate writer pins');
+    assert.equal(await count(writerSelector), writers, 'no duplicate writer pins');
 
     const overflow = await browser.evaluate('document.documentElement.scrollWidth');
     assert.ok(overflow <= width, `overflow ${overflow}`);
