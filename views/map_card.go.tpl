@@ -7,21 +7,19 @@
         <div data-map-slot="layers" class="writers-map-layers" aria-label="Map layers">
             <span class="writers-map-layer writers-map-layer-notable">Notable places</span>
             <span class="writers-map-layer writers-map-layer-writers">Writers' pins</span>
-            <span class="writers-map-layer writers-map-layer-itineraries">Writers' itineraries</span>
+            <span class="writers-map-layer writers-map-layer-itineraries">Itineraries</span>
             <span class="writers-map-layer writers-map-layer-plan">Your plan</span>
         </div>
     </div>
     <div data-map-slot="status" role="status" hidden></div>
     <div class="writers-map-body">
-        <div data-map-canvas></div>
+        <div data-map-canvas tabindex="-1" aria-label="Destination map"></div>
         <div data-map-slot="panel">
             <div class="map-default-panel">
                 {{ with .Presentation.Hero }}<figure class="map-default-photo"><img src="{{ .URL }}" alt="{{ .Alt }}" width="{{ .Width }}" height="{{ .Height }}" onerror="this.closest('.map-default-photo').hidden = true"><figcaption class="map-default-photo-credit"><a href="{{ .CreditURL }}" target="_blank" rel="noopener noreferrer">Photo: {{ .Credit }}</a>{{ if .LicenseURL }} · <a href="{{ .LicenseURL }}" target="_blank" rel="noopener noreferrer">{{ .License }}</a>{{ else }} · {{ .License }}{{ end }}</figcaption></figure>{{ end }}
                 <h2>{{ .GeneralInfo.City }}</h2>
-                {{ with .Presentation.Location }}<p class="map-default-location">{{ . }}</p>{{ end }}
-                {{ if .GeneralInfo }}<div class="map-default-weather"><i class="bi bi-thermometer-half" aria-hidden="true"></i><strong>{{ .GeneralInfo.Weather.Temperature }}°C</strong><span>{{ .GeneralInfo.Weather.Condition }}</span></div>{{ end }}
+                {{ with .Presentation.Location }}<p class="map-default-location"><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ . }}</p>{{ end }}
                 <section class="map-default-guide">
-                    <h3>About {{ .GeneralInfo.City }}</h3>
                     {{ with .Presentation.Guide }}
                         {{ if .Available }}
                             {{ range $i, $paragraph := .Paragraphs }}{{ if eq $i 0 }}<p>{{ $paragraph }}</p>{{ end }}{{ end }}
@@ -30,8 +28,10 @@
                     {{ end }}
                 </section>
                 <a class="map-default-plan" href="#itinerary">Plan your trip <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                {{ with .Presentation.Guide }}{{ if .Available }}<a class="map-default-link" href="{{ .SourcePageURL }}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">W</span><span><strong>Read on Wikivoyage</strong><small>City guide, CC BY-SA</small></span><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>{{ end }}{{ end }}
             </div>
         </div>
+        {{ template "overview_teasers" . }}
     </div>
     <div class="writers-map-toast" role="status" aria-live="polite" hidden></div>
     <div hx-get="{{ .WriterMap.URL }}" hx-trigger="load" hx-swap="none" hidden></div>

@@ -18,7 +18,7 @@ func TestPlacePanel_ListsEveryWriterPost(t *testing.T) {
 	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
 
 	writers := section(t, body, `<section class="map-panel-writers"`, `</section>`)
-	assert.Contains(t, writers, "Writers' posts (2)")
+	assert.Contains(t, writers, "From our writers")
 	assert.Contains(t, writers, `href="https://www.saltinourhair.com/madeira/pico-ruivo/"`)
 	assert.Contains(t, writers, "Hiking Pico Ruivo")
 	assert.Contains(t, writers, "Salt in our Hair")
@@ -32,10 +32,9 @@ func TestPlacePanel_ShowsPartsInMockupOrder(t *testing.T) {
 	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
 
 	order := []string{
-		`class="map-panel-close"`, "<h3>Pico Ruivo</h3>", `class="map-panel-meta"`,
-		"Mentioned by 2 writers", `class="map-panel-summary"`,
+		"<h3>Pico Ruivo</h3>", `class="map-panel-meta"`, `class="map-panel-summary"`,
 		`data-add-qid="Q473169"`,
-		`class="map-panel-save"`, `data-map-share`, "Writers' posts (2)",
+		`class="map-panel-save"`, `data-map-share`, "From our writers",
 	}
 	last := -1
 	for _, part := range order {
@@ -57,7 +56,7 @@ func TestPlacePanel_WithoutSummaryOffersDetailsOnly(t *testing.T) {
 func TestPlacePanel_WriterPlaceWithoutSummaryHasNoSummaryBox(t *testing.T) {
 	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q1192102")
 
-	assert.Contains(t, body, "Mentioned by 1 writer<")
+	assert.Contains(t, body, "From our writers")
 	assert.NotContains(t, body, "AI summary")
 	assert.NotContains(t, body, "map-panel-summary")
 }
@@ -100,7 +99,7 @@ func TestPlacePanel_BaseOnlyDestinationSaysNoWriterMentions(t *testing.T) {
 	assert.Contains(t, body, "Photo: A. Person, CC BY-SA 4.0")
 	assert.Contains(t, body, `data-save-qid="Q1"`)
 	assert.NotContains(t, body, "Mentioned by")
-	assert.NotContains(t, body, "map-panel-writers")
+	assert.NotContains(t, body, "data-writers-toggle")
 }
 
 func TestPlacePanel_PhotoSrcIsAnImageURLNotACommonsPage(t *testing.T) {
@@ -210,9 +209,9 @@ func TestPlacePanel_StoryAndDirectionsCards(t *testing.T) {
 	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
 	assert.NotContains(t, body, `role="tablist"`)
 	assert.Contains(t, body, `class="map-panel-bookmark"`)
-	assert.Contains(t, body, `class="map-panel-writer-card"`)
-	assert.Contains(t, body, `openstreetmap.org/directions?route=`)
-	assert.Contains(t, body, `map-panel-post-tile`)
+	assert.Contains(t, body, `class="map-panel-writers"`)
+	assert.Contains(t, body, `google.com/maps/dir/?api=1&amp;destination=`)
+	assert.Contains(t, body, `data-writers-toggle`)
 }
 
 func TestPlacePanel_HasExistingWriterSourceNamesForItineraryCard(t *testing.T) {
@@ -223,4 +222,65 @@ func TestPlacePanel_HasExistingWriterSourceNamesForItineraryCard(t *testing.T) {
 func TestPlacePanel_HasAreaForSelectedCallout(t *testing.T) {
 	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
 	assert.Contains(t, body, `data-place-area="Santana"`)
+}
+
+// As a traveller, I want a compact place card with useful links and no redundant close control.
+func TestPlacePanel_V3ActionsAndSinglePhoto(t *testing.T) {
+	body := placePanel(t, &writermaptest.FakeSource{Result: writermap.DestinationResult{Places: []writermap.Place{{QID: "Q1", Names: []string{"Museum"}, Kind: "museum", Lat: 1, Lon: 2, PhotoURL: "https://upload.wikimedia.org/photos/museum.jpg"}}}}, "Q1")
+	assert.Contains(t, body, "Add to your plan")
+	assert.Contains(t, body, "Open in Google Maps")
+	assert.Contains(t, body, "data-best-time-kind=\"museum\"")
+	assert.NotContains(t, body, "map-panel-close")
+	assert.NotContains(t, body, "data-carousel-step")
+	assert.NotContains(t, body, "data-writers-toggle")
+}
+
+// As a traveller, I want the neighbourhood and city together so I know where a place is.
+func TestPlacePanel_MetaIncludesAreaAndCity(t *testing.T) {
+	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
+	meta := section(t, body, `<p class="map-panel-meta">`, `</p>`)
+	assert.Contains(t, meta, "Santana, Funchal")
+}
+
+// As a traveller, I want the place type in plain words in the panel and the map callout.
+func TestPlacePanel_MetaShowsReadableKind(t *testing.T) {
+	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{Places: []writermap.Place{{QID: "Q1", Names: []string{"Belém Tower"}, Kind: "tower", Lat: 38.69, Lon: -9.21}}}}
+
+	meta := section(t, placePanel(t, source, "Q1"), `<p class="map-panel-meta">`, `</p>`)
+
+	assert.Contains(t, meta, "Historic Landmark")
+	assert.Contains(t, meta, `data-kind-icon="tower"`)
+	assert.NotContains(t, meta, "> tower")
+}
+
+func TestPlacePanel_GeoJSONCarriesReadableKind(t *testing.T) {
+	source := &writermaptest.FakeSource{Result: writermap.DestinationResult{Places: []writermap.Place{{QID: "Q1", Names: []string{"Belém Tower"}, Kind: "tower", Lat: 32.65, Lon: -16.91}}}}
+	server := NewAppServer(nil, nil, testStore)
+	server.SetWriterMapSource(source, true)
+
+	status, geoJSON := doRequest(t, server, httptest.NewRequest("GET", "/map/funchal-pt.geojson?lat=32.65&lon=-16.91", nil))
+
+	require.Equal(t, 200, status)
+	var collection struct {
+		Features []struct {
+			Properties map[string]any `json:"properties"`
+		} `json:"features"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(geoJSON), &collection))
+	require.Len(t, collection.Features, 1)
+	assert.Equal(t, "tower", collection.Features[0].Properties["kind"])
+	assert.Equal(t, "Historic Landmark", collection.Features[0].Properties["kind_label"])
+}
+
+// As a traveller, I want the writer's words as a quote, with the source as the link, like the mockup.
+func TestPlacePanel_WriterQuoteIsPlainTextWithLinkedSource(t *testing.T) {
+	body := placePanel(t, writermaptest.NewMadeiraSource(), "Q473169")
+
+	quote := section(t, body, `<blockquote`, `</blockquote>`)
+	text := section(t, quote, `<p`, `</p>`)
+	assert.NotContains(t, text, "<a")
+	assert.Contains(t, text, "“")
+	cite := section(t, quote, `<cite`, `</cite>`)
+	assert.Contains(t, cite, `<a href="https://`)
+	assert.Contains(t, cite, `target="_blank" rel="noopener noreferrer"`)
 }

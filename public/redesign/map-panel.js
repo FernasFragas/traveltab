@@ -8,7 +8,6 @@
     var labelledPlaces = 5;
     // A pin whose name is still loading has no name in the feed; never show its QID.
     var pendingName = 'Loading name\u2026';
-    var shownMonograms = 3;
     var writerPinZ = 1000;
     var popupId = 'pin-popup';
     var openPopup = null;
@@ -29,18 +28,8 @@
     });
     document.addEventListener('keydown', function (event) {
         if (event.defaultPrevented) return;
-        var activeSheet = document.querySelector('[data-map-slot="panel"].is-sheet');
-        if (event.key === 'Tab' && activeSheet) {
-            var focusable = activeSheet.querySelectorAll('button:not([hidden]), a[href], summary, [tabindex="0"]');
-            if (focusable.length) {
-                var first = focusable[0];
-                var last = focusable[focusable.length - 1];
-                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-            }
-        }
         if (event.key !== 'Escape') return;
-        if (activeSheet) { closeSheet(activeSheet); return; }
+        if (selectedPlace && !openPopup) { closeSelection(); return; }
         if (!openPopup) return;
         var pin = openPopup.pin;
         closePopup();
@@ -54,29 +43,37 @@
             selectedPlace.properties.area = article.dataset.placeArea || '';
             showSelectedCallout({ detail: { place: selectedPlace } });
         }
-        if (focusPanel) focusPlacePanel(target);
-        var monograms = target.querySelector('.map-panel-monograms');
-        if (monograms) drawMonograms(monograms, target.querySelectorAll('[data-writer-host]'));
-        if (target.querySelector('.map-place-panel')) showPeek(target);
+        initializePanel(target);
+        if (focusPanel) revealPanel(target);
     });
     document.body.addEventListener('click', function (event) {
-        var posts = event.target.closest('[data-writer-posts]');
-        if (posts) { var section = posts.closest('.map-place-panel').querySelector('.map-panel-writers'); if (section) section.scrollIntoView({ behavior: 'smooth' }); return; }
+        var posts = event.target.closest('[data-writers-toggle]');
+        if (posts) {
+            var list = posts.closest('.map-panel-writers').querySelector('ul');
+            list.hidden = !list.hidden;
+            posts.setAttribute('aria-expanded', String(!list.hidden));
+            posts.textContent = list.hidden ? 'See all ›' : 'Show less ‹';
+            return;
+        }
         var share = event.target.closest('[data-map-share]');
         if (share) { sharePlace(share); return; }
-        var close = event.target.closest('.map-panel-close');
-        var slot = close && close.closest('[data-map-slot="panel"]');
-        if (!slot) return;
-        if (slot.classList && slot.classList.contains('is-sheet')) { closeSheet(slot); return; }
-        resetPanel(slot);
     });
-    function resetPanel(slot) {
+    document.addEventListener('travelmap:back', closeSelection);
+
+    function closeSelection() {
+        var slot = document.querySelector('[data-map-slot="panel"]');
+        if (!slot) return;
         var empty = document.createElement('p');
         empty.textContent = 'Pick a place on the map';
         slot.replaceChildren(defaultPanel ? defaultPanel.cloneNode(true) : empty);
         selectedPlace = null;
-        var peek = document.querySelector('[data-map-panel-peek]');
-        if (peek) peek.hidden = true;
+        focusPanel = false;
+        if (selectedPin && selectedPin.classList) selectedPin.classList.remove('is-selected');
+        if (pinContext) pinContext.draw.clear('selected-callout');
+        closePopup();
+        var map = document.querySelector('[data-map-canvas]');
+        if (map && map.focus) { map.tabIndex = -1; map.focus({ preventScroll: true }); }
+        document.dispatchEvent(new CustomEvent('travelmap:closed'));
     }
 
     function pinLayer(writers) {
@@ -140,6 +137,12 @@
         if (selectedPin && selectedPin.classList) selectedPin.classList.remove('is-selected');
         selectedPin = pin;
         if (pin && pin.classList) pin.classList.add('is-selected');
+        if (isPhone()) {
+            focusPanel = Boolean(place.panel_url);
+            closePopup();
+            context.selectPlace(place.qid);
+            return;
+        }
         var details = document.createElement('button');
         details.type = 'button';
         details.className = 'map-popup-details';
@@ -148,7 +151,7 @@
         details.addEventListener('click', function () {
             selectedPin = pin;
             selectedPlace = { properties: place, geometry: feature.geometry };
-            focusPanel = Boolean(place.panel_url) && !isPhone();
+            focusPanel = Boolean(place.panel_url);
             closePopup();
             context.selectPlace(place.qid);
         });
@@ -177,11 +180,11 @@
         name.className = 'map-popup-name';
         name.textContent = place.name || pendingName;
         box.appendChild(name);
-        if (place.area) { var area = document.createElement('span'); area.className = 'map-popup-meta'; area.textContent = place.area; box.appendChild(area); }
+        if (place.kind || place.area) { var area = document.createElement('span'); area.className = 'map-popup-meta'; area.textContent = place.kind_label || place.kind || place.area; box.appendChild(area); }
         if (place.panel_url && window.fetch && window.DOMParser) {
             window.fetch(place.panel_url).then(function (response) { return response.text(); }).then(function (html) {
                 var article = new window.DOMParser().parseFromString(html, 'text/html').querySelector('.map-place-panel');
-                if (!article || !article.dataset.placeArea) return;
+                if (!article || !article.dataset.placeArea || place.kind) return;
                 place.area = article.dataset.placeArea;
                 var area = document.createElement('span'); area.className = 'map-popup-meta'; area.textContent = place.area; box.insertBefore(area, details);
             }).catch(function () {});
@@ -213,74 +216,52 @@
         window.htmx.ajax('GET', place.panel_url, slot);
     }
 
-    function showPeek(slot) {
-        updateWriterCard(slot);
-        if (!isPhone() || !slot.querySelector('.map-place-panel')) return;
-        if (!slot.querySelector('.map-sheet-handle')) {
-            var handle = document.createElement('button');
-            handle.type = 'button'; handle.className = 'map-sheet-handle';
-            handle.setAttribute('aria-label', 'Expand place details');
-            handle.setAttribute('aria-expanded', 'false');
-            handle.textContent = '━';
-            handle.addEventListener('click', function () {
-                if (dragged) { dragged = false; return; }
-                var expanded = slot.classList.toggle('is-expanded');
-                handle.setAttribute('aria-expanded', String(expanded));
-                handle.setAttribute('aria-label', expanded ? 'Collapse place details' : 'Expand place details');
-            });
-            handle.addEventListener('keydown', function (event) {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault(); handle.click();
-            });
-            var startY;
-            var dragged = false;
-            handle.addEventListener('pointerdown', function (event) { startY = event.clientY; handle.setPointerCapture(event.pointerId); });
-            handle.addEventListener('pointerup', function (event) {
-                if (Math.abs(event.clientY - startY) < 20) return;
-                dragged = true;
-                var expanded = event.clientY < startY;
-                slot.classList.toggle('is-expanded', expanded);
-                handle.setAttribute('aria-expanded', String(expanded));
-                handle.setAttribute('aria-label', expanded ? 'Collapse place details' : 'Expand place details');
-            });
-            slot.prepend(handle);
+    function revealPanel(slot) {
+        if (isPhone()) {
+            slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            slot.classList.add('is-highlighted');
+            window.setTimeout(function () { slot.classList.remove('is-highlighted'); }, 1400);
         }
-        slot.classList.add('is-sheet');
-        slot.setAttribute('role', 'dialog');
-        slot.setAttribute('aria-modal', 'true');
-        slot.setAttribute('aria-label', 'Place details');
         focusPlacePanel(slot);
     }
 
-    function updateWriterCard(slot) {
-        var card = slot.querySelector('.map-panel-writer-card');
-        if (!card || !pinContext || !selectedPlace) return;
-        var qid = selectedPlace.properties.qid;
-        var routes = (pinContext.itineraries || []).filter(function (route) {
-            return (route.days || []).some(function (day) { return (day.qids || []).indexOf(qid) >= 0; });
+    function initializePanel(slot) {
+        Array.prototype.forEach.call(slot.querySelectorAll('[data-kind-icon]'), function (icon) {
+            icon.className = 'bi bi-' + iconForKind(icon.dataset.kindIcon);
         });
-        if (!routes.length) return;
-        var names = [];
-        routes.forEach(function (route) {
-            var link = Array.prototype.find.call(slot.querySelectorAll('[data-writer-host]'), function (item) { return item.dataset.writerHost === route.writer_host; });
-            var source = Array.prototype.find.call(slot.querySelectorAll('[data-writer-source-host]'), function (item) { return item.dataset.writerSourceHost === route.writer_host; });
-            var name = source ? source.dataset.writerSourceName : link ? link.dataset.blogName : route.writer_host;
-            if (names.indexOf(name) < 0) names.push(name);
-        });
-        var text = card.querySelector('.map-panel-mentioned');
-        text.textContent = 'Featured in ' + routes.length + " writers' itineraries · Including " + names.join(', ');
-        if (!card.querySelector('[data-writer-posts]')) {
-            var arrow = document.createElement('button'); arrow.type = 'button'; arrow.textContent = '›';
-            arrow.setAttribute('data-writer-posts', ''); arrow.setAttribute('aria-label', "Go to writers' posts"); card.appendChild(arrow);
-        }
+        var hours = slot.querySelector('[data-opening-hours]');
+        if (hours && window.TravelOpeningHours) hours.querySelector('strong').textContent = window.TravelOpeningHours(hours.dataset.openingHours);
+        var best = slot.querySelector('[data-best-time-kind]');
+        var tip = best && window.TravelBestTime && window.TravelBestTime(best.dataset.bestTimeKind);
+        if (tip) { best.hidden = false; best.querySelector('strong').textContent = tip.value; best.querySelector('small').textContent = tip.tip; }
+        var facts = slot.querySelector('.map-panel-facts');
+        if (facts) facts.hidden = !hours && !tip;
+        Array.prototype.forEach.call(slot.querySelectorAll('[data-carousel]'), initializeCarousel);
     }
 
-    function closeSheet(slot) {
-        slot.classList.remove('is-sheet', 'is-expanded');
-        slot.removeAttribute('role');
-        slot.removeAttribute('aria-modal');
-        slot.removeAttribute('aria-label');
-        if (selectedPin) selectedPin.focus({ preventScroll: true });
+    function initializeCarousel(media) {
+        var photos = media.querySelectorAll('.map-panel-photo');
+        if (photos.length < 2 || media.querySelector('[data-carousel-step]')) return;
+        var current = 0;
+        var badge = document.createElement('span');
+        badge.className = 'map-panel-photo-count';
+        var live = document.createElement('span');
+        live.className = 'tt-visually-hidden'; live.setAttribute('aria-live', 'polite');
+        media.appendChild(badge); media.appendChild(live);
+        function update() {
+            Array.prototype.forEach.call(photos, function (photo, index) { photo.hidden = index !== current; });
+            badge.textContent = (current + 1) + ' / ' + photos.length;
+            live.textContent = (current + 1) + ' of ' + photos.length;
+        }
+        [-1, 1].forEach(function (step) {
+            var button = document.createElement('button'); button.type = 'button';
+            button.className = 'map-panel-photo-arrow'; button.dataset.carouselStep = String(step);
+            button.setAttribute('aria-label', step < 0 ? 'Previous photo' : 'Next photo');
+            button.textContent = step < 0 ? '‹' : '›';
+            button.addEventListener('click', function () { current = (current + step + photos.length) % photos.length; update(); });
+            media.appendChild(button);
+        });
+        update();
     }
 
     function isPhone() {
@@ -313,28 +294,6 @@
         if (initial) defaultPanel = initial.cloneNode(true);
         window.htmx.ajax('GET', '/map/' + encodeURIComponent(shell.dataset.mapDestination) + '/' + encodeURIComponent(qid) +
             '?lat=' + encodeURIComponent(shell.dataset.mapLat) + '&lon=' + encodeURIComponent(shell.dataset.mapLon), slot);
-    }
-
-    function drawMonograms(root, links) {
-        var writers = new Map();
-        Array.prototype.forEach.call(links, function (link) {
-            if (!writers.has(link.dataset.writerHost)) writers.set(link.dataset.writerHost, link.dataset.blogName || link.dataset.writerHost);
-        });
-        root.replaceChildren();
-        Array.from(writers).slice(0, shownMonograms).forEach(function (writer) {
-            var monogram = document.createElement('span');
-            monogram.className = 'map-panel-monogram';
-            monogram.textContent = initials(writer[1]);
-            monogram.title = writer[1];
-            monogram.style.backgroundColor = hostColour(writer[0]);
-            root.appendChild(monogram);
-        });
-        if (writers.size > shownMonograms) {
-            var more = document.createElement('span');
-            more.className = 'map-panel-monogram map-panel-monogram-more';
-            more.textContent = '+' + (writers.size - shownMonograms);
-            root.appendChild(more);
-        }
     }
 
     function biggestPlaces(features) {
@@ -395,9 +354,13 @@
         }
         var label = document.createElement('span');
         label.className = 'map-selected-name';
-        label.textContent = place.name + (place.area ? ' · ' + place.area : '') + ' ›';
+        label.textContent = place.name;
+        var kind = document.createElement('small'); kind.className = 'map-selected-kind'; kind.textContent = place.kind_label || place.kind || '';
+        label.appendChild(kind);
+        var arrow = document.createElement('span'); arrow.textContent = '›';
         button.appendChild(label);
-        button.addEventListener('click', function () { pinContext.selectPlace(place.qid); if (isPhone()) showPeek(document.querySelector('[data-map-slot="panel"]')); });
+        button.appendChild(arrow);
+        button.addEventListener('click', function () { focusPanel = true; pinContext.selectPlace(place.qid); });
         pinContext.draw.markers('selected-callout', [{ lngLat: feature.geometry.coordinates, element: button,
             title: place.name, z: 2000 }]);
     }
@@ -406,22 +369,12 @@
         var icons = {
             viewpoint: 'binoculars', cliff: 'binoculars', mountain: 'binoculars', waterfall: 'binoculars',
             museum: 'bank', gallery: 'bank',
-            restaurant: 'cup-hot', cafe: 'cup-hot', market: 'cup-hot',
+            restaurant: 'fork-knife', cafe: 'fork-knife', market: 'fork-knife',
             park: 'tree', garden: 'tree', forest: 'tree', 'nature reserve': 'tree',
             trail: 'signpost-split', path: 'signpost-split', levada: 'signpost-split',
             church: 'building', cathedral: 'building', monastery: 'building'
         };
         return icons[String(kind || '').toLowerCase()] || 'geo-alt';
-    }
-
-    function initials(name) {
-        return name.trim().split(/\s+/).slice(0, 2).map(function (word) { return word.charAt(0); }).join('').toUpperCase();
-    }
-
-    function hostColour(host) {
-        var hash = 0;
-        for (var i = 0; i < host.length; i++) hash = (hash * 31 + host.charCodeAt(i)) % 360;
-        return 'hsl(' + hash + ' 55% 40%)';
     }
 
     function hideWhenBroken(image) {

@@ -27,26 +27,48 @@ try {
     await browser.until("document.querySelector('[data-writers-map]')?.dataset.mapDestination === 'funchal-pt'");
     await browser.until("Boolean(document.querySelector('.travelmap-cluster-list button[data-qid=\"Q25444\"], .map-pin[title=\"Funchal\"]'))");
     await browser.until("document.querySelectorAll('.map-pin-notable').length > 0");
-    assert.ok(await browser.evaluate("!!document.querySelector('.map-pin-nature') && !!document.querySelector('.map-pin-notable .bi-bank') && !!document.querySelector('.map-pin-notable .bi-cup-hot')"), 'fixture shows nature, museum and food pin kinds');
+    assert.ok(await browser.evaluate("!!document.querySelector('.map-pin-nature') && !!document.querySelector('.map-pin-notable .bi-bank') && !!document.querySelector('.map-pin-notable .bi-fork-knife')"), 'fixture shows nature, museum and food pin kinds');
     await browser.settle();
     assert.equal(await browser.evaluate("document.querySelector('#overview').hidden"), false);
     assert.ok(await browser.evaluate('document.documentElement.scrollWidth <= innerWidth'));
+    if (width === 375) {
+      assert.ok(await browser.evaluate(`(() => {
+        const nav = document.querySelector('.tt-bottom-navigation');
+        return nav.querySelectorAll('a').length === 4 &&
+          !!nav.querySelector('[data-tt-section="overview"] .bi-compass-fill') &&
+          !!nav.querySelector('[data-tt-section="itinerary"] .bi-map') &&
+          !!nav.querySelector('[data-tt-section="stays"] svg') &&
+          !!nav.querySelector('[data-tt-section="videos"] .bi-play-circle');
+      })()`), 'phone navigation keeps icons and labels for all four sections');
+    }
     await writeFile(`${out}/funchal-map-${width}.png`, await browser.shot());
 
     await browser.evaluate(`(() => {
       const pin = document.querySelector('.travelmap-cluster-list button[data-qid="Q25444"], .map-pin-writer[title="Funchal"]');
       pin.focus(); pin.click();
     })()`);
-    await browser.until("Boolean(document.querySelector('.map-popup-details'))");
-    await browser.evaluate("document.querySelector('.map-popup-details').click()");
+    if (width > 600) {
+      await browser.until("Boolean(document.querySelector('.map-popup-details'))");
+      await browser.evaluate("document.querySelector('.map-popup-details').click()");
+    }
     await browser.until("document.querySelector('.map-place-panel h3')?.textContent.trim() === 'Funchal'");
     if (width === 375) {
-      await browser.until("document.querySelector('[data-map-slot=panel]').classList.contains('is-sheet')");
+      await browser.until("document.activeElement.matches('.map-place-panel h3')");
+      assert.ok(await browser.evaluate(`(() => {
+        const slot = document.querySelector('[data-map-slot=panel]');
+        const map = document.querySelector('[data-map-canvas]');
+        const style = getComputedStyle(slot);
+        return !slot.classList.contains('is-sheet') && !slot.hasAttribute('role') &&
+          !['fixed', 'absolute'].includes(style.position) &&
+          slot.getBoundingClientRect().top >= map.getBoundingClientRect().bottom;
+      })()`), 'selected phone place stays inline below the map without a dialog focus trap');
     }
-    assert.ok(await browser.evaluate("document.querySelector('.map-panel-writers')?.textContent.includes('Writers')"));
+    assert.ok(await browser.evaluate("document.querySelector('.map-panel-writers')?.textContent.includes('From our writers')"));
     await browser.until("document.querySelector('.map-panel-photo img')?.naturalWidth > 0");
-    assert.ok(await browser.evaluate("document.querySelector('.map-panel-mentioned').textContent.includes('Featured in 2') && document.querySelector('.map-panel-mentioned').textContent.includes('Earth Trekkers')"));
-    assert.ok(await browser.evaluate("document.querySelector('.map-panel-hours').open && document.querySelector('.map-panel-hours p').textContent.includes('09:00')"));
+    assert.ok(await browser.evaluate("document.querySelector('.map-panel-writers blockquote').textContent.length > 0"));
+    assert.ok(await browser.evaluate("document.querySelector('.map-panel-hours strong').textContent.includes('09:00')"));
+    await browser.evaluate("document.querySelector('[data-writers-toggle]').click()");
+    assert.equal(await browser.evaluate("document.querySelector('[data-writers-toggle]').getAttribute('aria-expanded')"), 'true');
     assert.equal(await browser.evaluate("document.querySelectorAll('.map-panel-writers li').length"), 2);
     if (width === 375) {
       const uncovered = await browser.evaluate(`(() => {
@@ -55,7 +77,7 @@ try {
         return [0.25, 0.5, 0.75].every(x => [0.25, 0.5, 0.75].every(y =>
           panel.contains(document.elementFromPoint(rect.left + rect.width * x, rect.top + rect.height * y))));
       })()`);
-      assert.ok(uncovered, 'map pins must stay behind the phone place sheet');
+      assert.ok(uncovered, 'map pins must stay behind the inline phone place card');
     }
     await writeFile(`${out}/funchal-panel-${width}.png`, await browser.shot());
     await browser.evaluate("document.querySelector('.map-panel-save').click()");
@@ -63,7 +85,7 @@ try {
     assert.ok(await browser.evaluate(`(() => {
       const undo = document.querySelector('[data-saved-undo]'); const r = undo.getBoundingClientRect();
       return undo === document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-    })()`), 'Undo toast is visible and clickable above the phone sheet');
+    })()`), 'Undo toast is visible and clickable above the phone card');
     await browser.evaluate("document.querySelector('[data-saved-undo]').click()");
     assert.equal(await browser.evaluate("document.querySelector('.map-panel-save').getAttribute('aria-pressed')"), 'false');
     await browser.evaluate("document.querySelector('.map-panel-save').click(); document.querySelector('.tt-saved-toggle').click()");

@@ -33,7 +33,7 @@ test('notable categories use icons, writers use clusters, and selection shows a 
   layers.get('writers').add({}, context);
   const notable = calls.find(call => call.id === 'notable').markers;
   assert.deepEqual(notable.map(marker => marker.element.children[0].className),
-    ['bi bi-binoculars', 'bi bi-bank', 'bi bi-cup-hot', 'bi bi-tree', 'bi bi-signpost-split', 'bi bi-building', 'bi bi-geo-alt']);
+    ['bi bi-binoculars', 'bi bi-bank', 'bi bi-fork-knife', 'bi bi-tree', 'bi bi-signpost-split', 'bi bi-building', 'bi bi-geo-alt']);
   const writers = calls.find(call => call.id === 'writers');
   assert.equal(writers.points.length, 1);
   assert.equal(writers.points[0].properties.writer_count, 2);
@@ -79,7 +79,7 @@ test('day plan draws orange numbered stops, a dashed route and lazy photo callou
   assert.equal(drawn.markers[0].element.children[0].tagName, 'IMG');
   assert.equal(drawn.markers[0].element.children[0].loading, 'lazy');
   assert.deepEqual(JSON.parse(JSON.stringify(drawn.lines[0].coords)), [[-16.9, 32.65], [-16.91, 32.66]]);
-  assert.deepEqual(JSON.parse(JSON.stringify(drawn.lines[0].style)), { color: '#a56824', width: 3, dash: [1, 2] });
+  assert.deepEqual(JSON.parse(JSON.stringify(drawn.lines[0].style)), { color: '#a56824', width: 2, dash: [1, 1.5] });
 });
 
 test('pin icons, plan numbers, cluster counts and labels have sufficient contrast', () => {

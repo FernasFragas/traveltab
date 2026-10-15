@@ -91,3 +91,12 @@
 .plan-popup-facts small { grid-column: 2; color: var(--tt-muted); font-size: 12px; }
 .plan-popup .map-popup-details { display: inline-flex; flex: 1 0 auto; justify-content: center; align-items: center; gap: 6px; min-width: 44px; padding: 0 18px; border-radius: 999px; background: var(--tt-accent); color: #fff; font-size: 15px; }
 .plan-popup .map-popup-details:hover { background: var(--tt-accent-hover); }
+
+.map-pin-selected { height: 72px; padding: 6px 10px 6px 6px; gap: 10px; border: 0; border-radius: 8px; margin-top: -65px; box-shadow: 0 3px 12px #0005; }
+.map-pin-selected::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; background: #fff; transform: translateX(-50%) rotate(45deg); }
+.map-pin-selected .map-pin-photo { width: 80px; height: 56px; }
+.map-selected-name { max-width: 200px; font: 700 20px / 1.15 var(--tt-serif, Georgia, serif); }
+.map-selected-kind { display: block; margin-top: 4px; color: #666158; font: 12px / 1.3 var(--tt-font-body); }
+.map-pin.is-selected { box-shadow: 0 0 0 4px #fff, 0 0 0 7px #cf795b, 0 0 20px 10px #cf795b88; }
+.map-pin.is-selected .map-pin-label { display: none; }
+.map-pin-selected > span:last-child { align-self: center; font-size: 22px; line-height: 1; }

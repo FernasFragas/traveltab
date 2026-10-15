@@ -7,12 +7,116 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
 	"weatherservice/internal/application"
+	"weatherservice/internal/planner"
 	"weatherservice/internal/writermap"
 )
+
+// As a traveler, I see Lisbon photos through the real map and panel routes using local images.
+func TestWriterMapPreview_LisbonPhotosReachBrowser(t *testing.T) {
+	base, client := startPreviewProcess(t, "writers-map")
+	for _, path := range []string{
+		"/map/lisbon-pt.geojson?lat=38.7223&lon=-9.1393",
+		"/map/lisbon-pt/Q215003?lat=38.7223&lon=-9.1393",
+	} {
+		res, err := client.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, err := io.ReadAll(res.Body)
+		_ = res.Body.Close()
+		if err != nil || res.StatusCode != http.StatusOK {
+			t.Fatalf("%s status=%d err=%v", path, res.StatusCode, err)
+		}
+		photos := regexp.MustCompile(`/fixture-photos/lisbon-[a-z]+\.png`).FindAllString(string(body), -1)
+		if len(photos) == 0 {
+			t.Fatalf("%s has no local Lisbon photo: %s", path, body)
+		}
+		if strings.Contains(path, ".geojson") {
+			if !strings.Contains(string(body), `"photo_url":"/fixture-photos/`) {
+				t.Fatalf("%s has no local photo_url property", path)
+			}
+		} else if !strings.Contains(string(body), `src="/fixture-photos/`) {
+			t.Fatalf("%s has no local image src", path)
+		}
+		if strings.Contains(string(body), "upload.wikimedia.org/fixture-photos/") {
+			t.Fatalf("%s leaked a remote fixture marker", path)
+		}
+		for _, photo := range photos {
+			res, err := client.Get(base + photo)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, decodeErr := png.Decode(res.Body)
+			_ = res.Body.Close()
+			if res.StatusCode != http.StatusOK || decodeErr != nil {
+				t.Fatalf("%s status=%d PNG=%v", photo, res.StatusCode, decodeErr)
+			}
+		}
+	}
+}
+
+// As a traveler, I see varied Lisbon pins and complete place details without remote photos.
+func TestWriterMapPreview_RichLisbon(t *testing.T) {
+	result, err := newWriterMapPreviewSource().Destination(context.Background(), writermap.Area{Name: "Lisbon"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Places) != 12 {
+		t.Fatalf("Lisbon places = %d, want 12", len(result.Places))
+	}
+	kinds := map[string]bool{}
+	foundBelem := false
+	for _, place := range result.Places {
+		kinds[place.Kind] = true
+		if place.Area == "" || place.Description == "" || !strings.HasPrefix(place.PhotoURL, "https://upload.wikimedia.org/fixture-photos/") {
+			t.Errorf("incomplete local place details: %+v", place)
+		}
+		photo := httptest.NewRecorder()
+		fixturePhotoHandler(photo, httptest.NewRequest(http.MethodGet, strings.TrimPrefix(place.PhotoURL, "https://upload.wikimedia.org"), nil))
+		if photo.Code != http.StatusOK {
+			t.Errorf("%s photo status = %d", place.Names[0], photo.Code)
+		}
+		if place.QID == "Q215003" {
+			foundBelem = true
+			if place.OpeningHours != "Tu-Su 10:00-18:30" || place.WikipediaURL != "https://en.wikipedia.org/wiki/Bel%C3%A9m_Tower" {
+				t.Errorf("Belém facts = %+v", place)
+			}
+			if len(result.Mentions[place.QID]) != 2 || result.WriterCounts[place.QID] != 2 {
+				t.Errorf("Belém mentions = %+v", result.Mentions[place.QID])
+			}
+		}
+	}
+	if !foundBelem {
+		t.Fatal("missing Belém Tower")
+	}
+	for _, kind := range []string{"museum", "cafe", "viewpoint", "park"} {
+		if !kinds[kind] {
+			t.Errorf("missing category %s", kind)
+		}
+	}
+}
+
+// As a traveler, I preview a Lisbon day from Belém in the morning to Alfama in the evening.
+func TestWriterMapPreview_LisbonDayPlan(t *testing.T) {
+	plan, err := (fixtureTrips{scenario: "writers-map"}).Plan(context.Background(), planner.Request{City: "Lisbon", Days: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stops := plan.Days[0].Stops
+	if len(stops) != 3 {
+		t.Fatalf("Lisbon day stops = %d, want 3", len(stops))
+	}
+	for i, name := range []string{"Belém Tower", "Jerónimos Monastery", "Alfama"} {
+		if stops[i].Name != name || stops[i].Image == "" {
+			t.Errorf("day slot %d = %+v, want %s with photo", i, stops[i], name)
+		}
+	}
+}
 
 // As a traveler, I can switch between writer, base-only, and unavailable map destinations.
 func TestWriterMapPreview_Scenarios(t *testing.T) {

@@ -37,18 +37,25 @@ try {
             canvas: box(document.querySelector('[data-map-canvas]')),
             panel: box(document.querySelector('[data-map-slot="panel"]')),
             nav: box(document.querySelector('.tt-bottom-navigation')),
+            teasers: box(document.querySelector('.overview-teasers')),
             layers: box(document.querySelector('[data-map-slot="layers"]')),
             mapHeader: box(document.querySelector('.writers-map-header')),
             status: (() => { const element = document.querySelector('[data-map-slot="status"]'); return element.hidden ? null : box(element); })(),
+            controls: Array.from(document.querySelectorAll('.travelmap-tools button')).map(box),
             overflow: document.documentElement.scrollWidth
           };
         })()`);
         assert.ok(layout.overflow <= width, JSON.stringify(layout));
+        for (const control of layout.controls) {
+          assert.ok(control.width >= 44 && control.height >= 44, JSON.stringify(control));
+          assert.ok(control.y >= layout.canvas.y - 1 && control.bottom <= layout.canvas.bottom + 1, JSON.stringify(layout));
+        }
         if (width === 1440) {
-          assert.ok(layout.canvas.y >= layout.layers.bottom && layout.canvas.bottom <= 900 && layout.canvas.height > 600, JSON.stringify(layout));
-          assert.ok(layout.panel.width >= 380 && layout.panel.width <= 420, JSON.stringify(layout));
+          assert.ok(layout.canvas.y >= layout.layers.bottom && layout.canvas.height >= 480 && layout.canvas.height <= 520, JSON.stringify(layout));
+          assert.ok(layout.panel.width >= 490 && layout.panel.width <= 530, JSON.stringify(layout));
           assert.ok(layout.panel.x >= layout.canvas.right + 12, JSON.stringify(layout));
-          assert.ok(Math.abs(layout.panel.height - layout.canvas.height) <= 2, JSON.stringify(layout));
+          assert.ok(layout.panel.y <= layout.layers.y + 2 && layout.panel.bottom >= layout.teasers.bottom - 2, JSON.stringify(layout));
+          assert.ok(layout.teasers.y >= layout.canvas.bottom && layout.teasers.y <= layout.canvas.bottom + 24, JSON.stringify(layout));
           const scroll = await browser.evaluate(`(() => {
             const panel = document.querySelector('[data-map-slot="panel"]');
             const canvas = document.querySelector('[data-map-canvas]');
@@ -61,12 +68,14 @@ try {
           assert.ok(scroll.scrollHeight > scroll.panel && scroll.overflow === 'auto', JSON.stringify(scroll));
         } else {
           assert.ok(layout.canvas.y >= layout.header.bottom - 2, JSON.stringify(layout));
-          assert.ok(Math.abs(layout.canvas.bottom - layout.nav.y) <= 2, JSON.stringify(layout));
+          assert.ok(layout.canvas.height >= 190 && layout.canvas.height <= 220, JSON.stringify(layout));
+          assert.ok(layout.panel.y >= layout.canvas.bottom && layout.panel.y <= layout.canvas.bottom + 12, JSON.stringify(layout));
+          assert.ok(layout.teasers.y >= layout.panel.bottom, JSON.stringify(layout));
           assert.ok(layout.layers.y >= layout.header.bottom - 2 && layout.layers.bottom <= layout.canvas.y, JSON.stringify(layout));
           if (layout.status) assert.ok(layout.status.y >= layout.layers.bottom, `map status covers layer controls: ${JSON.stringify(layout)}`);
         }
         assert.deepEqual(browser.errors, []);
-        console.log(`PASS ${engine} ${width}px: city banner above a full-height map`);
+        console.log(`PASS ${engine} ${width}px: short map with inline place card and teasers`);
       }
     } finally {
       preview.stop();

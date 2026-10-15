@@ -114,7 +114,7 @@ func TestWriterMap_FixturePanel(t *testing.T) {
 	assert.Contains(t, body, "Hiking Pico Ruivo")
 	assert.Contains(t, body, "Salt in our Hair")
 	assert.Contains(t, body, `data-language="pt"`)
-	assert.Contains(t, body, "Mentioned by 2 writers")
+	assert.Contains(t, body, "From our writers")
 }
 
 func TestWriterMap_PageFlagStates(t *testing.T) {

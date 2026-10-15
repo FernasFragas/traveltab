@@ -68,8 +68,28 @@ test('compass resets bearing and precedes locate, dimension and zoom controls', 
  assert.equal(buttons[0].className, 'travelmap-compass');
  assert.equal(buttons[1].className, 'travelmap-locate');
  assert.equal(buttons[2].className, 'travelmap-dimension');
- assert.deepEqual(buttons.slice(3, 5).map(button => button.textContent), ['+', '−']);
+ assert.deepEqual(buttons[3].children.map(button => button.textContent), ['+', '−']);
  buttons[0].click(); assert.equal(map.ease.bearing, 0);
+});
+
+test('fixture camera shows dispersed city pins while production keeps its close view', async () => {
+ const app = browser(); app.run(); app.mount('Lisbon', { mapStyleUrl: '/fixture-map/style.json' }); await app.flush();
+ assert.equal(app.maplibre[0].options.zoom, 12.3);
+});
+
+test('back is hidden before selection, returns to city and restores map focus', async () => {
+ const feature = { properties: { qid: 'Q1', name: 'Tower' }, geometry: { coordinates: [-16.91, 32.66] } };
+ const app = browser({ features: [feature] }); app.run();
+ const shell = app.mount(); await app.flush();
+ const map = app.maplibre[0];
+ const back = map.controls.find(item => item.control.onAdd?.().className === 'travelmap-back').control.onAdd();
+ assert.equal(back.hidden, true);
+ app.window.TravelMap.selectPlace('Q1');
+ assert.equal(back.hidden, false);
+ back.click();
+ assert.equal(app.events.at(-1).type, 'travelmap:back');
+ assert.deepEqual(Array.from(map.fly.center), [-16.9, 32.65]);
+ assert.equal(shell.canvas.focused, true);
 });
 
 test('locate me shows a position dot and a denied request reports status without retrying', async () => {
@@ -934,7 +954,8 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
       return node;
     },
     querySelector() { return null; },
-    dispatchEvent(event) { events.push(event); }
+    addEventListener(name, callback) { listeners.set(name, callback); },
+    dispatchEvent(event) { events.push(event); listeners.get(event.type)?.(event); }
   };
   const window = { navigator: { geolocation } };
   if (maplibre) window.maplibregl = maplibreStub(maplibreMaps, maplibre.ready !== false, style);
@@ -972,14 +993,14 @@ function browser({ failFetch = false, delayFirstFetch = false, webgl = true, map
         return {
           markers: map.markers.filter(marker => !marker.removed).length,
           lines: map.layers.filter(layer => layer.id.startsWith('draw-line')).length,
-          controls: map.controls.filter(control => control.custom && control.control.onAdd().className !== 'travelmap-tools').length
+          controls: map.controls.filter(control => control.custom && !['travelmap-tools', 'travelmap-back'].includes(control.control.onAdd().className)).length
         };
       }
       const map = leafletMaps.at(-1);
       return {
         markers: map.layers.filter(layer => layer.kind === 'marker').length,
         lines: map.layers.filter(layer => layer.kind === 'line').length,
-        controls: map.controls.filter(control => control.custom && control.element.className !== 'travelmap-tools').length
+        controls: map.controls.filter(control => control.custom && !['travelmap-tools', 'travelmap-back'].includes(control.element.className)).length
       };
     },
     popups() {
@@ -1143,8 +1164,10 @@ function element(tagName) {
     click() { if (!this.disabled) listeners.get('click')(); },
     dispatch(name) { listeners.get(name)?.(); },
     appendChild(child) { this.children.push(child); },
+    querySelector() { return null; },
     replaceChildren() { this.children = []; },
     replaceWith(node) { this.replacement = node; },
+    focus() { this.focused = true; },
     remove() { this.removed = true; }
   };
 }

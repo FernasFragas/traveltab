@@ -178,6 +178,13 @@ func (f fixtureTrips) Plan(ctx context.Context, req planner.Request) (*planner.P
 		default:
 			// Deliberately leaves Forecast nil, so a five-day plan exercises absent forecasts.
 		}
+		if f.scenario == "writers-map" && strings.EqualFold(req.City, "Lisbon") && i == 0 {
+			day.Stops = []planner.Place{
+				{ID: "Q215003", Name: "Belém Tower", Kind: planner.Outdoor, Lat: 38.6916, Lon: -9.2160, Image: "Torre de Belém 1.jpg", Description: "A fortified tower overlooking the Tagus."},
+				{ID: "Q272781", Name: "Jerónimos Monastery", Kind: planner.Mixed, Lat: 38.6979, Lon: -9.2064, Image: "Mosteiro dos Jerónimos.jpg", Description: "Manueline cloisters in Belém."},
+				{ID: "Q900013", Name: "Alfama", Kind: planner.Outdoor, Lat: 38.7118, Lon: -9.1293, Image: "Alfama Lisboa.jpg", Description: "Tiled lanes and evening fado."},
+			}
+		}
 		switch f.scenario {
 		case "forecast-absent", "fallback":
 			day.Forecast, day.Certain, day.Rainy = nil, false, false

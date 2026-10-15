@@ -157,7 +157,7 @@ waits for the heading to have focus. After the change: 5 runs, 5 passes, 4 `PASS
 
 **Against the mockups.** [Desktop](artifacts/map-look-v2/funchal-place-1440.png) and
 [phone](artifacts/map-look-v2/funchal-place-375.png) with Funchal selected, next to
-`Unknown.png` and `Unknown-2.png`: brand, header bookmark, pill band, rounded map and panel
+`../../phone.png` and `../../desktop.png`: brand, header bookmark, pill band, rounded map and panel
 cards, dark control column, teardrop pins, selected callout, writer card, actions, link cards,
 Hours, writers' posts, full-map card, half-height phone sheet and text bottom nav all match in
 structure. Remaining visual differences, not fixed here:

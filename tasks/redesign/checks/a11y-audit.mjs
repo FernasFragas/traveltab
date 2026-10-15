@@ -21,6 +21,7 @@ const axeSource = process.env.AXE_PATH ? await readFile(process.env.AXE_PATH, 'u
 
 // AUDIT_ONLY=contrast-quick,focus,targets runs a subset (used by the negative controls); default is everything.
 const only = (process.env.AUDIT_ONLY || '').split(',').filter(Boolean);
+const contrastStates = (process.env.AUDIT_STATES || 'lisbon-initial,lisbon-planned-5d-open').split(',');
 const want = name => !only.length || only.includes(name);
 const results = []; // the requirement matrix rows this script owns
 const findings = []; // every measured pair that failed, with numbers
@@ -260,13 +261,14 @@ try {
     ];
     // Last: every third-party image request fails, so each image-error fallback (stop, thumbnail) shows.
     states.push(['images-blocked-planned', async () => { b.state.imageMode = 'block'; await b.navigate(`${preview.url}/?a=${Date.now()}`); await planDays(3); }]);
-    for (const [name, setup] of states.filter(([n]) => want('contrast') || ['lisbon-initial', 'lisbon-planned-5d-open'].includes(n))) {
+    for (const [name, setup] of states.filter(([n]) => want('contrast') || contrastStates.includes(n))) {
       await setup();
       const label = `${name}@${width}`;
       const pairs = await audit(label, width, height, { components: ['lisbon-planned-5d-open', 'lisbon-initial', 'plan-error-500', 'submit-disabled'].includes(name) });
       const bad = pairs.filter(p => !p.disabled && !(p.kind === 'icon' && !p.iconOnlyControl) && p.ratio < p.required);
       structureByState[label] = await evaluate(collectStructure);
       console.log(`  ${label}: ${pairs.length} pairs, ${bad.length} below threshold, min ${Math.min(...pairs.map(p => p.ratio / p.required * 4.5)).toFixed(2)} (normalised to 4.5)`);
+      for (const pair of bad) console.log('    FAIL PAIR ' + JSON.stringify(pair));
       if (name === 'lisbon-planned-5d-open' || name === 'coimbra-no-photo-no-guide' || name === 'brokenimage-failed' || name === 'plan-error-500') {
         await writeFile(new URL(`${label}.png`, output), await b.shot()); shots.push(`${label}.png`);
       }
@@ -719,6 +721,16 @@ try {
       }
       // A pin opens a named popup; focus moves into it, and Escape closes it and returns to the pin.
       await evaluate("document.querySelector('.map-pin-notable').click()");
+      if (width <= 600) {
+        await until("document.activeElement.matches('.map-place-panel h3')");
+        const inline = await evaluate(`(() => { const slot = document.querySelector('[data-map-slot="panel"]');
+          return { title: slot.querySelector('h3')?.textContent, inline: getComputedStyle(slot).position === 'static', modal: slot.getAttribute('aria-modal'), expanded: !!slot.querySelector('[data-writers-toggle]'), overflow: document.documentElement.scrollWidth }; })()`);
+        await b.key('Escape', 'Escape', 27);
+        const closed = await evaluate("({ city: !!document.querySelector('.map-default-panel'), onMap: document.activeElement.matches('[data-map-canvas]') })");
+        const inlineOK = inline.title && inline.inline && !inline.modal && inline.overflow <= width && closed.city && closed.onMap;
+        record(`writers-map-inline-${engine}@${width}`, inlineOK, inlineOK ? 'pin opens inline card, focus on title, no modal or overflow; Escape restores city and map focus' : JSON.stringify({ inline, closed }));
+        continue;
+      }
       await until("document.querySelector('.map-popup .map-popup-details')");
       const popup = await evaluate(`(() => { const box = document.querySelector('.map-popup'); const details = box.querySelector('.map-popup-details');
         return { role: box.getAttribute('role'), name: box.getAttribute('aria-label'), text: box.textContent, focused: document.activeElement === details, button: details.getAttribute('aria-label') || details.textContent.trim() }; })()`);

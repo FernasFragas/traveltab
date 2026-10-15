@@ -7,6 +7,10 @@
     --tt-border: #DED8CC;
     --tt-border-control: #8F887B; /* form-field boundaries: at least 3:1 on --tt-surface and --tt-bg (WCAG 1.4.11) */
     --tt-accent: #A64027;
+    --tt-accent-tint: #F8E6E0;
+    --tt-writer-tint: #F1EEF8;
+    --tt-writer: #6B4FA8;
+    --tt-serif: Georgia, 'Times New Roman', serif;
     --tt-accent-hover: #87321F;
     --tt-olive: #62674A;
     --tt-radius: 8px;
@@ -140,4 +144,22 @@ a:hover { color: var(--tt-accent-hover); }
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* Look v3 header and phone section navigation. */
+@media (min-width: 900px) {
+    .tt-header { display: grid; grid-template-columns: auto minmax(220px, 570px) auto 44px; gap: 20px; }
+    .tt-header .tt-search-area { order: initial; max-width: 570px; width: 100%; }
+    .tt-header .tt-header-navigation { justify-self: end; order: initial; }
+    .tt-header-navigation a[aria-current] { text-decoration-thickness: 3px; }
+}
+@media (max-width: 639px) {
+    .tt-header .tt-brand-peaks { width: 38px; }
+    .tt-header .tt-wordmark strong { font-size: 26px; }
+    .tt-header .tt-search-area { margin-top: 20px; }
+    .tt-search input::placeholder { font-family: var(--tt-serif); font-size: 14px; }
+    .tt-bottom-navigation a { border-top: 0; border-bottom: 3px solid transparent; }
+    .tt-bottom-navigation a[aria-current] { border-bottom-color: var(--tt-accent); }
+    .tt-bottom-navigation a .bi, .tt-bottom-navigation a svg { width: 30px; height: 30px; padding: 5px; }
+    .tt-bottom-navigation a[aria-current] .bi-compass-fill { background: var(--tt-accent); color: white; border-radius: 50%; }
 }

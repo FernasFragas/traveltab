@@ -11,6 +11,8 @@ import (
 	"weatherservice/writerdata"
 
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type writerMapCardView struct {
@@ -96,7 +98,7 @@ func (s *Server) writerMapGeoJSON(ctx *fiber.Ctx) error {
 			names = []string{}
 		}
 		properties := mapProperties{
-			QID: place.QID, Name: name, Names: names, Kind: place.Kind,
+			QID: place.QID, Name: name, Names: names, Kind: place.Kind, KindLabel: placeKindLabel(place.Kind),
 			Description: place.Description, Sitelinks: place.Sitelinks,
 			WriterCount: result.WriterCounts[place.QID],
 			PanelURL:    "/map/" + url.PathEscape(ctx.Params("dest")) + "/" + url.PathEscape(place.QID) + query,
@@ -154,7 +156,7 @@ func (s *Server) writerMapPlace(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.Render("place_panel", fiber.Map{
-		"Place": &visiblePlace, "Name": name, "Summary": summary,
+		"Place": &visiblePlace, "Name": name, "KindLabel": placeKindLabel(place.Kind), "Summary": summary, "City": cases.Title(language.Und).String(area.Name),
 		"WriterCount": result.WriterCounts[qid], "Mentions": result.Mentions[qid], "WriterSources": sources,
 	})
 }
@@ -225,6 +227,7 @@ type mapProperties struct {
 	Name        string   `json:"name"`
 	Names       []string `json:"names"`
 	Kind        string   `json:"kind"`
+	KindLabel   string   `json:"kind_label"`
 	Description string   `json:"description"`
 	Photo       string   `json:"photo,omitempty"`
 	PhotoCredit string   `json:"photo_credit,omitempty"`

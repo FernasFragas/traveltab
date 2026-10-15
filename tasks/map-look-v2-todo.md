@@ -120,7 +120,7 @@ completed in [the TDD report](../docs/tdd/map-look-v2.tdd.md).
 - Card: city thumbnail (or map icon), "View full map", "Open {City} on a larger map", external-link icon; same external URL.
 - Fixture: give Funchal a photo, hours, a writers' itinerary stop, posts and nature/museum/food kinds so every state shows.
 - Journeys: search (Enter) → pin → callout → panel → Add to plan → Itinerary shows the stop; save → toast → Undo; save → header list → back to the place.
-- **Verify:** all `tasks/redesign/checks/*.mjs` pass; a11y audit clean; screenshots at 375 and 1440 next to `Unknown.png` and `Unknown-2.png`.
+- **Verify:** all `tasks/redesign/checks/*.mjs` pass; a11y audit clean; screenshots at 375 and 1440 next to `../phone.png` and `../desktop.png`.
 
 ### L11. Evidence and docs
 - [x] Done 2026-10-14

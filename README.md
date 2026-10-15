@@ -1,8 +1,10 @@
-# ✈🌤️ TravelTab
+# ✈🌤️ TravelTabByPatronFragas
 
 **Live:** https://traveltabbypatronfragas.com/
 
-TravelTab is a one-page travel dashboard. Search for a destination such as `Lisbon, Portugal` and it shows you:
+TravelTabByPatronFragas is a one-page travel dashboard. Search for a destination such as `Lisbon, Portugal` and it shows you:
+
+![Funchal on the map with its place panel open](docs/tdd/artifacts/map-look-v2/funchal-place-1440.png)
 
 - **Current weather**: temperature, humidity and conditions
 - **Wave height** for coastal destinations

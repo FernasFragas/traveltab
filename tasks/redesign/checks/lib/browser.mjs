@@ -221,6 +221,10 @@ export const openPlacePanel = async (browser, name) => {
       [...document.querySelectorAll('.travelmap-cluster-list button[data-qid]')].find(b => b.textContent === 'Open ' + ${quoted});
     pin.click();
   })()`);
+  if (await browser.evaluate('innerWidth <= 600')) {
+    await browser.until(`document.querySelector('.map-place-panel h3')?.textContent === ${quoted}`);
+    return;
+  }
   await browser.until(`[...document.querySelectorAll('.map-popup')].some(p => p.getAttribute('aria-label') === ${quoted})`);
   await browser.evaluate(`[...document.querySelectorAll('.map-popup')].find(p => p.getAttribute('aria-label') === ${quoted}).querySelector('.map-popup-details').click()`);
 };

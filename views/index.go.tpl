@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="/redesign/map-layers.css">
     <link rel="stylesheet" href="/redesign/map-itineraries.css">
     <link rel="stylesheet" href="/redesign/map-saved.css">
+    <link rel="stylesheet" href="/redesign/teasers.css">
     <script defer src="/vendor/htmx.org/dist/htmx.min.js"></script>
     <script defer src="/redesign/navigation.js"></script>
     <script defer src="/redesign/planner.js"></script>
@@ -34,7 +35,10 @@
     <script defer src="/redesign/search.js"></script>
     <script defer src="/redesign/writers-map-leaflet.js"></script>
     <script defer src="/redesign/writers-map.js"></script>
+    <script defer src="/redesign/opening-hours.js"></script>
+    <script defer src="/redesign/best-time.js"></script>
     <script defer src="/redesign/map-panel.js"></script>
+    <script defer src="/redesign/teasers.js"></script>
     <script defer src="/redesign/map-dayplan.js"></script>
     <script defer src="/redesign/map-saved.js"></script>
     <script defer src="/redesign/map-itineraries.js"></script>
@@ -45,19 +49,14 @@
     <div class="tt-shell">
         <header class="tt-header">
             <a class="tt-brand" href="/" aria-label="TravelTabByPatronFragas"><svg class="tt-brand-peaks" viewBox="0 0 48 40" aria-hidden="true"><path d="M0 36 18 4 29 23 35 12 48 36Z" fill="currentColor"/></svg><span class="tt-wordmark"><strong>TravelTab</strong><small>ByPatronFragas</small></span></a>
-            <nav id="header-navigation" class="tt-header-navigation" aria-label="Main navigation">
-                <a href="#overview" data-tt-section="overview" aria-current="location">Overview</a>
-                <a href="#itinerary" data-tt-section="itinerary">Itinerary</a>
-                <a href="#stays" data-tt-section="stays">Stays</a>
-                <a href="#videos" data-tt-section="videos">Videos</a>
-            </nav>
             <div class="tt-search-area">
                 <form id="destination-search" class="tt-search" action="/process-form/" method="get" role="search"
                       hx-get="/process-form/" hx-target="#content-area" hx-swap="innerHTML" hx-indicator="#destination-search-spinner">
                     <label class="tt-visually-hidden" for="city_name">Search destination, including country</label>
                     <i class="bi bi-search" aria-hidden="true"></i>
-                    <input id="city_name" type="search" name="city_name" placeholder="Search destinations…" required autocomplete="off" aria-describedby="destination-search-error" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="destination-suggestions"
+                    <input id="city_name" type="search" name="city_name" placeholder="Search destinations, cities, or places…" required autocomplete="off" aria-describedby="destination-search-error" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="destination-suggestions"
                            hx-get="/suggest" hx-trigger="input delay:250ms" hx-target="#destination-suggestions" hx-swap="innerHTML" hx-sync="this:replace" hx-params="city_name">
+                    <button type="button" class="tt-search-clear" aria-label="Clear search" hidden><i class="bi bi-x-lg" aria-hidden="true"></i></button>
                     <input id="country_code" type="hidden" name="country_code" value="">
                     <input id="place_lat" type="hidden" name="place_lat" value="">
                     <input id="place_lon" type="hidden" name="place_lon" value="">
@@ -67,6 +66,12 @@
                 <p id="destination-search-error" class="tt-error" role="alert" aria-atomic="true"></p>
                 <p id="destination-search-status" class="tt-visually-hidden" role="status" aria-atomic="true"></p>
             </div>
+            <nav id="header-navigation" class="tt-header-navigation" aria-label="Main navigation">
+                <a href="#overview" data-tt-section="overview" aria-current="location">Overview</a>
+                <a href="#itinerary" data-tt-section="itinerary">Itinerary</a>
+                <a href="#stays" data-tt-section="stays">Stays</a>
+                <a href="#videos" data-tt-section="videos">Videos</a>
+            </nav>
             <div class="tt-saved-area"><button type="button" class="tt-saved-toggle" aria-label="Saved places" aria-expanded="false" aria-controls="saved-places-list"><i class="bi bi-bookmark" aria-hidden="true"></i></button><div id="saved-places-list" class="tt-saved-list" hidden></div></div>
         </header>
 
@@ -89,7 +94,7 @@
         </footer>
     </div>
     <nav class="tt-bottom-navigation" aria-label="Quick section navigation">
-        <a href="#overview" data-tt-section="overview" aria-current="location">Overview</a><a href="#itinerary" data-tt-section="itinerary">Itinerary</a><a href="#stays" data-tt-section="stays">Stays</a><a href="#videos" data-tt-section="videos">Videos</a>
+        <a href="#overview" data-tt-section="overview" aria-current="location"><i class="bi bi-compass-fill" aria-hidden="true"></i>Overview</a><a href="#itinerary" data-tt-section="itinerary"><i class="bi bi-map" aria-hidden="true"></i>Itinerary</a><a href="#stays" data-tt-section="stays"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 20V7m0 9h18v4M3 11h5a3 3 0 0 1 3 3v2m0-7h7a3 3 0 0 1 3 3v4M5 9h2v3H5z"/></svg>Stays</a><a href="#videos" data-tt-section="videos"><i class="bi bi-play-circle" aria-hidden="true"></i>Videos</a>
     </nav>
 </body>
 </html>

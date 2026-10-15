@@ -2,7 +2,7 @@
 
 **Status:** done 2026-10-14 (L1–L11); verified in the [TDD evidence](../docs/tdd/map-look-v2.tdd.md), which lists the remaining visual differences. Decisions made with the owner the same day. Tasks: [map-look-v2-todo.md](map-look-v2-todo.md).
 
-**Goal:** make the destination page look like [Unknown.png](../Unknown.png) (desktop) and [Unknown-2.png](../Unknown-2.png) (phone), using **only data we already have**. Anything that needs new data, accounts or a new engine goes to **Later**. (Supersedes the earlier drafts based on `Desktop.png` / `Phone.png` and the first `Unknown` mockups.)
+**Goal:** make the destination page look like [Unknown.png](../phone.png) (desktop) and [Unknown-2.png](../desktop.png) (phone), using **only data we already have**. Anything that needs new data, accounts or a new engine goes to **Later**. (Supersedes the earlier drafts based on `Desktop.png` / `Phone.png` and the first `Unknown` mockups.)
 
 **Builds on** [map-first](map-first-plan.md). Start only after the map-first working tree is **committed** (it is still uncommitted).
 

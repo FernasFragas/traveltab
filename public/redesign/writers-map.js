@@ -39,10 +39,10 @@
         [['highway_motorway_inner', 'aeroway-runway'], { 'line-color': '#5a6274' }],
         [['highway_major_casing', 'highway_motorway_casing', 'aeroway-runway-casing'], { 'line-color': '#101c2e' }],
         [['highway_name_other', 'highway_name_motorway'], { 'text-color': '#9aa3b5', 'text-halo-color': '#202a32' }],
-        [['water_name'], { 'text-color': '#6f7f9c', 'text-halo-color': '#000e29' }],
+        [['water_name'], { 'text-color': '#93bde3', 'text-halo-color': '#000e29', 'text-font': ['Noto Sans Italic'] }],
         [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city', 'place_city_large', 'place_state',
             'place_country_other', 'place_country_minor', 'place_country_major'], { 'text-color': '#e0e0e0', 'text-halo-color': '#101820' }],
-        [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city'], { 'text-size': 11 }]
+        [['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city'], { 'text-size': 11, 'text-transform': 'uppercase' }]
     ];
     // Opens centred on the destination at about a 200 m scale bar (zoom 14.3 at mid latitudes); the
     // view is not fitted to the pins, so places farther out are reached by panning.
@@ -56,6 +56,10 @@
     var context = null;
     var maplibrePromise = null;
     var requestNumber = 0;
+    var backButton = null;
+
+    document.addEventListener('travelmap:place-selected', function () { if (backButton) backButton.hidden = false; });
+    document.addEventListener('travelmap:closed', function () { if (backButton) backButton.hidden = true; });
 
     window.TravelMap = {
         mount: mount,
@@ -212,6 +216,18 @@
     }
 
     function installControls() {
+        backButton = document.createElement('button');
+        backButton.type = 'button';
+        backButton.className = 'travelmap-back';
+        backButton.textContent = '‹';
+        backButton.hidden = true;
+        backButton.setAttribute('aria-label', 'Back to city');
+        backButton.addEventListener('click', function () {
+            document.dispatchEvent(new CustomEvent('travelmap:back', { detail: {} }));
+            context.draw.flyTo([Number(shell.dataset.mapLon), Number(shell.dataset.mapLat)], cityZoom(shell));
+            canvas.focus();
+        });
+        context.draw.control('map-back', backButton, 'top-left');
         var tools = document.createElement('div');
         tools.className = 'travelmap-tools';
         if (engine.name === 'maplibre') {
@@ -227,7 +243,10 @@
         locate.type = 'button';
         locate.className = 'travelmap-locate';
         locate.setAttribute('aria-label', 'Locate me');
-        locate.textContent = '⌖';
+        var crosshair = document.createElement('i');
+        crosshair.className = 'bi bi-crosshair';
+        crosshair.setAttribute('aria-hidden', 'true');
+        locate.appendChild(crosshair);
         locate.addEventListener('click', function () {
             var geolocation = window.navigator && window.navigator.geolocation;
             if (!geolocation) { showStatus(shell, 'Location unavailable.'); locate.disabled = true; return; }
@@ -258,15 +277,21 @@
             });
             tools.appendChild(dimension);
         }
+        var zoomGroup = document.createElement('div');
+        zoomGroup.className = 'travelmap-zoom';
         ['+', '−'].forEach(function (label, index) {
             var zoom = document.createElement('button');
             zoom.type = 'button'; zoom.textContent = label;
             zoom.setAttribute('aria-label', index ? 'Zoom out' : 'Zoom in');
             zoom.addEventListener('click', function () { if (index) engine.map.zoomOut(); else engine.map.zoomIn(); });
-            tools.appendChild(zoom);
+            zoomGroup.appendChild(zoom);
         });
-        if (window.TravelMapLayers) tools.appendChild(window.TravelMapLayers.createMenu());
+        tools.appendChild(zoomGroup);
         context.draw.control('map-tools', tools, 'top-right');
+    }
+
+    function cityZoom(root) {
+        return String(root.dataset.mapStyleUrl || root.dataset.mapTileUrl || '').indexOf('/fixture-map/') !== -1 ? 12.3 : camera.zoom;
     }
 
     function unavailable(currentRequest) {
@@ -309,7 +334,7 @@
                 try {
                     map = new window.maplibregl.Map({ container: target,
                         style: root.dataset.mapStyleUrl || defaultStyle,
-                        center: [longitude, latitude], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing });
+                        center: [longitude, latitude], zoom: cityZoom(root), pitch: camera.pitch, bearing: camera.bearing, attributionControl: { compact: true } });
                 } catch (error) { reject(error); return; }
                 var drawing = newMaplibreDrawing(map);
                 var threeD = true;
@@ -332,13 +357,14 @@
                     settled = true;
                     clearTimeout(timer);
                     map.addControl(new window.maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
+                    collapseAttribution(target);
                     resolve({ name: 'maplibre', map: map, draw: drawing.draw, clearAll: drawing.clearAll,
                         set3D: function (enabled) {
                             threeD = enabled;
                             map.setPitch(enabled ? camera.pitch : 0);
                             map.setTerrain(enabled && map.getSource('terrain-dem') ? { source: 'terrain-dem', exaggeration: 1 } : null);
                         },
-                        reset: function (lat, lon) { drawing.clearAll(); threeD = true; map.resize(); map.jumpTo({ center: [lon, lat], zoom: camera.zoom, pitch: camera.pitch, bearing: camera.bearing }); if (map.getSource('terrain-dem')) map.setTerrain({ source: 'terrain-dem', exaggeration: 1 }); },
+                        reset: function (lat, lon) { drawing.clearAll(); threeD = true; map.resize(); map.jumpTo({ center: [lon, lat], zoom: cityZoom(root), pitch: camera.pitch, bearing: camera.bearing }); if (map.getSource('terrain-dem')) map.setTerrain({ source: 'terrain-dem', exaggeration: 1 }); },
                         destroy: function () { drawing.clearAll(); map.remove(); } });
                 });
 
@@ -360,7 +386,7 @@
                     var types = {};
                     (map.getStyle().layers || []).forEach(function (layer) { types[layer.id] = layer.type; });
                     var prefixes = { background: 'background-', fill: 'fill-', line: 'line-', symbol: 'text-' };
-                    var layoutProperties = ['text-size'];
+                    var layoutProperties = ['text-size', 'text-transform', 'text-font'];
                     palette.forEach(function (row) {
                         row[0].forEach(function (id) {
                             var type = types[id];
@@ -709,6 +735,14 @@
     function removeLayer(name, layer) {
         try { layer.remove(engine.map, context); }
         catch (error) { console.warn('Map layer ' + name + ': ' + error.message); }
+    }
+
+    // MapLibre opens its compact attribution on load; start it closed so the small phone map stays clear.
+    function collapseAttribution(target) {
+        var attribution = target.querySelector('.maplibregl-ctrl-attrib');
+        if (!attribution) return;
+        attribution.removeAttribute('open');
+        attribution.classList.remove('maplibregl-compact-show');
     }
 
     function closeInfo(info) {

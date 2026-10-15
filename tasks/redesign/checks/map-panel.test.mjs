@@ -52,6 +52,13 @@ test('a pin whose name has not loaded yet is a neutral marker: no label, no QID,
   assert.ok(![pin.title, pin.element.title, ...labelled].some(text => text.includes('Q777')));
 });
 
+test('phone pin selection opens the inline card directly without a popup step', () => {
+ const app = browser({ phone: true }); app.run(); const map = app.addLayers();
+ map.markers('notable')[0].onClick();
+ assert.deepEqual(app.selected, ['Q2']);
+ assert.equal(map.popups.size, 0);
+});
+
 test('a pin click opens a popup with the name, the writer count and the blog monograms, and does not open the panel', async () => {
   const app = browser();
   app.run();
@@ -75,7 +82,7 @@ test('a popup says "1 writer" for one writer and shows the place kind for a nota
   assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Cabo Girão']);
   map.markers('notable').find(marker => marker.title === 'Funchal').onClick();
   assert.equal(map.popups.size, 1, 'one popup at a time');
-  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Funchal']);
+  assert.deepEqual(app.textOf(map.popups.get('pin-popup').element), ['Funchal', 'City']);
   assert.equal(app.requests.length, 2, 'panel metadata comes from existing place fragments');
 });
 
@@ -167,37 +174,36 @@ test('loads the selected place into the panel slot', () => {
   assert.deepEqual(app.requests, [['GET', '/map/madeira-pt/Q1?lat=1&lon=2', app.panel]]);
 });
 
-test('draws one monogram per writer with a colour from the host, and +N past three', () => {
-  const app = browser();
-  app.run();
-  app.swapPanel([
-    ['travel.example', 'Salt in our Hair'], ['travel.example', 'Salt in our Hair'],
-    ['viagens.example', 'Viagens à Solta'], ['c.example', 'Casa'], ['d.example', 'Dias'], ['e.example', 'Ermo']
-  ]);
-  const monograms = app.monograms.children;
-  assert.deepEqual(monograms.map(item => item.textContent), ['SI', 'VÀ', 'C', '+2']);
-  assert.match(monograms[0].style.backgroundColor, /^hsl\(\d+ /);
-  assert.equal(monograms[0].title, 'Salt in our Hair');
-  const again = browser();
-  again.run();
-  again.swapPanel([['travel.example', 'Salt in our Hair']]);
-  assert.equal(again.monograms.children[0].style.backgroundColor, monograms[0].style.backgroundColor);
+test('back returns the panel to its city state and announces closure', () => {
+ const app = browser(); app.run(); app.select('Q1');
+ app.back();
+ assert.equal(app.panel.children[0].textContent, 'Pick a place on the map');
+ assert.equal(app.events.at(-1), 'travelmap:closed');
 });
 
-test('close returns the panel to its empty state', () => {
-  const app = browser();
-  app.run();
-  app.swapPanel([['travel.example', 'Salt in our Hair']]);
-  app.body.emit('click', { target: element('button', { className: 'map-panel-close', closestOf: app.panel }) });
-  assert.equal(app.panel.children.length, 1);
-  assert.equal(app.panel.children[0].textContent, 'Pick a place on the map');
+test('writer See all toggles the list and accessible expanded state', () => {
+ const app = browser(); app.run();
+ const list = { hidden: true };
+ const root = { querySelector: () => list };
+ const arrow = { attributes: {}, setAttribute(name, value) { this.attributes[name] = value; }, closest: selector => selector === '[data-writers-toggle]' ? arrow : selector === '.map-panel-writers' ? root : null };
+ app.body.emit('click', { target: arrow });
+ assert.equal(list.hidden, false); assert.equal(arrow.attributes['aria-expanded'], 'true');
+ app.body.emit('click', { target: arrow });
+ assert.equal(list.hidden, true); assert.equal(arrow.attributes['aria-expanded'], 'false');
 });
 
-test('writer card arrow scrolls to the posts', () => {
- const app = browser(); app.run(); let scrolled = false;
- const root = { querySelector: () => ({ scrollIntoView() { scrolled = true; } }) };
- const arrow = { closest: selector => selector === '[data-writer-posts]' ? arrow : selector === '.map-place-panel' ? root : null };
- app.body.emit('click', { target: arrow }); assert.equal(scrolled, true);
+test('carousel loops in both directions and announces the current photo', () => {
+ const app = browser(); app.run();
+ const photos = [element('figure'), element('figure'), element('figure')];
+ const media = element('div');
+ media.querySelectorAll = () => photos;
+ media.querySelector = () => null;
+ app.panel.querySelectorAll = selector => selector === '[data-carousel]' ? [media] : [];
+ app.body.emit('htmx:afterSwap', { detail: { target: app.panel } });
+ const [badge, live, previous, next] = media.children;
+ assert.equal(badge.textContent, '1 / 3'); assert.equal(live.textContent, '1 of 3');
+ previous.click(); assert.equal(live.textContent, '3 of 3'); assert.equal(photos[2].hidden, false);
+ next.click(); assert.equal(live.textContent, '1 of 3'); assert.equal(photos[2].hidden, true);
 });
 
 test('Share copies a link to the selected place when Web Share is unavailable', async () => {
@@ -246,6 +252,7 @@ function browser(options = {}) {
   const requests = [];
   const listeners = new Map();
   const body = target();
+  const events = [];
   const panel = element('div');
   const shell = element('div', { slots: { panel } });
   const map = fakeMap();
@@ -253,6 +260,7 @@ function browser(options = {}) {
   const focus = { current: null };
   const writersOf = [['travel.example', 'Salt in our Hair'], ['viagens.example', 'Viagens à Solta'], ['c.example', 'Casa'], ['c.example', 'Casa'], ['d.example', 'Dias']];
   const window = {
+    innerWidth: options.phone ? 375 : 1440,
     location: { href: 'https://traveltab.example/trip/madeira-pt' },
     navigator: options.navigator || {},
     fetch: url => { requests.push([url]); return Promise.resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(writersOf)) }); },
@@ -266,18 +274,20 @@ function browser(options = {}) {
   const document = {
     body,
     addEventListener: (type, fn) => listeners.set(type, fn),
-    querySelector: selector => selector === '[data-writers-map]' ? shell : null,
+    querySelector: selector => selector === '[data-writers-map]' ? shell : selector === '[data-map-slot=\"panel\"]' ? panel : null,
+    dispatchEvent: event => events.push(event.type),
     createElement: tag => element(tag, { focus })
   };
   const app = {
-    layers, selected, requests, body, panel, context, monograms: null,
+    layers, selected, requests, body, panel, context, events, monograms: null,
+    back: () => listeners.get('travelmap:back')(),
     get focused() { return focus.current; },
     set focused(node) { focus.current = node; },
     keydown: key => listeners.get('keydown')({ key }),
     flush: async () => { await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve)); },
     find: (node, test) => [node, ...node.children.flatMap(child => app.find(child, test))].filter(test),
     textOf: node => app.find(node, item => item.textContent && item.tagName !== 'BUTTON' && !item.className.includes('monogram')).map(item => item.textContent),
-    run: () => vm.runInNewContext(source, { window, document, ...window, URL, setTimeout }),
+    run: () => vm.runInNewContext(source, { window, document, ...window, URL, setTimeout, CustomEvent: class { constructor(type) { this.type = type; } } }),
     addLayers() {
       layers.forEach(layer => layer.add(map, context));
       return map;

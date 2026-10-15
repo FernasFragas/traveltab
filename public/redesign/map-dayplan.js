@@ -102,7 +102,7 @@
             if (day.stops.length > 1 && drawAPI.line) {
                 var routeId = 'plan-route-' + day.number;
                 drawAPI.line(routeId, day.stops.map(function (stop) { return [stop.lon, stop.lat]; }),
-                    { color: '#a56824', width: 3, dash: [1, 2] });
+                    { color: '#a56824', width: 2, dash: [1, 1.5] });
                 routeIds.push(routeId);
             }
             day.stops.forEach(function (stop, index) {

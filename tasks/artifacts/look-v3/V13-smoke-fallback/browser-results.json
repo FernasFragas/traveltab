@@ -1,0 +1,402 @@
+{
+  "browser": "Chrome/155.0.8059.40",
+  "htmx": "2.0.11",
+  "scenario": "fallback",
+  "base": "http://127.0.0.1:57013",
+  "results": [
+    {
+      "width": 375,
+      "height": 812,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 375,
+        "viewport": 375,
+        "map": {
+          "x": 14,
+          "y": 260,
+          "width": 347,
+          "height": 196,
+          "top": 260,
+          "right": 361,
+          "bottom": 456,
+          "left": 14
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 375,
+        "viewport": 375,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 14,
+          "y": 243,
+          "width": 347,
+          "height": 510.578125,
+          "top": 243,
+          "right": 361,
+          "bottom": 753.578125,
+          "left": 14
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 0,
+        "note": "Nearby stays are temporarily unavailable. You can still search Booking.com.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 768,
+        "viewport": 768,
+        "map": {
+          "x": 33,
+          "y": 364,
+          "width": 702,
+          "height": 242,
+          "top": 364,
+          "right": 735,
+          "bottom": 606,
+          "left": 33
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 768,
+        "viewport": 768,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 33,
+          "y": 362,
+          "width": 702,
+          "height": 269.6875,
+          "top": 362,
+          "right": 735,
+          "bottom": 631.6875,
+          "left": 33
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 0,
+        "note": "Nearby stays are temporarily unavailable. You can still search Booking.com.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    },
+    {
+      "width": 1100,
+      "height": 1000,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1100,
+        "viewport": 1100,
+        "map": {
+          "x": 49,
+          "y": 264,
+          "width": 1002,
+          "height": 242,
+          "top": 264,
+          "right": 1051,
+          "bottom": 506,
+          "left": 49
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1085,
+        "viewport": 1100,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 49,
+          "y": 264,
+          "width": 987,
+          "height": 269.6875,
+          "top": 264,
+          "right": 1036,
+          "bottom": 533.6875,
+          "left": 49
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 0,
+        "note": "Nearby stays are temporarily unavailable. You can still search Booking.com.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "initial": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1440,
+        "viewport": 1440,
+        "map": {
+          "x": 155,
+          "y": 272,
+          "width": 1130,
+          "height": 242,
+          "top": 272,
+          "right": 1285,
+          "bottom": 514,
+          "left": 155
+        },
+        "form": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "visible": [
+          "overview"
+        ],
+        "days": 0,
+        "openDays": [],
+        "stays": 0,
+        "note": "Generate a trip plan to find places to stay.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      },
+      "planned": {
+        "title": "Lisbon",
+        "htmx": "2.0.11",
+        "planner": true,
+        "photo": 1280,
+        "videos": 0,
+        "sections": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "overflow": 1425,
+        "viewport": 1440,
+        "map": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        },
+        "form": {
+          "x": 147.5,
+          "y": 270,
+          "width": 1130,
+          "height": 269.6875,
+          "top": 270,
+          "right": 1277.5,
+          "bottom": 539.6875,
+          "left": 147.5
+        },
+        "visible": [
+          "itinerary"
+        ],
+        "days": 3,
+        "openDays": [
+          true,
+          false,
+          false
+        ],
+        "stays": 0,
+        "note": "Nearby stays are temporarily unavailable. You can still search Booking.com.",
+        "error": "",
+        "searchError": "",
+        "idsUnique": true
+      }
+    }
+  ],
+  "errors": [],
+  "failedResources": []
+}

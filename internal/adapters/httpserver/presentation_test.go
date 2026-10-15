@@ -313,7 +313,7 @@ func TestWeatherDisplay_ShowsLocationHeroDetailsAndForecast(t *testing.T) {
 func TestWeatherDisplay_NoForecastAndNoSunsetRenderNoEmptyRow(t *testing.T) {
 	html := renderWeatherDisplay(t, presentationView{Location: "Portugal"}, application.Weather{Temperature: 24, Condition: "clear sky"})
 
-	assert.NotContains(t, html, "weather-forecast")
+	assert.NotContains(t, html, `class="weather-forecast"`)
 	assert.NotContains(t, html, "Sunset")
 }
 
@@ -344,4 +344,12 @@ func TestPresentationHeroLine_TaglineWinsOverTheWikidataDescription(t *testing.T
 			assert.Equal(t, tc.want, tc.view.HeroLine())
 		})
 	}
+}
+
+func TestWeatherDisplay_SlimStripAndForecastPopover(t *testing.T) {
+	markup := renderWeatherDisplay(t, presentationView{PhotoCaption: "Old caption", Forecast: []forecastRow{{Day: "Sun", High: "25", Low: "17"}}}, application.Weather{Temperature: 24.4, FeelsLike: 25.2, Sunset: "19:30"})
+	for _, want := range []string{"popover", "popovertarget", "Forecast", "#itinerary", "Plan your trip", "Humidity", "Wind", "Waves", "Sunset", "24<span", "Feels like 25°C"} {
+		assert.Contains(t, markup, want)
+	}
+	assert.NotContains(t, markup, "Old caption")
 }

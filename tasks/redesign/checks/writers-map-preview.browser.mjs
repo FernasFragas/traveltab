@@ -41,7 +41,7 @@ try {
         card: { x: card.x, width: card.width }, canvas: { x: canvas.x, y: canvas.y, right: canvas.right, bottom: canvas.bottom, width: canvas.width, height: canvas.height },
         panel: { x: panel.x, y: panel.y, width: panel.width, height: panel.height },
         info: { label: info?.getAttribute('aria-label'), description: document.getElementById(info?.getAttribute('aria-describedby'))?.textContent.trim() },
-        layers: [...shell.querySelectorAll('[data-map-slot="layers"] > button')].map(el => el.textContent.trim()),
+        layers: [...shell.querySelectorAll('[data-map-slot="layers"] > .writers-map-layer')].map(el => el.textContent.trim()),
         emptyPanel: shell.querySelector('[data-map-slot="panel"]')?.textContent.trim(),
         panelVisible: getComputedStyle(shell.querySelector('[data-map-slot="panel"]')).display !== 'none',
         peekCount: shell.querySelectorAll('[data-map-panel-peek]').length };
@@ -51,25 +51,45 @@ try {
     assert.match(madeira[engine === 'maplibre' ? 'styleURL' : 'tileURL'], engine === 'maplibre'
       ? /^http:\/\/127\.0\.0\.1:\d+\/fixture-map\/style\.json$/
       : /^http:\/\/127\.0\.0\.1:\d+\/fixture-tiles\/%7bz%7d\/%7bx%7d\/%7by%7d\.png$/i);
-    assert.ok(madeira.width > 0 && madeira.width <= width && madeira.height >= 320, JSON.stringify(madeira));
+    assert.ok(madeira.width > 0 && madeira.width <= width && (width === 375 ? madeira.height >= 190 && madeira.height <= 220 : madeira.height >= 480 && madeira.height <= 520), JSON.stringify(madeira));
     assert.ok(madeira.overflow <= width, JSON.stringify(madeira));
     assert.equal(madeira.info.label, 'About map layers');
     assert.match(madeira.info.description || '', /notable places.*writers.*day plan.*itineraries/i);
-    assert.deepEqual(madeira.layers, width === 375 ? ['Notable', 'Writers', 'Itineraries', 'Your plan'] : ['Notable places', "Writers' pins", "Writers' itineraries", 'Your plan']);
-    assert.match(madeira.emptyPanel, /About Madeira/);
+    assert.deepEqual(madeira.layers, ['Notable places', "Writers' pins", 'Itineraries', 'Your plan']);
+    assert.match(madeira.emptyPanel, /Madeira/);
     assert.match(madeira.emptyPanel, /Plan your trip/);
     if (width === 1440) {
       assert.ok(madeira.card.width >= 1000, JSON.stringify(madeira));
-      assert.ok(madeira.panel.width >= 380 && madeira.panel.width <= 420, JSON.stringify(madeira));
-      assert.ok(madeira.panel.x >= madeira.canvas.right && Math.abs(madeira.panel.height - madeira.canvas.height) <= 1, JSON.stringify(madeira));
+      assert.ok(madeira.panel.width >= 490 && madeira.panel.width <= 530, JSON.stringify(madeira));
+      assert.ok(madeira.panel.x >= madeira.canvas.right && madeira.panel.height > madeira.canvas.height, JSON.stringify(madeira));
     } else {
       assert.ok(madeira.canvas.width >= madeira.card.width - 20 && madeira.canvas.width <= madeira.card.width);
-      assert.equal(madeira.panelVisible, false);
+      assert.equal(madeira.panelVisible, true);
+      assert.ok(madeira.panel.y >= madeira.canvas.bottom && madeira.panel.y <= madeira.canvas.bottom + 12, JSON.stringify(madeira));
       assert.equal(madeira.peekCount, 0);
     }
     await browser.tab(true);
     await browser.tab();
     assert.equal(await browser.evaluate("document.activeElement === document.querySelector('.map-pin')"), true);
+
+    // MapLibre's compact credits start collapsed and open from the keyboard (a <details> summary); Leaflet's reveal on focus.
+    const isMaplibre = await browser.evaluate(`(() => {
+      const control = document.querySelector('.maplibregl-ctrl-attrib, .leaflet-control-attribution');
+      control.querySelector('.maplibregl-ctrl-attrib-button, a').focus();
+      return control.classList.contains('maplibregl-ctrl-attrib');
+    })()`);
+    if (isMaplibre) {
+      assert.equal(await browser.evaluate(`document.querySelector('.maplibregl-ctrl-attrib').hasAttribute('open')`), false, 'credits start collapsed');
+      await browser.key('Enter', 'Enter', 13);
+    }
+    const attribution = await browser.evaluate(`(() => {
+      const control = document.querySelector('.maplibregl-ctrl-attrib, .leaflet-control-attribution');
+      const target = control.querySelector('.maplibregl-ctrl-attrib-button, a');
+      return { focused: document.activeElement === target, width: control.getBoundingClientRect().width,
+        credit: control.textContent.trim(),
+        detailsVisible: getComputedStyle(control.querySelector('.maplibregl-ctrl-attrib-inner') || control).display !== 'none' };
+    })()`);
+    assert.ok(attribution.focused && attribution.credit.length > 0 && attribution.detailsVisible && attribution.width > 24, JSON.stringify(attribution));
 
     // The status is already '' before the places arrive, so a swap with no status message is done only once its pins are drawn.
     for (const [query, slug, status, loaded] of [
