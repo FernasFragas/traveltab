@@ -24,14 +24,15 @@
         activeDay = 0;
         draw();
     });
-    // "View on map": press the Your day plan chip (7f keeps its own state) and scroll to the map.
+    // "View on map": press the Your day plan chip (7f keeps its own state) and scroll to the map. On a
+    // phone the map's section is hidden until the hash change shows it, so the scroll waits for that.
     document.addEventListener('click', function (event) {
         if (!event.target.closest || !event.target.closest('[data-view-on-map]')) return;
         var chip = document.querySelector('.writers-map-layer-plan');
         if (chip && chip.getAttribute('aria-pressed') !== 'true') chip.click();
+        if (window.location.hash === '#overview') return scrollToMap();
+        window.addEventListener('hashchange', scrollToMap, { once: true });
         window.location.hash = '#overview';
-        var mapElement = document.querySelector('[data-writers-map]');
-        if (mapElement) mapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     document.body.addEventListener('htmx:afterSwap', report);
     document.body.addEventListener('htmx:historyRestore', report);
@@ -43,6 +44,11 @@
         pin.focus({ preventScroll: true });
     }, true);
     report();
+
+    function scrollToMap() {
+        var mapElement = document.querySelector('[data-writers-map]');
+        if (mapElement) mapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     function report() {
         if (!document.querySelector('[data-writers-map]')) return;

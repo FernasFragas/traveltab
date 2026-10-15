@@ -1,6 +1,7 @@
 # Security review: attack surface and fix plan
 
-Initial review: 2026-10-09. Code-review update: 2026-10-10. Scope: the web app
+Initial review: 2026-10-09. Code-review update: 2026-10-10. **Status re-check: 2026-10-15**
+(branch `fix-v4` at `9e6e45e` plus the uncommitted working tree). Scope: the web app
 (`internal/adapters/httpserver`, active API clients, SQLite caches, templates, browser JS)
 and its deployment (`Dockerfile`, `fly.toml`). Dependency and supply-chain checks are covered
 by [dependency-security-plan.md](dependency-security-plan.md).
@@ -11,6 +12,12 @@ as **previously reported local results**; this update did not rerun them or inde
 verify their output. The update inspected current source, installed middleware source and
 existing tests. No tests, load tests or live-site probes were run for this update.
 
+**2026-10-15 re-check:** every finding below was re-read against current source. **None of the
+twelve fixes has landed**; line references were refreshed. New since 2026-10-10: the writers' map
+routes (`/map/:dest.geojson`, `/map/:dest/:qid`), the WordPress sync, CDN-loaded map libraries and
+`Cache-Control: no-cache` on static files. They add **finding 13** and four rows to *Existing
+protections*. This re-check also ran no security probes.
+
 Severity is a remediation priority, not a measured exploitability score. Production reachability,
 proxy configuration, deployed environment variables and resource impact remain unverified.
 
@@ -18,21 +25,22 @@ proxy configuration, deployed environment variables and resource impact remain u
 
 | # | Finding | Severity | Status |
 |---|---|---|---|
-| 1 | Unauthenticated runtime profiler at `/debug/fgprof` | **High** | Code + previously reported local response |
-| 2 | Expensive routes bypass the new-city limiter; its budget is shared | Medium | From code; resource impact unmeasured |
-| 3 | `/suggest` has no application length cap or rate limit | Medium | From code |
-| 4 | No application security headers (CSP, frame, nosniff, referrer) | Low / hardening | Code + previously reported local headers |
-| 5 | Stats token in the query string, compared without constant time | Low | From code |
-| 6 | Session store loaded on every request but never used | Informational | Code + previously reported absence of cookie |
-| 7 | `/stats?days=` has no upper bound | Low | From code |
-| 8 | No application retention/size limit for visits and persistent caches | Medium | From code; exhaustion unproven |
-| 9 | Runtime image defaults to root | Low / hardening | From Dockerfile; deployed UID unverified |
-| 10 | Active upstream clients lack overall deadlines and cancellation propagation | Medium | From code |
-| 11 | OpenWeather geocoding sends the API key over HTTP | **High** | From code; interception not demonstrated |
-| 12 | Analytics visitor ID is derived from the client IP and is reversible | Medium (privacy) | From code; owner decision 2026-10-11: stop using the IP, drop unique visitors |
+| 1 | Unauthenticated runtime profiler at `/debug/fgprof` | **High** | **Open.** Code + previously reported local response |
+| 2 | Expensive routes bypass the new-city limiter; its budget is shared | Medium | **Open.** From code; resource impact unmeasured |
+| 3 | `/suggest` has no application length cap or rate limit | Medium | **Open.** From code |
+| 4 | No application security headers (CSP, frame, nosniff, referrer) | Low / hardening | **Open.** Code + previously reported local headers |
+| 5 | Stats token in the query string, compared without constant time | Low | **Open.** From code |
+| 6 | Session store loaded on every request but never used | Informational | **Open.** Code + previously reported absence of cookie |
+| 7 | `/stats?days=` has no upper bound | Low | **Open.** From code |
+| 8 | No application retention/size limit for visits and persistent caches | Medium | **Open, wider** (writers' map caches, see 13). From code; exhaustion unproven |
+| 9 | Runtime image defaults to root | Low / hardening | **Open.** From Dockerfile; deployed UID unverified |
+| 10 | Active upstream clients lack overall deadlines and cancellation propagation | Medium | **Open.** From code |
+| 11 | OpenWeather geocoding sends the API key over HTTP | **High** | **Open.** From code; interception not demonstrated |
+| 12 | Analytics visitor ID is derived from the client IP and is reversible | Medium (privacy) | **Open** (decided, not implemented). Owner decision 2026-10-11: stop using the IP, drop unique visitors |
+| 13 | Writers' map routes start unbounded Wikidata work and cache rows per request | Medium | **New 2026-10-15.** From code; only when `WRITERS_MAP` is on |
 | — | Existing protections and remaining verification gaps | — | See below |
 
-**Fix order:** 1 and 11 → 2, 3, 10 and 12 → 8 → 5 and 9 → 4 and 7. Item 6 is optional cleanup.
+**Fix order:** 1 and 11 → 2, 3, 10, 12 and 13 → 8 → 5 and 9 → 4 and 7. Item 6 is optional cleanup.
 Start with these focused changes; another scanner or a distributed rate-limiting service is
 not necessary to address the findings. Keep the existing dependency checks.
 
@@ -40,7 +48,7 @@ not necessary to address the findings. Keep the existing dependency checks.
 
 ## 1. Unauthenticated runtime profiler at `/debug/fgprof` (High)
 
-**Evidence:** `internal/adapters/httpserver/server.go:55` runs `app.Use(fgprof.New())` with no
+**Evidence:** `internal/adapters/httpserver/server.go:67` runs `app.Use(fgprof.New())` with no
 condition. The initial review reported that
 `curl 'http://127.0.0.1:8097/debug/fgprof?seconds=2'` returned **200** after **2.0 s** with a
 1.9 KB profile. Installed `gofiber/contrib/fgprof@v1.0.4` routes this path to the fgprof
@@ -67,7 +75,8 @@ planning dates. `planTrip` (`/plan`) and `resolveTripPlan` (both exports) call t
 without that check. `/`, `/process-form/` and `/trip/:slug` fetch weather before checking
 the destination cache; photo/video work can also occur before the limiter is consulted.
 Provider fan-out varies: Wikimedia performs additional geographic searches when its initial
-search hits the result cap, rather than always making seven searches.
+search hits the result cap, rather than always making seven searches. The writers' map routes
+added since have no limiter either (finding 13).
 
 **Risk:**
 
@@ -129,9 +138,9 @@ timeout, but neither limits aggregate request rate or concurrent work.
     - `worker-src blob:` (MapLibre's worker); add `child-src blob:` for older Safari
     - Recheck the actual browser requests before enforcing the policy, and drop the Leaflet and OSM origins if the fallback stops using them.
 - [ ] Look for inline scripts and styles. Prefer moving them out over allowing `'unsafe-inline'`.
-  - Known inline image handlers (October 11, 2026): `views/weather_display.go.tpl` (hero `onload`/`onerror`), `views/itinerary_body.go.tpl` (stop photo `onerror`), `views/stay_card.go.tpl` (`onerror`) and `views/video.go.tpl` (2× `onerror`). Image `error` events don't bubble: a shared script must listen in the capture phase and also handle images that failed before it loaded.
-- [ ] Account for HTMX 1.x's injected indicator styles and evaluation-dependent features; inspect `includeIndicatorStyles` and `allowEval` before enforcing the policy. See the [version 1 configuration docs](https://v1.htmx.org/docs/#config). Include local images/fonts and any actually used data-URI assets in the resource inventory.
-- [ ] Choose an explicit referrer policy compatible with the video/map embeds. Use `Cache-Control: no-store` and `Referrer-Policy: no-referrer` specifically for private stats responses.
+  - Known inline image handlers (re-checked October 15, 2026): `views/weather_display.go.tpl` (hero `onload`/`onerror`), `views/itinerary_body.go.tpl` (stop photo `onerror`), `views/stay_card.go.tpl` (`onerror`), `views/video.go.tpl` (2× `onerror`), and new since: `views/map_card.go.tpl` (city photo `onerror`) and `views/place_panel.go.tpl` (place photo `onerror`). Image `error` events don't bubble: a shared script must listen in the capture phase and also handle images that failed before it loaded.
+- [ ] Account for HTMX's injected indicator styles and evaluation-dependent features; inspect `includeIndicatorStyles` and `allowEval` before enforcing the policy. The app now vendors **HTMX 2.0.11** (`package.json`), so use the [current configuration reference](https://htmx.org/reference/#config), not the 1.x docs. Include local images/fonts and any actually used data-URI assets in the resource inventory.
+- [ ] Choose an explicit referrer policy compatible with the video/map embeds. Use `Cache-Control: no-store` and `Referrer-Policy: no-referrer` specifically for private stats responses. (Static files now send `Cache-Control: no-cache`; that is a freshness fix and does not cover `/stats`.)
 - [ ] Run the browser checks (`browser-smoke.mjs`, `interaction-regressions.mjs`, `a11y-audit.mjs`) with the policy enabled. Add explicit capture of CSP violations/blocked resources: `lib/browser.mjs` currently records `Runtime.exceptionThrown`, which does not cover every CSP console diagnostic. Verify search, swaps, indicators, maps and video playback as well as layout.
 - [ ] Optionally ship it as `Content-Security-Policy-Report-Only` for a week first.
 
@@ -154,7 +163,7 @@ timeout, but neither limits aggregate request rate or concurrent work.
 
 ## 6. Unused session store (Informational)
 
-**Evidence:** `server.go:58–64` calls `store.Get(ctx)` on every request and stores the result in
+**Evidence:** `server.go:69–76` calls `store.Get(ctx)` on every request and stores the result in
 `ctx.Locals`, but no session reader or save was found. The initial review reported no cookie on `/`.
 
 **Risk:** no current session-based exploit established. It is unnecessary work on every request, and anyone who later
@@ -188,6 +197,8 @@ simple bot filter. `cached.get` also allows concurrent misses for one key to fet
 **Risk:** varied locations and repeated page visits can increase storage and SQLite write
 load. Concurrent cache misses can amplify upstream work. Filling the production volume or
 causing an outage has not been demonstrated. The in-memory suggestion cache is already bounded.
+Since 2026-10-10 the writers' map also writes Wikidata place results to `source_cache` under
+request-controlled keys (finding 13), which widens this growth path.
 
 **Fix plan:**
 
@@ -216,7 +227,8 @@ environment secrets and write its permitted database, so this is impact reductio
 ## 10. Upstream deadlines and cancellation gaps (Medium)
 
 **Evidence:** `cmd/web/main.go` wires `NewWeatherAPI` and `NewOpenMateoAPI` into the public
-weather flow. Both use `http.DefaultClient`, which has no overall request timeout. OpenWeather
+weather flow. Both use `http.DefaultClient` (`openweather.go:26`, `openmateo.go:21`; YouTube too,
+`youtube.go:24`), which has no overall request timeout. OpenWeather
 uses `client.Get`; the marine client uses `http.NewRequest` without the supplied context.
 Consequently, their upstream requests do not inherit that context's cancellation. Go documents
 the client timeout semantics in [net/http.Client](https://pkg.go.dev/net/http#Client).
@@ -224,7 +236,9 @@ the client timeout semantics in [net/http.Client](https://pkg.go.dev/net/http#Cl
 The YouTube adapter's search and video-status `.Do()` calls do not attach a per-call context;
 passing a context when constructing the service is not an explicit deadline on those calls.
 Other active adapters already have timeouts (geocoding, Wikimedia, forecast, Overpass and
-destination photos), so this finding does not apply equally to every provider.
+destination photos), so this finding does not apply equally to every provider. The newer
+WordPress and Wikidata-nearby clients default to a 30 s client timeout (`wordpress.go:54`,
+`wikidatanearby.go:56`).
 
 **Risk:** slow or stalled upstream responses can occupy requests and resources for longer
 than intended, multiplying item 2's availability risk. No stalled-provider experiment was run.
@@ -298,6 +312,35 @@ and stores `visitorID(ip, userAgent)`: the first 8 bytes of `sha256(ip + "|" + u
 - [ ] Update `/stats` and its consumers: remove `unique_visitors` and the tests that assert it.
 - [ ] Note the change and the retention rule (item 8) in `docs/maintenance.md`.
 
+## 13. Writers' map routes start unbounded upstream work and cache rows (Medium)
+
+**Added 2026-10-15.** Applies only when `WRITERS_MAP` is enabled; `fly.toml` doesn't set it, so it
+may be a Fly secret. Production state unverified.
+
+**Evidence:** `GET /map/:dest.geojson` and `GET /map/:dest/:qid` (`writermap.go`) accept any city
+slug that `ParseSlug` allows, plus any valid `lat`/`lon` (`mapRequest`). `destinationSoFar` asks
+the base place source for that area. The SQLite cache keys it as
+`wikidata:<version>:"<name>":"<country>":<lat>:<lon>:<radius>` with full-precision `%g`
+coordinates (`internal/adapters/sqlite/wikidatanearby.go:25`, `basePlaceKey`). So every distinct
+name or coordinate is a cache miss. That starts the 5 km ring queries against Wikidata and stores a
+new row, plus partial rows while rings load. No limiter from item 2 applies, and requests skip
+`trackVisit`.
+
+**Risk:**
+- **Upstream abuse.** Scripted requests with varied coordinates can drive Wikidata SPARQL traffic
+  as fast as the app accepts requests, which risks provider throttling for real visitors.
+- **Storage growth.** Each miss adds `source_cache` rows with no retention (item 8).
+- Exploitation was not attempted. The client's 30 s timeout bounds each call, not the total.
+
+**Fix plan:**
+- [ ] RED: with a fake base place source that counts calls, show that requests for many distinct
+  coordinates within one window are refused (or served cached) after an agreed budget, and that a
+  coordinate a few metres away reuses the same cache entry.
+- [ ] Snap request coordinates to a grid (for example 3 decimals, like the planner's source cache)
+  before keying. Consider accepting only destinations the page itself rendered.
+- [ ] Apply item 2's per-client and global budgets to cache misses on these routes.
+- [ ] Include the writers' map keys in item 8's retention budget.
+
 ## Existing protections and limits of the evidence
 
 These observations reduce risk but do not close an entire vulnerability class. Referenced
@@ -315,6 +358,10 @@ tests were inspected, not executed during this update.
 | Browser HTTPS | `fly.toml` sets `force_https = true`; deployed behavior not checked. Outbound HTTP is a separate issue (item 11). |
 | `.env` in the image | `.dockerignore` excludes `.env` and `.env.*` |
 | Static browser assets | The app serves `./public`, not all of `node_modules`. The vendor script copies five selected assets. Confirm sensitive paths and encoded traversal attempts remain inaccessible; no live filesystem-disclosure test was performed. |
+| CDN map libraries (new) | `writers-map.js` loads MapLibre 5.24.0 from jsDelivr and `writers-map-leaflet.js` loads Leaflet 1.9.4 from unpkg, both with pinned versions and Subresource Integrity (`sha384`/`sha256`). A tampered CDN file is refused by the browser. The CSP in item 4 must still allow these origins. |
+| Writers' post and Wikipedia links (new) | `place_panel.go.tpl` puts crawled `PostURL` and `WikipediaURL` in `href` through `html/template`, which replaces unsafe schemes such as `javascript:`. Links open with `rel="noopener noreferrer"`. Titles and blog names are escaped text. |
+| Place photo URLs (new) | `validPlacePhotoURL` (`writermap.go:197`) only accepts `https` URLs without credentials on `upload.wikimedia.org` or `thumb.wikimedia.org`. Otherwise the panel and GeoJSON drop the photo. |
+| WordPress crawler (new) | It fetches only hosts listed in the embedded allowlist `writerdata/sources.json` (`writermap.ParseSources`, `cmd/web/main.go:157`), through a per-host limiter, so it isn't steerable to arbitrary URLs by visitors. Response size limits weren't reviewed. |
 | Dependencies and image | Current CI config includes Dependabot, govulncheck, `npm audit --audit-level=high`, Trivy and a weekly rescan. This establishes configuration, not a fresh passing scan. Trivy gates fixable High/Critical findings (`ignore-unfixed: true`); known-vulnerability scans and lockfile integrity do not establish that an update is benign. |
 
 ## Remaining verification
@@ -323,9 +370,11 @@ tests were inspected, not executed during this update.
 - [ ] **Provider failure handling.** Check empty/malformed responses without live upstream calls. In particular, `openmateo.go` indexes the final wave-height element without checking for an empty array; verify the reachable error path and panic containment.
 - [ ] **Proxy trust and analytics.** User-agent filtering is trivially bypassed. Whether a client-IP header is spoofable depends on the ingress path; do not assume Fly-proxied requests and direct connections have identical trust. Traffic inflation also has the storage/write-load impact in item 8.
 - [ ] **Static files and secrets.** Check `.env`, database, package metadata and encoded traversal paths against the actual static middleware. Inspect the final image for unintended files without exposing secret contents.
+- [ ] **Feature flags in production.** `WRITERS_MAP`, `WRITERS_SYNC` and `WRITERS_AI` aren't in `fly.toml` (only `WRITERS_RESYNC_BEFORE` is). Check `fly secrets list` to know whether finding 13 and the crawler are live.
 - [ ] **Deployment and repository controls.** Verify deployed UID, proxy restrictions, required PR checks/reviews, token permissions, secret access and rollback procedure. These settings cannot be established from source alone; dependency coverage is tracked in the linked plan.
 - [ ] **Live follow-up.** After fixes, verify profiler denial and response headers through production ingress. Keep any load/resource tests on an isolated instance with fake providers and explicit resource limits; the local preview does not exercise production providers or proxy behavior.
 
 Behavior fixes follow `AGENTS.md` §5 (test first), with actual results recorded in
-`docs/tdd/<task>.tdd.md`. Browser changes require checks at 375 and 1440 px. This documentation
-update implements none of the proposed fixes and claims no new runtime verification.
+`docs/tdd/<task>.tdd.md`. Browser changes require checks at 375 and 1440 px. Neither the
+2026-10-10 update nor the 2026-10-15 re-check implements any of the proposed fixes or claims
+new runtime verification.

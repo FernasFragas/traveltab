@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
 import assert from 'node:assert/strict';
-import { connect, openPlacePanel, startPreview } from './lib/browser.mjs';
+import { connect, openPlacePanel, showLayer, startPreview } from './lib/browser.mjs';
 
 const browser = await connect();
 try {
@@ -16,6 +16,7 @@ try {
     try {
       await browser.viewport(width, 900);
       await browser.navigate(`${preview.url}/trip/madeira-pt`);
+      await showLayer(browser, 'writers');
       await browser.until("document.querySelector('.map-pin[title=\"Funchal\"]')");
       const initial = await browser.evaluate(`(() => ({
         weather: document.querySelector('.map-default-weather')?.textContent,

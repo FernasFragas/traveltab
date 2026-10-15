@@ -1,10 +1,10 @@
-/* Legend chips: toggle the Writers' Map layers (notable, writers, plan, itineraries). */
+/* Legend chips: toggle the Writers' Map layers (notable, writers, plan, itineraries). Each loaded
+   destination starts with only the notable places on. */
 (function () {
     'use strict';
 
-    var STORAGE_KEY = 'travelmap.layers';
     var LAYERS = ['notable', 'writers', 'plan', 'itineraries'];
-    var state = readState();
+    var state = {};
     var hasPlan = false;
     var menus = [];
 
@@ -50,9 +50,11 @@
         return menu;
     }
 
+    // The server renders fresh span chips with each destination, so finding one means a new load.
     function upgrade(slot) {
         Array.prototype.forEach.call(slot.querySelectorAll('.writers-map-layer'), function (chip) {
             if (chip.tagName !== 'SPAN') return;
+            state = {};
             var button = document.createElement('button');
             button.className = chip.className;
             button.textContent = chip.textContent;
@@ -80,7 +82,6 @@
         var name = layerName(chip);
         if (!name || chip.disabled) return;
         state[name] = !isOn(name);
-        writeState();
         refresh(chip);
         Array.prototype.forEach.call(document.querySelectorAll('[data-map-slot="layers"]'), function (slot) {
             Array.prototype.forEach.call(slot.querySelectorAll('.writers-map-layer'), function (peer) {
@@ -104,7 +105,7 @@
     }
 
     function isOn(name) {
-        return state[name] !== false;
+        return name in state ? state[name] : name === 'notable';
     }
 
     function layerName(chip) {
@@ -112,20 +113,5 @@
             if (String(chip.className).indexOf('writers-map-layer-' + LAYERS[i]) !== -1) return LAYERS[i];
         }
         return '';
-    }
-
-    function readState() {
-        try {
-            var parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch (e) {
-            return {};
-        }
-    }
-
-    function writeState() {
-        try {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (e) { /* storage blocked: state stays in memory */ }
     }
 })();

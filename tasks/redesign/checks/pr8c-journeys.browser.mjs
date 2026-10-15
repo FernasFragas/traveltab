@@ -3,7 +3,7 @@
 // Attach to an isolated Brave/Chromium on CDP_PORT with an about:blank tab.
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { connect, startPreview } from './lib/browser.mjs';
+import { connect, showLayer, startPreview } from './lib/browser.mjs';
 
 const out = process.env.OUTPUT_DIR || 'docs/tdd/artifacts/map-first';
 const preview = await startPreview({ scenario: 'writers-map' });
@@ -25,6 +25,7 @@ try {
     await browser.evaluate("document.querySelector('#city_name').value = 'Funchal'; document.querySelector('#city_name').focus()");
     await browser.key('Enter', 'Enter', 13);
     await browser.until("document.querySelector('[data-writers-map]')?.dataset.mapDestination === 'funchal-pt'");
+    await showLayer(browser, 'writers');
     await browser.until("Boolean(document.querySelector('.travelmap-cluster-list button[data-qid=\"Q25444\"], .map-pin[title=\"Funchal\"]'))");
     await browser.until("document.querySelectorAll('.map-pin-notable').length > 0");
     assert.ok(await browser.evaluate("!!document.querySelector('.map-pin-nature') && !!document.querySelector('.map-pin-notable .bi-bank') && !!document.querySelector('.map-pin-notable .bi-fork-knife')"), 'fixture shows nature, museum and food pin kinds');

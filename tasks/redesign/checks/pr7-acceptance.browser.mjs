@@ -3,7 +3,7 @@
 // only /plan carries include) and 7g (View on map via map-dayplan.js, no inline handler).
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
 import assert from 'node:assert/strict';
-import { connect, openPlacePanel, startPreview, sleep } from './lib/browser.mjs';
+import { connect, openPlacePanel, showLayer, startPreview, sleep } from './lib/browser.mjs';
 
 for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
 const preview = await startPreview({ scenario });
@@ -34,6 +34,7 @@ try {
       await browser.until(`Boolean(document.querySelector('[data-map-canvas] .${engine === 'maplibre' ? 'maplibregl-canvas' : 'leaflet-pane'}') && document.querySelector('#trip-card form'))`);
       assert.equal(await count('.plan-pin'), 0, `${slug}: no plan pins before a plan`);
       await generate();
+      await showLayer(browser, 'plan');
       await browser.until("document.querySelectorAll('.plan-pin').length > 0");
       const stops = await count('[data-plan-stop]');
       assert.equal(await count('.plan-pin'), stops, `${slug}: one pin per stop`);
@@ -55,6 +56,7 @@ try {
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.evaluate('(() => { try { localStorage.clear(); } catch {} })()');
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
+    await showLayer(browser, 'writers');
     await browser.until("document.querySelectorAll('.map-pin').length > 0");
     await openPlacePanel(browser, 'Pico Ruivo');
     await browser.until("document.querySelector('.map-place-panel [data-save-qid]')");
@@ -64,6 +66,7 @@ try {
     await sleep(500);
     assert.equal(requests().length, before, `saving made requests: ${requests().slice(before)}`);
     await browser.evaluate("document.querySelector('#trip-card form').requestSubmit()");
+    await showLayer(browser, 'plan');
     await browser.until("document.querySelectorAll('.plan-pin').length > 0");
     const withInclude = requests().slice(before).filter(u => u.includes('include='));
     assert.equal(withInclude.length, 1, JSON.stringify(withInclude));
@@ -76,6 +79,7 @@ try {
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.evaluate('(() => { try { localStorage.clear(); } catch {} })()');
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
+    await showLayer(browser, 'writers');
     await browser.until("document.querySelectorAll('.map-pin').length >= 5");
     const names = ['Madeira', 'Funchal', 'Pico Ruivo', 'Cabo Girão', 'Câmara de Lobos'];
     for (const name of names) {
@@ -97,8 +101,8 @@ try {
 
     // 7g: View on map presses the plan chip only when needed, scrolls to the map, no inline handler.
     assert.equal(await count('[data-view-on-map][onclick]'), 0);
-    await browser.until(`${chip("Your plan")}.getAttribute('aria-pressed') === 'true'`);
-    await browser.evaluate(`${chip("Your plan")}.click()`);
+    await browser.until(`!${chip("Your plan")}.disabled`);
+    assert.equal(await browser.evaluate(`${chip("Your plan")}.getAttribute('aria-pressed')`), 'false', 'plan chip starts off');
     assert.equal(await count('.plan-pin'), 0, 'plan chip off');
     await browser.evaluate('window.scrollTo(0, document.documentElement.scrollHeight)');
     const scrolled = await browser.evaluate('window.scrollY');
@@ -118,6 +122,7 @@ try {
   const blocker = await browser.call('Page.addScriptToEvaluateOnNewDocument', { source: `
     Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('blocked', 'SecurityError'); } });` });
   await browser.navigate(`${preview.url}/trip/madeira-pt`);
+  await showLayer(browser, 'writers');
   await browser.until("document.querySelectorAll('.map-pin').length > 0");
   assert.equal(await browser.evaluate('(() => { try { localStorage.length; return false; } catch { return true; } })()'), true, 'storage is blocked');
   await openPlacePanel(browser, 'Pico Ruivo');

@@ -159,7 +159,7 @@ Answered with the owner one by one. **Bold** = differs from the recommendation.
 | D18 | Video duration | Dropped |
 | D19 | Bed icon | One inline SVG |
 | D20 | Temperature | Whole degrees |
-| D21 | Layer pills (asked during V14, revised the same day) | **Notable places, while on, is filled terracotta**; on overlays are white with a filled coloured icon. **Every pill toggles**, Notable places included (owner: "make it possible to unselect"); off pills are muted with an outline icon |
+| D21 | Layer pills (asked during V14, revised the same day) | **Notable places, while on, is filled terracotta**; on overlays are white with a filled coloured icon. **Every pill toggles**, Notable places included (owner: "make it possible to unselect"); off pills are muted with an outline icon. **Each loaded destination starts with only Notable places on**; the choice is no longer remembered across loads |
 
 **D14 rule table** (start here; the owner reviews the wording in V9):
 

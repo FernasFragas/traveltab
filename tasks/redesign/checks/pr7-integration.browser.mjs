@@ -2,7 +2,7 @@
 // PR 7 together: 7f chips toggle the 7a and 7b layers; 7d saves from 7a's real panel and the plan request carries them.
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
 import assert from 'node:assert/strict';
-import { connect, openPlacePanel, startPreview } from './lib/browser.mjs';
+import { connect, openPlacePanel, showLayer, startPreview } from './lib/browser.mjs';
 
 for (const [engine, scenario] of [['maplibre', 'writers-map'], ['leaflet', 'writers-map-leaflet']]) {
 const preview = await startPreview({ scenario });
@@ -33,6 +33,8 @@ try {
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
     await browser.until("document.querySelectorAll('.map-pin').length > 0 && document.querySelectorAll('[data-map-slot=\"layers\"] button').length > 0");
     const count = sel => browser.evaluate(`document.querySelectorAll('${sel}').length`);
+    assert.deepEqual(await browser.evaluate(`[...document.querySelectorAll('[data-map-slot="layers"] button')].map(b => b.getAttribute('aria-pressed'))`), ['true', 'false', 'false', 'false'], 'only notable places on at load');
+    await showLayer(browser, 'writers');
     const writerSelector = engine === 'maplibre' ? '.travelmap-cluster-list button[data-qid]' : '.map-pin-writer';
     const chip = label => `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label')?.includes("${label}"))`;
     const chips = await browser.evaluate(`[...document.querySelectorAll('[data-map-slot="layers"] button')].map(b => [b.textContent.trim(), b.getAttribute('aria-pressed'), b.disabled, b.hidden])`);
@@ -75,6 +77,7 @@ try {
 
     // Reload keeps the save; reopening the panel shows it as saved.
     await browser.navigate(`${preview.url}/trip/madeira-pt`);
+    await showLayer(browser, 'writers');
     await browser.until("document.querySelectorAll('.map-pin').length > 0");
     await openPlacePanel(browser, 'Pico Ruivo');
     await browser.until("document.querySelector('.map-panel-save')");
@@ -83,10 +86,10 @@ try {
     // Plan request carries the save; 7f enables the plan chip; plan chip toggles 7b's pins.
     assert.equal(await browser.evaluate(`${chip("Your plan")}.disabled`), true, 'plan chip disabled before a plan');
     await browser.evaluate("document.querySelector('#trip-card form').requestSubmit()");
+    await showLayer(browser, 'plan');
     await browser.until("document.querySelectorAll('.plan-pin').length > 0");
     const planURL = await browser.evaluate('window.__planURLs.at(-1)');
     assert.match(planURL, /Q473169/, planURL);
-    await browser.until(`!${chip("Your plan")}.disabled`);
     await browser.evaluate(`${chip("Your plan")}.click()`);
     assert.equal(await count('.plan-pin'), 0, 'plan chip off');
     await browser.evaluate(`${chip("Your plan")}.click()`);

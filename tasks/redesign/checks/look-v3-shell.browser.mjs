@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { connect, startPreview, openPlacePanel } from './lib/browser.mjs';
+import { connect, startPreview, openPlacePanel, showLayer } from './lib/browser.mjs';
 const preview = await startPreview({scenario:'writers-map'});
 const browser = await connect();
 try {
@@ -8,6 +8,7 @@ try {
     await browser.viewport(width,900);
     await browser.navigate(preview.url);
     await browser.until(`document.querySelectorAll('.map-pin').length > 0`);
+    await showLayer(browser, 'writers');
     const layout = await browser.evaluate(`(() => {
       const box = s => {const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,height:r.height,width:r.width}};
       return {hero:box('.destination-banner'), title:box('.destination-title'),tagline:box('.destination-tagline'), tabs:box('.tt-header-navigation'),bookmark:box('.tt-saved-toggle'), overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth};

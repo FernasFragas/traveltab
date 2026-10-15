@@ -213,6 +213,13 @@ export const ratio = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].s
 export const composite = (fg, alpha, bg) => fg.map((c, i) => c * alpha + bg[i] * (1 - alpha));
 export const round = (n, places = 2) => Math.round(n * 10 ** places) / 10 ** places;
 
+// Switches a layer chip on the way a user does; each loaded destination starts with only notable places on.
+export const showLayer = async (browser, name) => {
+  const chip = `document.querySelector('[data-map-slot="layers"] button.writers-map-layer-${name}')`;
+  await browser.until(`${chip} && !${chip}.disabled`);
+  await browser.evaluate(`(${chip}.getAttribute('aria-pressed') === 'true' || ${chip}.click(), true)`);
+};
+
 // Opens a place's side panel the way a user does: click its pin, then the popup's Details button.
 export const openPlacePanel = async (browser, name) => {
   const quoted = JSON.stringify(name);

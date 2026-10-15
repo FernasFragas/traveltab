@@ -104,6 +104,27 @@ test('View on map activates the plan chip and scrolls to the shell', () => {
   app.viewOnMap();
   assert.equal(app.chipPressed(), 'true');
   assert.equal(app.hash(), '#overview');
+  app.hashchange();
+  assert.equal(app.scrolls(), 1);
+});
+
+// As a traveller on a phone, I want View on map to take me to the map, so that I see my plan's pins.
+test('View on map scrolls only once the overview section is shown', () => {
+  const app = browser();
+  app.run();
+  app.viewOnMap();
+  assert.equal(app.scrolls(), 0, 'the map is still hidden until the hash change shows its section');
+  app.hashchange();
+  assert.equal(app.scrolls(), 1);
+  app.hashchange();
+  assert.equal(app.scrolls(), 1, 'later hash changes do not scroll');
+});
+
+test('View on map scrolls at once when the overview is already shown', () => {
+  const app = browser();
+  app.run();
+  app.setHash('#overview');
+  app.viewOnMap();
   assert.equal(app.scrolls(), 1);
 });
 
@@ -171,7 +192,10 @@ function browser({ core = true, shell = true } = {}) {
     addEventListener(n, cb) { listeners.set('doc:' + n, cb); }
   };
   document.dispatchEvent = event => listeners.get('doc:' + event.type)?.(event);
-  const window = { location: { hash: '#itinerary' } };
+  const window = { location: { hash: '#itinerary' }, addEventListener(n, cb, options) {
+    const once = options && options.once;
+    listeners.set('win:' + n, once ? event => { listeners.delete('win:' + n); cb(event); } : cb);
+  } };
   if (core) window.TravelMap = {
     registerLayer(name, value) { registered.push(name); layer = value; },
     setLayerEnabled(name, on) {
@@ -210,6 +234,8 @@ function browser({ core = true, shell = true } = {}) {
     viewOnMap() { listeners.get('doc:click')?.({ target: { closest: selector => selector === '[data-view-on-map]' } }); },
     chipPressed: () => chip.attrs['aria-pressed'],
     hash: () => window.location.hash,
+    setHash(value) { window.location.hash = value; },
+    hashchange() { listeners.get('win:hashchange')?.({}); },
     scrolls: () => scrollCount,
     popup: () => drawing.popups.get('pin-popup') || null,
     selected: () => selected,
