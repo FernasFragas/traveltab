@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"strconv"
@@ -60,9 +61,11 @@ func init() {
 }
 
 func NewAppServer(weatherReporters application.Reporter[application.GeneralWeatherInfo], videoStreamReporters application.Reporter[application.VideosStream], storage application.Storage) *Server {
+	views := html.New("./views", ".go.tpl")
 	app := fiber.New(fiber.Config{
-		Views: html.New("./views", ".go.tpl"),
+		Views: views,
 	})
+	escapeTemplates(views)
 
 	app.Use(fgprof.New())
 
@@ -113,6 +116,18 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 	app.Get("/sitemap.xml", server.sitemap)
 
 	return server
+}
+
+// escapeTemplates runs html/template's escaping once for every loaded template. It otherwise happens on a
+// template's first Execute and writes to it, which races with the gofiber engine copying the same template
+// for another request. Executing with no data into io.Discard escapes it; the execution errors don't matter.
+func escapeTemplates(views *html.Engine) {
+	if views.Templates == nil {
+		return // views failed to load; fiber has already logged it
+	}
+	for _, tmpl := range views.Templates.Templates() {
+		_ = tmpl.Execute(io.Discard, nil)
+	}
 }
 
 func (s *Server) Listen(port string) error {

@@ -2,7 +2,7 @@
 // Start an isolated Brave/Chromium on CDP_PORT with about:blank, then run this check.
 // M5: one writer itinerary on both map engines at 375 and 1440 px.
 import assert from 'node:assert/strict';
-import { connect, startPreview } from './lib/browser.mjs';
+import { connect, showLayer, startPreview } from './lib/browser.mjs';
 
 let browser;
 try {
@@ -28,7 +28,9 @@ try {
         await browser.navigate(`${preview.url}/trip/madeira-pt`);
         await browser.evaluate('(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} })()');
         await browser.navigate(`${preview.url}/trip/madeira-pt`);
-        await browser.until(`window.__mapEngine === '${engine}' && document.querySelectorAll('.itinerary-pin').length > 0`, 30000);
+        await browser.until(`window.__mapEngine === '${engine}'`, 30000);
+        await showLayer(browser, 'itineraries');
+        await browser.until(`document.querySelectorAll('.itinerary-pin').length > 0`, 30000);
         browser.errors.length = 0;
         const count = selector => browser.evaluate(`document.querySelectorAll('${selector}').length`);
         const chip = `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label') === "Itineraries")`;

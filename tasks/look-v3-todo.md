@@ -160,7 +160,7 @@ Source of truth for progress. Read [the plan](look-v3-plan.md) first.
 
 **Owns:** `public/redesign/map-layers.js` / `.css`, `internal/adapters/httpserver/placekind.go` (new) / `placekind_test.go` (new), `internal/adapters/httpserver/writermap.go` (`kind_label`), `views/place_panel.go.tpl`, `public/redesign/map-panel.js` / `.css`, `public/redesign/best-time.js`, `public/redesign/writers-map.js` (attribution), `public/redesign/map-pins.css`, `public/redesign/teasers.css`, matching checks, `docs/tdd/look-v3-polish.tdd.md` (new), `docs/design.md`
 
-- Pills follow **D21**: Notable places is filled while on and toggles like the others; on overlays are white.
+- Pills follow **D21**: Notable places is filled while on and toggles like the others; on overlays are white. Each loaded destination starts with only Notable places on.
 - Readable place types ("tower" → "**Historic Landmark**") in the panel, popup and callout.
 - Towers, castles, forts and monuments get the Morning tip.
 - Writer quote is plain italic text; the blog name links to the post.

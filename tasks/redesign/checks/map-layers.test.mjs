@@ -30,11 +30,32 @@ test('notable places can be switched off and on again', () => {
   assert.equal(app.chip('notable').attrs['aria-pressed'], 'true');
 });
 
-test('a remembered notable-off state is applied', () => {
-  const app = browser({ registered: NAMES, stored: { notable: false } });
+// As a traveller, I want a newly loaded destination to show only its notable places, so that the map starts uncluttered.
+test('a loaded destination starts with only notable places on', () => {
+  const app = browser({ registered: NAMES });
   app.run();
-  assert.equal(app.chip('notable').attrs['aria-pressed'], 'false');
-  assert.deepEqual(app.calls.find(call => call[0] === 'notable'), ['notable', false]);
+  assert.deepEqual(app.chips().map(c => c.attrs['aria-pressed']), ['true', 'false', 'false', 'false']);
+  assert.deepEqual(app.calls, [['notable', true], ['writers', false], ['plan', false], ['itineraries', false]]);
+});
+
+test('loading another destination resets the chips to notable only', () => {
+  const app = browser({ registered: NAMES });
+  app.run();
+  app.chip('notable').click();
+  app.chip('writers').click();
+  app.renderChips();
+  app.document.emit('htmx:afterSwap');
+  assert.deepEqual(app.chips().map(c => c.attrs['aria-pressed']), ['true', 'false', 'false', 'false']);
+  assert.deepEqual(app.calls.slice(-4), [['notable', true], ['writers', false], ['plan', false], ['itineraries', false]]);
+});
+
+test('other swaps on the same destination keep the chosen chips', () => {
+  const app = browser({ registered: NAMES });
+  app.run();
+  app.chip('writers').click();
+  app.document.emit('htmx:afterSwap');
+  app.document.emit('travelmap:ready');
+  assert.equal(app.chip('writers').attrs['aria-pressed'], 'true');
 });
 
 test('notable is filled terracotta only while on; on overlays are white', () => {
@@ -64,11 +85,11 @@ test('a chip toggles only its own layer', () => {
   app.run();
   app.calls.length = 0;
   app.chip('writers').click();
-  assert.deepEqual(app.calls, [['writers', false]]);
-  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
-  app.chip('writers').click();
-  assert.deepEqual(app.calls.at(-1), ['writers', true]);
+  assert.deepEqual(app.calls, [['writers', true]]);
   assert.equal(app.chip('writers').attrs['aria-pressed'], 'true');
+  app.chip('writers').click();
+  assert.deepEqual(app.calls.at(-1), ['writers', false]);
+  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
 });
 
 test('layers menu toggles the same flags and stays in sync with chips', () => {
@@ -77,17 +98,17 @@ test('layers menu toggles the same flags and stays in sync with chips', () => {
   const menu = app.window.TravelMapLayers.createMenu();
   const writers = menu.children.find(item => item.className.includes('writers-map-layer-writers'));
   writers.click();
-  assert.deepEqual(app.calls.at(-1), ['writers', false]);
-  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
+  assert.deepEqual(app.calls.at(-1), ['writers', true]);
+  assert.equal(app.chip('writers').attrs['aria-pressed'], 'true');
   app.chip('writers').click();
-  assert.equal(writers.attrs['aria-pressed'], 'true');
+  assert.equal(writers.attrs['aria-pressed'], 'false');
 });
 
 test('all chips off is fine and never throws', () => {
   const app = browser({ registered: NAMES });
   app.run();
   app.document.emit('travelmap:plan-updated', { days: [{ places: [1] }] });
-  for (const n of NAMES) app.chip(n).click();
+  app.chip('notable').click();
   for (const n of NAMES) assert.equal(app.chip(n).attrs['aria-pressed'], 'false');
 });
 
@@ -95,7 +116,7 @@ test('unregistered layers never throw on click or ready', () => {
   const app = browser({ registered: [] });
   app.run();
   assert.doesNotThrow(() => { app.chip('writers').click(); app.document.emit('travelmap:ready'); });
-  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
+  assert.equal(app.chip('writers').attrs['aria-pressed'], 'true');
 });
 
 test('plan chip is disabled until a plan with days exists, then enabled', () => {
@@ -119,27 +140,12 @@ test('itineraries chip is hidden until that layer is registered', () => {
   assert.equal(app.chip('itineraries').hidden, false);
 });
 
-test('remembered state is applied once the layer is registered', () => {
-  const app = browser({ registered: [], stored: { writers: false } });
+test('a layer registered late still starts off', () => {
+  const app = browser({ registered: [] });
   app.run();
-  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
   app.registered.add('writers');
   app.document.emit('travelmap:ready');
   assert.deepEqual(app.calls.at(-1), ['writers', false]);
-});
-
-test('toggles are remembered in sessionStorage', () => {
-  const app = browser({ registered: NAMES });
-  app.run();
-  app.chip('writers').click();
-  assert.deepEqual(JSON.parse(app.store['travelmap.layers']), { writers: false });
-});
-
-test('blocked sessionStorage does not break the chips', () => {
-  const app = browser({ registered: NAMES, blockedStorage: true });
-  app.run();
-  assert.doesNotThrow(() => app.chip('writers').click());
-  assert.equal(app.chip('writers').attrs['aria-pressed'], 'false');
 });
 
 function element(tagName) {
@@ -155,17 +161,20 @@ function element(tagName) {
   };
 }
 
-function browser({ registered = NAMES, stored = null, blockedStorage = false } = {}) {
+function browser({ registered = NAMES } = {}) {
   const reg = new Set(registered);
   const calls = [];
-  const store = stored ? { 'travelmap.layers': JSON.stringify(stored) } : {};
   const slot = element('DIV');
-  NAMES.forEach((n, i) => {
-    const span = element('SPAN');
-    span.className = 'writers-map-layer writers-map-layer-' + n;
-    span.textContent = LABELS[i];
-    slot.children.push(span);
-  });
+  // The server renders the chips as spans with each destination.
+  const renderChips = () => {
+    slot.children = NAMES.map((n, i) => {
+      const span = element('SPAN');
+      span.className = 'writers-map-layer writers-map-layer-' + n;
+      span.textContent = LABELS[i];
+      return span;
+    });
+  };
+  renderChips();
   const handlers = {};
   const document = {
     readyState: 'complete',
@@ -175,13 +184,10 @@ function browser({ registered = NAMES, stored = null, blockedStorage = false } =
     emit(n, detail) { (handlers[n] || []).forEach(cb => cb({ detail })); }
   };
   const window = { TravelMap: { setLayerEnabled(name, on) { if (!reg.has(name)) throw new Error('Unknown map layer: ' + name); calls.push([name, on]); } } };
-  const sessionStorage = blockedStorage
-    ? { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } }
-    : { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = v; } };
-  const context = vm.createContext({ document, window, sessionStorage, JSON });
+  const context = vm.createContext({ document, window, JSON });
   const chips = () => slot.children;
   return {
-    document, window, calls, store, registered: reg, chips,
+    document, window, calls, registered: reg, chips, renderChips,
     chip: n => chips().find(c => c.className.includes('writers-map-layer-' + n)),
     run: () => vm.runInContext(source, context)
   };

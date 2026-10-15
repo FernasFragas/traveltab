@@ -116,11 +116,34 @@ toggle expects `<details open>` to stay set and only `maplibregl-compact-show` t
 map loads` (`ℹ pass 6` `ℹ fail 1`) after asserting class-only collapse. GREEN: 170 of 170 unit tests;
 `writers-map-preview.browser.mjs` `PASS` MapLibre and Leaflet at 375 and 1440 px; `look-v3-shell.browser.mjs` `PASS 375` / `PASS 1440`.
 
+### 13. Only Notable places is on when a destination loads (D21 addendum)
+The owner asked for only the notable pins to be selected when a location loads, with every pill still toggling.
+The chips are rendered as spans with each destination, so upgrading a fresh span now resets the choice; the
+`sessionStorage` memory is gone. `node --test tasks/redesign/checks/map-layers.test.mjs` RED: `✖ a loaded destination
+starts with only notable places on`, `✖ loading another destination resets the chips to notable only`, `✖ other swaps on
+the same destination keep the chosen chips`, and five existing tests updated for the new defaults (`ℹ pass 8` `ℹ fail 8`).
+GREEN: `ℹ pass 16` `ℹ fail 0`.
+
+Browser checks that expected writer, itinerary or plan pins at load now switch the layer on the way a user does, through a
+new `showLayer` helper in `lib/browser.mjs` (look-v3-shell, map-itineraries, map-panel, pr7-acceptance, pr7-integration,
+pr8c-journeys). `pr7-integration` asserts the load state: `['true', 'false', 'false', 'false']`.
+
+### 14. View on map scrolls to the map on a phone
+With the plan layer now off until pressed, `pr7-acceptance` 7g failed 2 of 6 runs (`Timed out: window.scrollY < 581`); the
+original code passed 4 of 4. A probe at 375 px showed the scroll never reached the map in any run:
+`{"y":939,"h":1839,"hash":"#itinerary"} 632/1532/252 …` (scrollY / page height / map top). `scrollIntoView` ran while the
+map's section was still hidden; the page only moved because it got shorter. The scroll now waits for the hash change.
+`node --test tasks/redesign/checks/map-dayplan.test.mjs` RED: `✖ View on map scrolls only once the overview section is
+shown` (`1 !== 0`, `ℹ pass 11` `ℹ fail 1`). GREEN: `ℹ tests 172` `ℹ pass 172`. Probe after: `632 → 209 → 176`, the map in
+view; `pr7-acceptance` then passed 4 of 4 (`PASS 7g maplibre 375px: … scrolls 905 -> 176`).
+
 ## Guarantees
 
 | What is guaranteed | Test | Level | Result |
 | --- | --- | --- | --- |
-| Every pill toggles and remembers state, Notable places included | `map-layers.test.mjs`, `pr7-integration.browser.mjs` | Unit + browser | PASS |
+| Every pill toggles, Notable places included | `map-layers.test.mjs`, `pr7-integration.browser.mjs` | Unit + browser | PASS |
+| A loaded destination starts with only Notable places on; a new destination resets, other swaps keep the choice | `map-layers.test.mjs`, `pr7-integration.browser.mjs` | Unit + browser | PASS |
+| View on map scrolls once the overview section is shown | `map-dayplan.test.mjs`, `pr7-acceptance.browser.mjs` 7g | Unit + browser | PASS |
 | Notable is filled only while on; on overlays white; outline inside the pill | `map-layers.test.mjs` | Unit (CSS) | PASS |
 | Kind labels: grouped landmarks/religious sites, title case otherwise | `TestPlaceKindLabel_GroupsAndTitleCases` | Unit | PASS |
 | Panel meta and GeoJSON carry the readable kind; raw kind still drives icons | `TestPlacePanel_MetaShowsReadableKind`, `TestPlacePanel_GeoJSONCarriesReadableKind` | Integration | PASS |
@@ -153,7 +176,11 @@ three runs in a row. Its 12 `FAIL PAIR` lines are the audit's advisory `componen
 `TestWriterMapPreview_LisbonPhotosReachBrowser` failed once inside `make test` right after the audit (2.05 s), then passed
 6 runs alone and the next full `make test`. It starts a real preview process, so it is timing-sensitive under load.
 
+After 13–14 (final code): `node --test` `ℹ tests 172` `ℹ pass 172`; all 11 browser checks EXIT 0; audit `31 passed, 0
+failed`; `make test lint build` `0 issues.`, exit 0.
+
 ## Known gaps
+- A newly generated plan stays hidden on the map until the Your plan pill or View on map is pressed, because only Notable places starts on.
 - `writers-map-layout.browser.mjs` and `TestWriterMapPreview_LisbonPhotosReachBrowser` each failed once and then passed repeatedly; treat both as possibly flaky.
 - The offline preview map is blank and fixture photos are synthetic, so streets, labels and real photography can't match the mockups.
 - On a phone the meta row ("Historic Landmark · Belém, Lisbon") wraps to two lines in the 152 px column.
