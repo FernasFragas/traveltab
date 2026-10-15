@@ -221,3 +221,23 @@ func TestPreviewPhotosMissingScenarioRoute(t *testing.T) {
 		t.Fatalf("photos-missing must leave Porto photo-free: %s", body[:min(len(body), 200)])
 	}
 }
+
+// As a developer, I want a photo request to render only that photo, so that the first request
+// stays fast under -race and on a busy machine instead of outlasting the client's timeout.
+func TestFixturePhotoHandler_RendersOnlyTheRequestedPhoto(t *testing.T) {
+	fixturePhotoMu.Lock()
+	fixturePhotoBytes = map[string][]byte{}
+	fixturePhotoMu.Unlock()
+
+	recorder := httptest.NewRecorder()
+	fixturePhotoHandler(recorder, httptest.NewRequest("GET", "/fixture-photos/porto.png", nil))
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d", recorder.Code)
+	}
+	fixturePhotoMu.Lock()
+	defer fixturePhotoMu.Unlock()
+	if len(fixturePhotoBytes) != 1 || fixturePhotoBytes["porto"] == nil {
+		t.Fatalf("rendered %d photos, want only porto", len(fixturePhotoBytes))
+	}
+}

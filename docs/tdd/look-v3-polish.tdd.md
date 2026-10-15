@@ -108,6 +108,14 @@ The owner asked to be able to unselect Notable places. `node --test tasks/redesi
 `PASS 375` / `PASS 1440`; `pr7-integration.browser.mjs` `PASS` MapLibre and Leaflet at 375 and 1440 px (notable chip off
 hides its pins; all chips off empties the map).
 
+### 12. Map credits open from the keyboard
+The final sweep caught `writers-map-preview.browser.mjs` failing after Enter on the ⓘ:
+`{"focused":true,"width":24,"credit":"© Mapterhorn | Local fixture map data","detailsVisible":true}`. MapLibre 5's compact
+toggle expects `<details open>` to stay set and only `maplibregl-compact-show` to change (its own minimise does the same);
+`collapseAttribution` had removed `open` too. `map-look-v2.test.mjs` RED: `✖ compact attribution starts collapsed once the
+map loads` (`ℹ pass 6` `ℹ fail 1`) after asserting class-only collapse. GREEN: 170 of 170 unit tests;
+`writers-map-preview.browser.mjs` `PASS` MapLibre and Leaflet at 375 and 1440 px; `look-v3-shell.browser.mjs` `PASS 375` / `PASS 1440`.
+
 ## Guarantees
 
 | What is guaranteed | Test | Level | Result |
@@ -125,9 +133,28 @@ hides its pins; all chips off empties the map).
 | Static assets carry `Cache-Control: no-cache` | `TestStatic_AssetsAreRevalidatedOnEveryLoad` | Integration | PASS |
 
 ## Suite and coverage
-SWEEP_PLACEHOLDER
+Final code, fresh headless Brave with SwiftShader, 2026-10-15:
+
+| Check | Result |
+| --- | --- |
+| `make test lint build` (CI-pinned golangci-lint 2.14.0) | `0 issues.`, build OK |
+| `go test -cover` httpserver / design-preview | 93.1% / 81.6% |
+| `node --test tasks/redesign/checks/*.test.mjs` | `ℹ tests 170` `ℹ pass 170` `ℹ fail 0` |
+| `hero-phone`, `look-v3-shell`, `map-dayplan`, `map-itineraries`, `map-panel`, `pr7-acceptance`, `pr7-integration`, `pr8c-journeys`, `writers-map-core`, `writers-map-layout` | EXIT 0 |
+| `writers-map-preview` | failed, fixed (see 12), then `PASS` all four engine × width runs |
+| `browser-smoke.mjs` (preview on 127.0.0.1:8087, output to a scratch dir) | EXIT 0 |
+| `a11y-audit.mjs` (output `tasks/artifacts/look-v3/a11y`) | `31 passed, 0 failed` |
+
+After fix 12 (it touched `writers-map.js`) these were rerun: `writers-map-core`, `hero-phone` EXIT 0; the audit again
+`31 passed, 0 failed`; `writers-map-layout` failed once (its output was discarded, so the cause is unknown) and then passed
+three runs in a row. Its 12 `FAIL PAIR` lines are the audit's advisory `component-labelled` itinerary borders
+(`a11y-audit.mjs:300-302`), outside this change.
+
+`TestWriterMapPreview_LisbonPhotosReachBrowser` failed once inside `make test` right after the audit (2.05 s), then passed
+6 runs alone and the next full `make test`. It starts a real preview process, so it is timing-sensitive under load.
 
 ## Known gaps
+- `writers-map-layout.browser.mjs` and `TestWriterMapPreview_LisbonPhotosReachBrowser` each failed once and then passed repeatedly; treat both as possibly flaky.
 - The offline preview map is blank and fixture photos are synthetic, so streets, labels and real photography can't match the mockups.
 - On a phone the meta row ("Historic Landmark · Belém, Lisbon") wraps to two lines in the 152 px column.
 - The phone day card has no separate round › button; "View all ›" in the heading covers it, which avoids a duplicate link.

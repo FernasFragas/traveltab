@@ -98,22 +98,16 @@ var fixturePalettes = map[string][2]color.RGBA{
 }
 
 var (
-	fixturePhotoOnce  sync.Once
+	fixturePhotoMu    sync.Mutex
 	fixturePhotoBytes = map[string][]byte{}
 )
 
 // fixturePhotoHandler serves /fixture-photos/NAME.png. Unknown names, including the deliberately
 // broken "missing", answer 404.
 func fixturePhotoHandler(w http.ResponseWriter, r *http.Request) {
-	fixturePhotoOnce.Do(func() {
-		for name, palette := range fixturePalettes {
-			fixturePhotoBytes[name] = renderFixturePhoto(palette[0], palette[1])
-		}
-	})
-
 	name := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/fixture-photos/"), ".png")
 
-	data, ok := fixturePhotoBytes[name]
+	data, ok := fixturePhoto(name)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -123,6 +117,23 @@ func fixturePhotoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_, _ = w.Write(data)
+}
+
+// fixturePhoto renders a named photo on first use and caches it. Only the requested photo is
+// rendered, so a first request stays fast under -race on a busy machine.
+func fixturePhoto(name string) ([]byte, bool) {
+	palette, ok := fixturePalettes[name]
+	if !ok {
+		return nil, false
+	}
+	fixturePhotoMu.Lock()
+	defer fixturePhotoMu.Unlock()
+	if data, ok := fixturePhotoBytes[name]; ok {
+		return data, true
+	}
+	data := renderFixturePhoto(palette[0], palette[1])
+	fixturePhotoBytes[name] = data
+	return data, true
 }
 
 // renderFixturePhoto paints a sky gradient over a ground band with a stepped skyline, all from
