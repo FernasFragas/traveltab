@@ -45,8 +45,9 @@ test('v3 chrome groups zoom, exposes back and uses compact attribution', () => {
 test('compact attribution starts collapsed once the map loads', () => {
  const js = read('public/redesign/writers-map.js');
  assert.match(js, /function collapseAttribution\(/);
- assert.match(js, /removeAttribute\('open'\)/);
- assert.match(js, /maplibregl-compact-show/);
+ // Collapse like MapLibre's own minimise: drop the class, keep <details open>, so its toggle keeps working.
+ assert.match(js, /classList\.remove\('maplibregl-compact-show'\)/);
+ assert.doesNotMatch(js, /removeAttribute\('open'\)/);
  assert.match(js, /map\.on\('load', function \(\) \{[^]*?collapseAttribution\(target\)/);
 });
 test('the selected pin hides its name label because the callout shows it', () => {

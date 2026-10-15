@@ -57,7 +57,7 @@ try {
         meta: document.querySelector('.map-panel-meta').textContent,
         bestTime: document.querySelector('.map-panel-best-time')?.hidden === false ? document.querySelector('.map-panel-best-time').textContent : '',
         quoteIsLink: !!document.querySelector('.map-panel-writers blockquote p a'),
-        attributionOpen: !!attribution && (attribution.hasAttribute('open') || attribution.classList.contains('maplibregl-compact-show')),
+        attributionOpen: !!attribution && attribution.classList.contains('maplibregl-compact-show'),
         selectedLabelShown: !!label && getComputedStyle(label).display !== 'none',
         notablePill: (() => { const b = document.querySelector('button.writers-map-layer-notable'); return b && b.getAttribute('aria-pressed') + ' ' + getComputedStyle(b).backgroundColor; })(),
         writersPill: getComputedStyle(document.querySelector('button.writers-map-layer-writers')).backgroundColor

@@ -79,7 +79,7 @@ try {
       return control.classList.contains('maplibregl-ctrl-attrib');
     })()`);
     if (isMaplibre) {
-      assert.equal(await browser.evaluate(`document.querySelector('.maplibregl-ctrl-attrib').hasAttribute('open')`), false, 'credits start collapsed');
+      assert.equal(await browser.evaluate(`document.querySelector('.maplibregl-ctrl-attrib').classList.contains('maplibregl-compact-show')`), false, 'credits start collapsed');
       await browser.key('Enter', 'Enter', 13);
     }
     const attribution = await browser.evaluate(`(() => {

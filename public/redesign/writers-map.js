@@ -738,11 +738,10 @@
     }
 
     // MapLibre opens its compact attribution on load; start it closed so the small phone map stays clear.
+    // Like MapLibre's own minimise, drop only the class: its ⓘ toggle relies on <details open> staying set.
     function collapseAttribution(target) {
         var attribution = target.querySelector('.maplibregl-ctrl-attrib');
-        if (!attribution) return;
-        attribution.removeAttribute('open');
-        attribution.classList.remove('maplibregl-compact-show');
+        if (attribution) attribution.classList.remove('maplibregl-compact-show');
     }
 
     function closeInfo(info) {
