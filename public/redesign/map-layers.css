@@ -88,3 +88,55 @@ button.writers-map-layer[hidden] {
 .plan-day-toggle button[aria-pressed="true"] { background: #a56824; }
 .plan-day-toggle button:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
 @media (max-width: 600px) { .travelmap-layers-menu { display: block; } }
+
+/* Filled/outlined icons reinforce the pressed state without relying on colour. */
+button.writers-map-layer { position: relative; min-height: 44px; padding: 0 13px; border-color: var(--tt-border); border-radius: 999px; background: #fff; color: var(--tt-ink); font-size: 12px; }
+button.writers-map-layer::before { width: 20px; height: 20px; border-radius: 0; background: none; color: var(--layer-color); font: 20px / 1 bootstrap-icons; }
+.writers-map-layer-notable { --layer-color: var(--tt-accent); }
+.writers-map-layer-notable::before { content: "\f3e8"; }
+.writers-map-layer-writers, .writers-map-layer-itineraries { --layer-color: var(--tt-writer, #6b4fa8); }
+.writers-map-layer-writers::before { content: "\f4ca"; }
+.writers-map-layer-itineraries::before { content: "\f5ae"; }
+.writers-map-layer-plan { --layer-color: #a56824; }
+.writers-map-layer-plan::before { content: "\f47f"; }
+/* On overlays: white pill, filled coloured icon. Off: muted text, outline icon. */
+button.writers-map-layer[aria-pressed="true"] { background: #fff; color: var(--tt-ink); }
+button.writers-map-layer[aria-pressed="false"] { color: var(--tt-muted); background: var(--tt-bg); }
+button.writers-map-layer[aria-pressed="false"]::before { background: none; box-shadow: none; }
+/* Notable places, while on, is the filled terracotta pill from the mockup. */
+button.writers-map-layer-notable[aria-pressed="true"] { background: var(--tt-accent); color: #fff; }
+button.writers-map-layer-notable[aria-pressed="true"]::before { color: #fff; }
+.travelmap-zoom { overflow: hidden; border: 1px solid #ffffff40; border-radius: 22px; background: #222c39e8; }
+.travelmap-zoom > button { display: block; width: 44px; min-height: 44px; border: 0; background: transparent; color: #fff; font: 24px / 1 sans-serif; cursor: pointer; }
+.travelmap-zoom > button + button { border-top: 1px solid #ffffff40; }
+.travelmap-back { min-width: 44px; min-height: 44px; border: 1px solid #ffffff40; border-radius: 50%; background: #222c39e8; color: #fff; font: 30px / 1 Georgia, serif; cursor: pointer; margin: 8px 10px; }
+.travelmap-back[hidden] { display: none; }
+.travelmap-compass { display: flex !important; flex-direction: column; gap: 2px; font-size: 11px !important; }
+.travelmap-compass::before { content: ""; border-right: 4px solid transparent; border-left: 4px solid transparent; border-bottom: 12px solid #e86360; }
+.travelmap-zoom button:focus-visible, .travelmap-back:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+@media (max-width: 600px) {
+ button.writers-map-layer { font-size: 11px; padding: 0 10px; background-clip: padding-box; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+ button.writers-map-layer[aria-pressed="true"] { border-top-color: transparent; border-bottom-color: transparent; }
+ .travelmap-tools { gap: 0; margin: 4px; }
+ .travelmap-tools > button { min-width: 44px; min-height: 44px; }
+ .travelmap-locate { width: 44px; height: 44px; }
+}
+button.writers-map-layer-notable[aria-pressed="true"]::before { content: "\f3e7"; }
+button.writers-map-layer-writers[aria-pressed="true"]::before { content: "\f4c9"; }
+button.writers-map-layer-itineraries[aria-pressed="true"]::before { content: "\f5ab"; }
+button.writers-map-layer-plan[aria-pressed="true"]::before { content: "\f47e"; }
+@media (min-width: 601px) {
+ button.writers-map-layer { border-top: 2px solid transparent; border-bottom: 2px solid transparent; background-clip: padding-box; }
+ button.writers-map-layer[aria-pressed="true"] { border-top-color: transparent; border-bottom-color: transparent; }
+}
+@media (max-width: 600px) {
+ .travelmap-tools { display: flex; flex-direction: column; gap: 0; margin: 0 4px; }
+ .travelmap-tools > .travelmap-zoom { flex-shrink: 0; }
+}
+@media (max-width: 600px) {
+ .travelmap-zoom { border: 0; box-shadow: inset 0 0 0 1px #ffffff40; }
+}
+/* Outline inside the pill: the transparent top/bottom borders are hit area only. */
+button.writers-map-layer { border-color: transparent; box-shadow: inset 0 0 0 1px var(--tt-border); }
+button.writers-map-layer-notable[aria-pressed="true"] { box-shadow: none; }
+button.writers-map-layer[aria-pressed] { background-clip: padding-box; }

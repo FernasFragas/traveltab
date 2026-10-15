@@ -14,3 +14,21 @@
 @media (max-width: 600px) {
     [data-map-canvas] { height: 340px; }
 }
+
+.writers-map-card .maplibregl-ctrl-scale,
+.writers-map-card .leaflet-control-scale-line { position: relative; border: 0; border-bottom: 2px solid #fff; background: transparent; color: #fff; padding: 0 0 4px; text-align: right; text-shadow: 0 1px 3px #000; }
+.writers-map-card .maplibregl-ctrl-scale::before,
+.writers-map-card .leaflet-control-scale-line::before { content: "0"; position: absolute; left: 0; bottom: -2px; height: 100%; padding-bottom: 4px; border-left: 2px solid #fff; }
+.writers-map-card .maplibregl-ctrl-scale::after,
+.writers-map-card .leaflet-control-scale-line::after { content: ""; position: absolute; right: 0; bottom: -2px; height: 6px; border-right: 2px solid #fff; }
+.writers-map-card .leaflet-control-attribution { max-width: 24px; max-height: 24px; overflow: hidden; border-radius: 12px; }
+.writers-map-card .leaflet-control-attribution::before { content: "ⓘ"; display: inline-block; min-width: 24px; text-align: center; }
+.writers-map-card .leaflet-control-attribution:hover,
+.writers-map-card .leaflet-control-attribution:focus-within { max-width: min(300px, 80vw); max-height: 80px; }
+.writers-map-card .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner { display: none; }
+.writers-map-card .maplibregl-ctrl-attrib.maplibregl-compact:focus-within .maplibregl-ctrl-attrib-inner { display: block; }
+@media (max-width: 600px) {
+ .writers-map-card .maplibregl-ctrl-bottom-right, .writers-map-card .leaflet-bottom.leaflet-right { right: auto; left: 0; }
+ .writers-map-card .maplibregl-ctrl-bottom-right .maplibregl-ctrl, .writers-map-card .leaflet-bottom.leaflet-right .leaflet-control { float: left; margin-left: 8px; }
+ .writers-map-card .maplibregl-ctrl-scale { margin-bottom: 4px; }
+}

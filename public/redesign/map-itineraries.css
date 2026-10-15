@@ -84,3 +84,13 @@
 }
 
 .itinerary-pin { width: 10px; height: 10px; background: #a582d4; border: 2px solid #fff; color: transparent; font-size: 0; }
+
+/* The route selector opens from the Itineraries pill band. */
+.itinerary-menu { flex-shrink: 0; order: 3; }
+.itinerary-menu > summary { display: grid; place-items: center; min-width: 44px; min-height: 44px; margin-left: -12px; border: 1px solid var(--tt-border); border-radius: 999px; background: #fff; color: var(--tt-writer, #6b4fa8); list-style: none; cursor: pointer; }
+.itinerary-menu > summary::-webkit-details-marker { display: none; }
+.itinerary-menu .itinerary-picker { position: absolute; z-index: 10; min-height: 44px; max-width: min(300px, calc(100vw - 48px)); margin-top: 4px; border-radius: 8px; }
+.writers-map-layer-notable { order: 0; }
+.writers-map-layer-writers { order: 1; }
+.writers-map-layer-itineraries { order: 2; }
+.writers-map-layer-plan { order: 4; }

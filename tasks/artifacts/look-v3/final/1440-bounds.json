@@ -1,0 +1,50 @@
+{
+  ".tt-header": {
+    "x": 17,
+    "y": 13,
+    "width": 1391,
+    "height": 70
+  },
+  ".destination-banner": {
+    "x": 33,
+    "y": 83,
+    "width": 1359,
+    "height": 157
+  },
+  "[data-map-slot=\"layers\"]": {
+    "x": 33,
+    "y": 252,
+    "width": 511.984375,
+    "height": 44
+  },
+  "[data-map-canvas]": {
+    "x": 33,
+    "y": 308,
+    "width": 845.578125,
+    "height": 505
+  },
+  "[data-map-slot=\"panel\"]": {
+    "x": 894.578125,
+    "y": 252,
+    "width": 497.421875,
+    "height": 851.5
+  },
+  ".map-panel-facts": {
+    "x": 910.578125,
+    "y": 791.5,
+    "width": 465.421875,
+    "height": 96.890625
+  },
+  ".map-panel-writers": {
+    "x": 910.578125,
+    "y": 904.390625,
+    "width": 465.421875,
+    "height": 134
+  },
+  ".overview-teasers": {
+    "x": 33,
+    "y": 825,
+    "width": 845.578125,
+    "height": 278.5
+  }
+}

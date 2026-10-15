@@ -58,6 +58,7 @@ try {
     assert.equal(await browser.evaluate(`${chip("Writers")}.getAttribute('aria-pressed')`), 'false');
     await browser.evaluate(`${chip("Notable")}.click()`);
     assert.equal(await count('.map-pin-notable'), 0, 'notable chip off');
+    assert.equal(await browser.evaluate(`${chip("Notable")}.getAttribute('aria-pressed')`), 'false');
     await browser.evaluate(`${chip("Writers")}.click()`);
     await browser.evaluate(`${chip("Notable")}.click()`);
     assert.equal(await count(writerSelector), writers);

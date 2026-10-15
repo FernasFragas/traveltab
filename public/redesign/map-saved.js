@@ -157,14 +157,15 @@
     }
 
     function paint(button) {
-        if (!button.dataset.saveLabel) button.dataset.saveLabel = button.textContent;
+        var label = button.querySelector('[data-save-label]') || button;
+        if (!button.dataset.saveLabel) button.dataset.saveLabel = label.textContent;
         if (saved === null) {
             button.hidden = true;
             return;
         }
         var on = saved.indexOf(button.dataset.saveQid) >= 0;
         button.hidden = false;
-        if (button.className !== 'map-panel-bookmark') button.textContent = on ? 'Saved' : button.dataset.saveLabel;
+        if (button.className !== 'map-panel-bookmark') label.textContent = on ? 'Saved' : button.dataset.saveLabel;
         else button.setAttribute('aria-label', on ? 'Remove from saved places' : 'Save to visit');
         button.setAttribute('aria-pressed', String(on));
     }

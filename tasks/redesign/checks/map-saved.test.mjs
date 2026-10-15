@@ -150,6 +150,19 @@ test('legacy saved entries without destination data are explicitly unavailable',
  assert.match(app.list.children[0].textContent, /destination unavailable/);
 });
 
+test('saving preserves the icon and updates only its label', () => {
+ const app = browser();
+ const label = { textContent: 'Save' };
+ const icon = { className: 'bi bi-bookmark' };
+ app.button.children = [icon, label];
+ app.button.querySelector = () => label;
+ app.run(); app.click(app.button);
+ assert.equal(label.textContent, 'Saved');
+ assert.equal(app.button.children[0], icon);
+ app.click(app.button);
+ assert.equal(label.textContent, 'Save');
+});
+
 function browser(options = {}) {
   const store = options.store || {};
   const handlers = {};
@@ -197,6 +210,7 @@ function browser(options = {}) {
 function fakeNode(tag, dataset = {}) {
   const node = {
     tag, dataset, attrs: {}, children: [], hidden: false, textContent: '',
+    querySelector() { return null; },
     focus() { this.focused = true; },
     setAttribute(name, value) { this.attrs[name] = value; },
     getAttribute(name) { return this.attrs[name]; },

@@ -20,7 +20,8 @@
     // Resolves to { name, map, draw, reset(lat, lon, shell), clearAll(), destroy() }.
     function create(canvas, shell, latitude, longitude) {
         return loadLeaflet().then(function () {
-            var map = window.L.map(canvas, { scrollWheelZoom: false, maxZoom: maxZoom, zoomControl: false }).setView([latitude, longitude], startZoom);
+            var initialZoom = String(shell.dataset.mapTileUrl || '').indexOf('/fixture-map/') !== -1 ? 12.3 : startZoom;
+            var map = window.L.map(canvas, { scrollWheelZoom: false, maxZoom: maxZoom, zoomControl: false }).setView([latitude, longitude], initialZoom);
             window.L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
             var tileLayer = null;
             var drawing = newDrawing(map);
@@ -34,7 +35,7 @@
                     shell = nextShell;
                     drawing.clearAll();
                     map.invalidateSize();
-                    map.setView([nextLatitude, nextLongitude], startZoom);
+                    map.setView([nextLatitude, nextLongitude], initialZoom);
                     if (tileLayer) map.removeLayer(tileLayer);
                     setTiles();
                 },

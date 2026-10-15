@@ -284,7 +284,8 @@ func TestDestinationPhoto_CuratedLisbonOverridesWithoutALookup(t *testing.T) {
 
 			require.Equal(t, http.StatusOK, status)
 			assert.Contains(t, body, `src="/images/destinations/lisbon-alfama.jpg"`)
-			assert.Contains(t, body, "Above the rooftops of Alfama")
+			assert.NotContains(t, body, "Above the rooftops of Alfama")
+			assert.Contains(t, body, "destination-photo-credit")
 			assert.Zero(t, source.callCount(), "the verified local photo needs no lookup")
 			assert.Contains(t, body, `data-photo-state="ready"`)
 		})

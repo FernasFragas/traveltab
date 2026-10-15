@@ -1,6 +1,11 @@
 .tt-search-area { position: relative; }
 .tt-search { border-radius: 12px; }
 .tt-search input::-webkit-search-cancel-button { display: none; -webkit-appearance: none; }
+/* Minimalist clear cross: a thin muted ×, 44 px target, only while the box has text. */
+.tt-search-clear { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; margin-right: 1px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--tt-muted); font-size: 13px; cursor: pointer; }
+.tt-search-clear[hidden] { display: none; }
+.tt-search-clear:hover { color: var(--tt-ink); background: var(--tt-bg); }
+.tt-search-clear:focus-visible { outline: 2px solid var(--tt-accent); outline-offset: -4px; }
 .tt-suggestions { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none; border: 1px solid var(--tt-border-control); border-radius: 16px; background: var(--tt-surface); box-shadow: 0 12px 24px rgb(0 0 0 / 14%); max-height: min(350px, 55vh); overflow-y: auto; }
 .tt-suggestions[hidden] { display: none; }
 .tt-suggestions [role="option"] { display: flex; flex-direction: column; justify-content: center; min-height: 48px; padding: 7px 12px; border-radius: 10px; cursor: pointer; color: var(--tt-ink); }
@@ -20,3 +25,7 @@
 @media (max-width: 600px) { .tt-saved-area { order: 1; } .tt-header .tt-search-area { order: 3; } }
 
 @media (min-width: 601px) { .tt-saved-area { margin-left: auto; } }
+
+@media (min-width: 900px) {
+    .tt-header .tt-search-area, .tt-header .tt-header-navigation, .tt-header .tt-saved-area { order: 0; }
+}

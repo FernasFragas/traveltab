@@ -10,6 +10,7 @@
     var context = null;
     var shell = null;
     var picker = null;
+    var pickerMenu = null;
     var openPopup = null;
     var selected = 0;
     var drawNumber = 0;
@@ -39,9 +40,11 @@
 
     function clear() {
         if (context) context.draw.clear('itineraries');
-        if (picker) picker.remove();
+        if (pickerMenu) pickerMenu.remove();
+        else if (picker) picker.remove();
         if (openPopup) openPopup.remove();
         picker = null;
+        pickerMenu = null;
         openPopup = null;
     }
 
@@ -165,6 +168,13 @@
             selected = Number(picker.value) || 0;
             draw(data);
         });
-        slot.appendChild(picker);
+        pickerMenu = document.createElement('details');
+        pickerMenu.className = 'itinerary-menu';
+        var summary = document.createElement('summary');
+        summary.textContent = '⌄';
+        summary.setAttribute('aria-label', "Choose a writer's itinerary");
+        pickerMenu.appendChild(summary);
+        pickerMenu.appendChild(picker);
+        slot.appendChild(pickerMenu);
     }
 })();

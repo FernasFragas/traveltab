@@ -31,7 +31,7 @@ try {
         await browser.until(`window.__mapEngine === '${engine}' && document.querySelectorAll('.itinerary-pin').length > 0`, 30000);
         browser.errors.length = 0;
         const count = selector => browser.evaluate(`document.querySelectorAll('${selector}').length`);
-        const chip = `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label') === "Writers' itineraries")`;
+        const chip = `[...document.querySelectorAll('[data-map-slot="layers"] button')].find(b => b.getAttribute('aria-label') === "Itineraries")`;
         const lineCount = engine === 'maplibre'
           ? "Number(Boolean(window.__itineraryMap?.getLayer('draw-line-itineraries')))"
           : "[...document.querySelectorAll('.leaflet-overlay-pane path')].filter(p => p.getAttribute('stroke') === '#a582d4').length";
@@ -48,6 +48,8 @@ try {
         assert.ok(look.chip, JSON.stringify(look));
         assert.ok(look.overflow <= width, JSON.stringify(look));
 
+        await browser.evaluate("document.querySelector('.itinerary-menu > summary').click()");
+        assert.equal(await browser.evaluate("document.querySelector('.itinerary-menu').open"), true);
         const options = await browser.evaluate("[...document.querySelectorAll('.itinerary-picker option')].map(o => o.textContent)");
         assert.equal(options.length, 2, JSON.stringify(options));
         await browser.evaluate("(() => { const s = document.querySelector('.itinerary-picker'); s.value = '1'; s.dispatchEvent(new Event('change')); })()");

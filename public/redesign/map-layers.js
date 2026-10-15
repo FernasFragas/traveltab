@@ -36,7 +36,7 @@
         var summary = document.createElement('summary');
         summary.textContent = 'Layers';
         menu.appendChild(summary);
-        var labels = ['Notable places', "Writers' pins", 'Your plan', "Writers' itineraries"];
+        var labels = ['Notable places', "Writers' pins", 'Your plan', "Itineraries"];
         LAYERS.forEach(function (name, index) {
             var button = document.createElement('button');
             button.type = 'button';
@@ -67,9 +67,9 @@
     function refresh(chip) {
         var name = layerName(chip);
         if (!name) return;
-        var labels = { notable: ['Notable places', 'Notable'], writers: ["Writers' pins", 'Writers'], itineraries: ["Writers' itineraries", 'Itineraries'], plan: ['Your plan', 'Your plan'] };
+        var labels = { notable: ['Notable places', 'Notable'], writers: ["Writers' pins", 'Writers'], itineraries: ["Itineraries", 'Itineraries'], plan: ['Your plan', 'Your plan'] };
         chip.setAttribute('aria-label', labels[name][0]);
-        chip.textContent = window.innerWidth <= 600 ? labels[name][1] : labels[name][0];
+        chip.textContent = labels[name][0];
         var registered = apply(name);
         chip.setAttribute('aria-pressed', isOn(name) ? 'true' : 'false');
         if (name === 'plan') chip.disabled = !hasPlan;

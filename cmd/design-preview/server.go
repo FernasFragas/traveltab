@@ -13,13 +13,13 @@ import (
 // photos come from fixturePhotos, served by the local fixture origin, and city guides from
 // fixtureGuides (the reviewed guides embedded in the binary). cleanup is retained for
 // parity with a temporary-storage server, but is currently a no-op.
-func newPreviewServer(mapOrigin string, slow bool, scenario string, liveTiles bool) (*httpserver.Server, func()) {
+func newPreviewServer(mapOrigin string, slow bool, scenario string, liveTiles bool) (*previewServer, func()) {
 	server, _, cleanup := newPreviewServerWithPhotos(mapOrigin, slow, scenario)
 	if liveTiles && scenario == "writers-map" {
 		server.SetWriterMapTiles("", "")
 		server.SetWriterMapBasemap("", "", "")
 	}
-	return server, cleanup
+	return &previewServer{Server: server, localPlacePhotos: scenario == "writers-map" || scenario == "writers-map-leaflet"}, cleanup
 }
 
 // newPreviewServerWithPhotos also returns the photo source, so tests can count its calls.

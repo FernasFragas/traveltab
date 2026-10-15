@@ -5,63 +5,44 @@ import vm from 'node:vm';
 
 const source = readFileSync(process.env.MAP_PANEL_SOURCE || new URL('../../../public/redesign/map-panel.js', import.meta.url), 'utf8');
 
-test('writer card uses real itinerary day QIDs before mention count and deduplicates blog names', () => {
-  const app = panel({ mentions: 'Mentioned by 3 writers', routes: [route('a.example', ['Q1']), route('a.example', ['Q1', 'Q2']), route('b.example', ['Q2'])] });
-  app.select();
-  app.swap();
-  assert.match(app.mentioned.textContent, /Featured in 2 writers' itineraries/);
-  assert.match(app.mentioned.textContent, /Including Alpha Travels$/);
-  assert.equal(app.card.querySelector('[data-writer-posts]').getAttribute('aria-label'), "Go to writers' posts");
+const template = readFileSync('views/place_panel.go.tpl', 'utf8');
+test('writer story quotes the first existing post rather than itinerary counts', () => {
+ assert.match(template, /with index \.Mentions 0/);
+ assert.match(template, /<blockquote>/);
+ assert.doesNotMatch(template, /map-panel-writer-card/);
+});
+test('writer list expands with an accessible control', () => {
+ assert.match(template, /data-writers-toggle aria-expanded="false"/);
+ assert.match(template, /<ul id="writer-posts-.*hidden>/);
+});
+test('writer quote is plain text and the blog name links to the post', () => {
+ assert.match(template, /<blockquote><p>“{{ \.PostTitle }}”<\/p><cite>— <a href="{{ \.PostURL }}"[^>]*>{{ \.BlogName }}/);
+});
+test('no mentions state does not offer an empty expansion', () => {
+ assert.match(template, /{{ if \.Mentions }}<button[^>]*data-writers-toggle/);
+ assert.match(template, /No writer mentions yet/);
 });
 
-test('writer card preserves mentions when only other places feature in itineraries', () => {
-  const app = panel({ mentions: 'Mentioned by 3 writers', routes: [route('a.example', ['Q2'])] });
-  app.select();
-  app.swap();
-  assert.equal(app.mentioned.textContent, 'Mentioned by 3 writers');
-});
-
-test('writer itinerary names use existing source metadata before mention aliases or hosts', () => {
-  const app = panel({ routes: [route('a.example', ['Q1']), route('b.example', ['Q1'])], writerSources: [['a.example', 'Official Alpha'], ['b.example', 'Official Beta']] });
-  app.select();
-  app.swap();
-  assert.match(app.mentioned.textContent, /Including Official Alpha, Official Beta$/);
-  assert.doesNotMatch(app.mentioned.textContent, /Alpha Travels|b\.example/);
-});
-
-test('writer card preserves no mentions state when no itinerary includes the place', () => {
-  const app = panel({ mentions: 'No writer mentions yet', routes: [] });
-  app.select();
-  app.swap();
-  assert.equal(app.mentioned.textContent, 'No writer mentions yet');
-  assert.equal(app.card.querySelector('[data-writer-posts]'), null);
-});
-
-test('first pin callout shows the photo and area before its action opens the panel', () => {
+test('first pin callout shows the photo and kind before its action opens the panel', () => {
   const app = panel();
   const pin = app.groups.get('notable')[0];
   pin.onClick();
   assert.equal(app.requests.length, 0, 'pin selection leaves panel loading to the callout action');
   const callout = app.popups.get('pin-popup').element;
   assert.ok(callout.querySelector('img'), 'first callout includes the existing place photo');
-  assert.match(callout.textContent, /Old Town/);
+  assert.match(callout.textContent, /Historic Landmark/);
+  assert.doesNotMatch(callout.textContent, /tower/);
   const action = callout.querySelector('button');
   assert.ok(action);
   action.click();
   assert.equal(app.requests.length, 1);
 });
 
-test('dragging the phone handle expands once and updates its accessible action', () => {
-  const app = panel({ phone: true });
-  app.select();
-  app.swap();
-  const handle = app.slot.querySelector('.map-sheet-handle');
-  handle.dispatch('pointerdown', { clientY: 400, pointerId: 1 });
-  handle.dispatch('pointerup', { clientY: 250, pointerId: 1 });
-  assert.equal(handle.getAttribute('aria-expanded'), 'true');
-  assert.equal(handle.getAttribute('aria-label'), 'Collapse place details');
-  handle.click();
-  assert.equal(handle.getAttribute('aria-expanded'), 'true', 'the click synthesized after dragging does not undo expansion');
+test('phone place card stays inline and auto selection does not steal focus', () => {
+ const app = panel({ phone: true }); app.select(); app.swap();
+ assert.equal(app.slot.querySelector('.map-sheet-handle'), null);
+ assert.equal(app.slot.className.includes('is-sheet'), false);
+ assert.equal(app.slot.getAttribute('aria-modal'), undefined);
 });
 
 test('a callout photo that fails to load is hidden instead of showing a broken image', () => {
@@ -96,9 +77,9 @@ test('opening a second pin callout leaves only the latest pin selected', () => {
   assert.equal(first.element.className.split(' ').includes('is-selected'), false);
 });
 
-test('selected callout gets its area from the loaded panel without adding a GeoJSON field', () => {
+test('selected callout shows its readable kind beneath the name', () => {
  const app = panel({ featureArea: '' }); app.select(); app.swap();
- assert.match(app.groups.get('selected-callout')[0].element.textContent, /Old Town/);
+ assert.match(app.groups.get('selected-callout')[0].element.textContent, /Museum.*Historic Landmark/);
 });
 
 function panel({ featureArea = 'Old Town', mentions = 'No writer mentions yet', routes = [], phone = false, photo = true, secondPlace = false, writerSources = [] } = {}) {
@@ -129,7 +110,7 @@ function panel({ featureArea = 'Old Town', mentions = 'No writer mentions yet', 
   slot.appendChild(article);
   const shell = node('div');
   shell.querySelector = () => slot;
-  const feature = { properties: { qid: 'Q1', name: 'Museum', area: featureArea, kind: 'museum', photo_url: photo ? '/museum.jpg' : '', writer_count: 0, panel_url: '/map/city/Q1' }, geometry: { coordinates: [1, 2] } };
+  const feature = { properties: { qid: 'Q1', name: 'Museum', area: featureArea, kind: 'tower', kind_label: 'Historic Landmark', photo_url: photo ? '/museum.jpg' : '', writer_count: 0, panel_url: '/map/city/Q1' }, geometry: { coordinates: [1, 2] } };
   const draw = { markers: (id, markers) => groups.set(id, markers), clear: id => { groups.delete(id); popups.delete(id); }, popup: (id, coordinates, element) => popups.set(id, { element }) };
   const features = [feature];
   if (secondPlace) features.push({ ...feature, properties: { ...feature.properties, qid: 'Q2', name: 'Second museum' } });
@@ -182,7 +163,7 @@ function node(tag, className = '') {
   return element;
 }
 
-test('phone sheet keeps Hours summary in the keyboard focus cycle after Directions', () => {
+test('inline phone card leaves Tab in the natural document focus order', () => {
   let onKey;
   let focused;
   const handle = { focus() { focused = 'handle'; } };
@@ -197,6 +178,6 @@ test('phone sheet keeps Hours summary in the keyboard focus cycle after Directio
   assert.equal(prevented, false, 'Tab from Directions must reach the following Hours summary');
   document.activeElement = summary;
   onKey({ key: 'Tab', preventDefault() { prevented = true; } });
-  assert.equal(prevented, true);
-  assert.equal(focused, 'handle', 'Tab from the final summary wraps to the sheet handle');
+  assert.equal(prevented, false);
+  assert.equal(focused, undefined);
 });

@@ -99,15 +99,27 @@ func newLisbonPreviewSource() *writermaptest.FakeSource {
 	const title = "One Day in Lisbon, Portugal: 2 Detailed Itineraries"
 	return &writermaptest.FakeSource{Result: writermap.DestinationResult{
 		Places: []writermap.Place{
-			{QID: "Q597", Names: []string{"Lisbon"}, Lat: 38.7223, Lon: -9.1393, Kind: "city", Area: "Lisbon"},
-			{QID: "Q272781", Names: []string{"Jerónimos Monastery"}, Lat: 38.6979, Lon: -9.2064, Kind: "monastery", Area: "Belém"},
-			{QID: "Q215003", Names: []string{"Belém Tower"}, Lat: 38.6916, Lon: -9.2160, Kind: "tower", Area: "Belém"},
+			{QID: "Q215003", Names: []string{"Belém Tower"}, Lat: 38.6916, Lon: -9.2160, Kind: "tower", Area: "Belém", Description: "A fortified tower overlooking the Tagus, with Manueline stonework and riverside views.", OpeningHours: "Tu-Su 10:00-18:30", WikipediaURL: "https://en.wikipedia.org/wiki/Bel%C3%A9m_Tower", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-landmark.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q272781", Names: []string{"Jerónimos Monastery"}, Lat: 38.6979, Lon: -9.2064, Kind: "monastery", Area: "Belém", Description: "An ornate monastery with vaulted cloisters beside the gardens of Belém.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-landmark.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900013", Names: []string{"Alfama"}, Lat: 38.7118, Lon: -9.1293, Kind: "neighborhood", Area: "Alfama", Description: "Narrow lanes, tiled houses and evening fado in Lisbon's oldest neighborhood.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-landmark.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q597", Names: []string{"Lisbon"}, Lat: 38.7223, Lon: -9.1393, Kind: "city", Area: "Lisbon", Description: "Portugal's hilltop capital on the Tagus River.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-landmark.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900014", Names: []string{"National Tile Museum"}, Lat: 38.7244, Lon: -9.1130, Kind: "museum", Area: "Xabregas", Description: "Historic azulejo tiles displayed in a former convent.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-museum.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900015", Names: []string{"MAAT"}, Lat: 38.6958, Lon: -9.1945, Kind: "museum", Area: "Belém", Description: "Contemporary art, architecture and technology on the waterfront.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-museum.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900016", Names: []string{"Pastéis de Belém"}, Lat: 38.6975, Lon: -9.2032, Kind: "cafe", Area: "Belém", Description: "A traditional bakery known for warm custard tarts.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-food.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900017", Names: []string{"Time Out Market Lisboa"}, Lat: 38.7071, Lon: -9.1459, Kind: "market", Area: "Cais do Sodré", Description: "A lively food hall inside the historic Ribeira market.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-food.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900018", Names: []string{"Miradouro da Senhora do Monte"}, Lat: 38.7191, Lon: -9.1328, Kind: "viewpoint", Area: "Graça", Description: "A hilltop panorama across the castle, city roofs and river.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-nature.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900019", Names: []string{"Miradouro de Santa Catarina"}, Lat: 38.7091, Lon: -9.1474, Kind: "viewpoint", Area: "Santa Catarina", Description: "A relaxed terrace above the Tagus with sunset views.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-nature.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900020", Names: []string{"Estrela Garden"}, Lat: 38.7148, Lon: -9.1592, Kind: "garden", Area: "Estrela", Description: "Leafy paths, ponds and shaded benches beside the basilica.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-nature.png", PhotoCredit: "Synthetic preview image"},
+			{QID: "Q900021", Names: []string{"Eduardo VII Park"}, Lat: 38.7291, Lon: -9.1524, Kind: "park", Area: "Avenidas Novas", Description: "A green hillside with formal hedges and views towards the river.", PhotoURL: "https://upload.wikimedia.org/fixture-photos/lisbon-nature.png", PhotoCredit: "Synthetic preview image"},
 		},
 		Mentions: map[string][]writermap.Mention{
 			"Q272781": {{WriterHost: host, BlogName: "Earth Trekkers", PostRef: ref, PostURL: url, PostTitle: title, Language: "en"}},
-			"Q215003": {{WriterHost: host, BlogName: "Earth Trekkers", PostRef: ref, PostURL: url, PostTitle: title, Language: "en"}},
+			"Q215003": {
+				{WriterHost: host, BlogName: "Earth Trekkers", PostRef: ref, PostURL: url, PostTitle: title, Language: "en"},
+				{WriterHost: "fixture.writer", BlogName: "Lisbon Notebook (preview)", PostRef: "fixture.writer:belem", PostURL: "https://example.com/preview/belem", PostTitle: "A morning beside the Tagus", Language: "en"},
+			},
 		},
-		WriterCounts: map[string]int{"Q272781": 1, "Q215003": 1},
+		WriterCounts: map[string]int{"Q272781": 1, "Q215003": 2},
 		Itineraries:  []writermap.Itinerary{{WriterHost: host, PostRef: ref, PostURL: url, PostTitle: title, Language: "en", Days: []writermap.ItineraryDay{{QIDs: []string{"Q272781", "Q215003", "Q597"}}}}},
 		Complete:     true,
 	}}

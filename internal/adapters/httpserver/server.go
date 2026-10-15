@@ -86,8 +86,12 @@ func NewAppServer(weatherReporters application.Reporter[application.GeneralWeath
 		suggestions:          newSuggestionCache(),
 	}
 
-	// Serve static files from the "public" directory
-	app.Static("/", "./public")
+	// Serve static files from the "public" directory. Asset URLs aren't versioned, so browsers must
+	// revalidate them (a cheap 304 when unchanged) instead of guessing a cache lifetime.
+	app.Static("/", "./public", fiber.Static{ModifyResponse: func(c *fiber.Ctx) error {
+		c.Set(fiber.HeaderCacheControl, "no-cache")
+		return nil
+	}})
 
 	app.Get("/", server.trackVisit, server.listGeneralInfo)
 

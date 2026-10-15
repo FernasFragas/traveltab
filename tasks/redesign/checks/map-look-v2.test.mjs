@@ -19,10 +19,10 @@ test('saved places have a header list and polite undo toast', () => {
 test('panel presents story and cards without tabs or peek', () => {
  const html = read('views/place_panel.go.tpl');
  assert.doesNotMatch(html, /role="tab|map-panel-tabs/);
- assert.match(html, /map-panel-writer-card/);
- assert.match(html, /openstreetmap.org\/directions/);
+ assert.match(html, /From our writers/);
+ assert.match(html, /google.com\/maps\/dir/);
  assert.match(html, /map-panel-bookmark/);
- assert.match(html, /<details class="map-panel-hours"/);
+ assert.match(html, /map-panel-facts/);
  assert.doesNotMatch(read('views/map_card.go.tpl'), /data-map-panel-peek/);
 });
 test('map uses card layout, full-map link and updated palette', () => {
@@ -30,4 +30,25 @@ test('map uses card layout, full-map link and updated palette', () => {
  assert.match(read('public/redesign/map-pins.css'), /map-pin-nature/);
  assert.match(read('public/redesign/writers-map.js'), /Reset bearing/);
  assert.match(read('public/redesign/map-dayplan.js'), /#a56824/);
+});
+
+test('v3 chrome groups zoom, exposes back and uses compact attribution', () => {
+ const js = read('public/redesign/writers-map.js');
+ assert.match(js, /travelmap-back/);
+ assert.match(js, /travelmap-zoom/);
+ assert.match(js, /bi-crosshair/);
+ assert.match(js, /compact: true/);
+ assert.doesNotMatch(js, /TravelMapLayers.createMenu/);
+});
+
+// As a traveller on a phone, I want the small map uncluttered: credits one tap away, no duplicate name.
+test('compact attribution starts collapsed once the map loads', () => {
+ const js = read('public/redesign/writers-map.js');
+ assert.match(js, /function collapseAttribution\(/);
+ assert.match(js, /removeAttribute\('open'\)/);
+ assert.match(js, /maplibregl-compact-show/);
+ assert.match(js, /map\.on\('load', function \(\) \{[^]*?collapseAttribution\(target\)/);
+});
+test('the selected pin hides its name label because the callout shows it', () => {
+ assert.match(read('public/redesign/map-pins.css'), /\.map-pin\.is-selected \.map-pin-label\s*\{\s*display:\s*none/);
 });

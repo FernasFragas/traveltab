@@ -40,6 +40,14 @@ test('uses drawing API for orange, numbered, focusable pins and a day control', 
   assert.deepEqual(app.drawCalls().map(call => call.method).slice(-2), ['markers', 'control']);
 });
 
+test('day routes use thin closely spaced dots', () => {
+  const app = browser(); app.run(); app.mount();
+  app.swap([[['Tower', 38.69, -9.21], ['Museum', 38.72, -9.11]]]);
+  const route = app.drawCalls().find(call => call.method === 'line');
+  assert.equal(route.style.width, 2);
+  assert.deepEqual(Array.from(route.style.dash), [1, 1.5]);
+});
+
 test('the day control takes its look from the stylesheet, not the old turquoise inline colours', () => {
   const app = browser();
   app.run();
@@ -217,6 +225,7 @@ function drawContext() {
   return {
     markers, controls, popups, calls,
     draw: {
+      line(id, points, style) { calls.push({ method: 'line', id, points, style }); },
       markers(id, items) { calls.push({ method: 'markers', id }); markers.set(id, items); },
       control(id, element, position) { calls.push({ method: 'control', id }); controls.set(id, { element, position, buttons: () => element.children }); },
       popup(id, lngLat, element, options) { popups.set(id, { lngLat, element, options }); },

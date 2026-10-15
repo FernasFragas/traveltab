@@ -10,10 +10,12 @@
     var placeLat = document.getElementById('place_lat');
     var placeLon = document.getElementById('place_lon');
     var list = document.getElementById('destination-suggestions');
-    if (!form || !input || !countryCode || !placeLat || !placeLon || !list) return;
+    var clear = form && form.querySelector('.tt-search-clear');
+    if (!form || !input || !countryCode || !placeLat || !placeLon || !list || !clear) return;
 
     var active = -1;
     var picked = false;
+    showClear();
 
     function options() {
         return Array.from(list.querySelectorAll('[role="option"]'));
@@ -49,6 +51,10 @@
         setActive(-1);
     }
 
+    function showClear() {
+        clear.hidden = input.value === '';
+    }
+
     function pick(item) {
         if (!item) return;
         picked = true;
@@ -57,6 +63,7 @@
         placeLat.value = item.dataset.lat || '';
         placeLon.value = item.dataset.lon || '';
         close();
+        showClear();
         form.requestSubmit();
     }
 
@@ -66,6 +73,17 @@
         placeLon.value = '';
         picked = false;
         close();
+        showClear();
+    });
+    clear.addEventListener('click', function () {
+        input.value = '';
+        countryCode.value = '';
+        placeLat.value = '';
+        placeLon.value = '';
+        picked = false;
+        close();
+        showClear();
+        input.focus();
     });
     input.addEventListener('focus', openIfAvailable);
     input.addEventListener('keydown', function (event) {

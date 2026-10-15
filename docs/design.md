@@ -1,7 +1,7 @@
 # Design reference
 
-The destination page follows the [desktop map-look-v2 reference](../Unknown.png) and
-[phone reference](../Unknown-2.png), using the data already available to the app.
+The destination page follows the [desktop look-v3 reference](../desktop.png) and
+[phone reference](../phone.png), using the data already available to the app.
 The earlier [reference image](../goalimg.png) still informs the light TravelTab controls and
 content cards. This file covers the layout, template contracts and data rules. Map-first
 verification is in [the TDD evidence](tdd/map-first.tdd.md); the updated appearance and journeys
@@ -14,23 +14,18 @@ smaller terracotta “ByPatronFragas”. The accessible name, document and trip 
 text remain `TravelTabByPatronFragas`. Search submits with Enter or a suggestion; the rounded
 field has no clear or arrow button. A bordered bookmark button opens saved places.
 
-**Desktop:** a soft rounded frame contains the header, search and section tabs. White layer
-pills sit above a 16 px rounded map card, beside a separate roughly 400 px place panel that
-scrolls independently. The panel shows compact weather,
-city guide and a planning shortcut until a place is selected. Itinerary, Stays and Videos replace
-the visible view when selected; the map stays mounted. Overview opens with the destination banner
-(city photo, name, country, tagline and current weather) between the header and the map; the map
-below it keeps a full screen of height. The banner replaces the footer, which is hidden on the map
-page only. The footer remains outside the swapped
-content region. With a plan on the map, a dark "All · Day 1 · Day 2 …" row at the map's top left
-filters the plan pins; the selected day uses the plan orange.
+**Desktop:** the header orders brand, centered search, section tabs and bookmark. A 157 px
+photo banner shows the city and a horizontal weather strip with sunset, forecast popover and
+planning link. The left column holds full-label layer pills (all toggle; Notable places is filled terracotta while on,
+overlays that are on are white with filled coloured icons, off pills muted with outline icons), a `min(505px, 60vh)` map and
+three teaser cards; the roughly 510 px right column holds a place or city card and scrolls
+independently. The footer is hidden on the map page. Section tabs preserve the mounted map.
 
-**Mobile:** the search has its own row. The map fills the space above the fixed bottom navigation.
-Layer pills use short labels (Notable, Writers, Itineraries, Your plan) while keeping their full
-accessible names. Selecting a place opens a half-height sheet with an inset rounded photo;
-its handle expands or collapses it by tap, drag or keyboard. Escape closes it and restores focus
-to the pin. The bottom navigation uses text tabs with an underline on the active section.
-Itinerary stops, stays and videos use compact rows.
+**Mobile:** search has its own row, followed by a 100 px photo hero with weather chip,
+scrollable full-label pills, a 205 px map, an inline place card and the day, stay and video
+teasers. Selecting Details scrolls to the card and focuses its title; initial auto-selection
+never steals focus. Escape and the map back button return to the map. Bottom navigation
+shows icons above labels, a bed SVG for Stays and an underline below the active section.
 
 ## Visual tokens
 
@@ -44,6 +39,9 @@ Defined in `public/styles.css`. Component stylesheets load after it, in this ord
 | `--tt-border` | `#DED8CC` decorative dividers and card edges |
 | `--tt-border-control` | `#8F887B` form-field boundaries (date, select, search pill): 3.46:1 on `--tt-surface`, 3.18:1 on `--tt-bg` |
 | `--tt-accent` / `--tt-accent-hover` | `#A64027` terracotta / `#87321F` |
+| `--tt-accent-tint` | `#F8E6E0`; terracotta text/icons have 5.14:1 contrast |
+| `--tt-writer` / `--tt-writer-tint` | `#6B4FA8` / `#F1EEF8`; 5.54:1 contrast |
+| `--tt-serif` | Georgia, Times New Roman, serif; descriptions, metadata and teaser titles |
 | `--tt-olive` | `#62674A` |
 | `--tt-radius` | `8px` |
 | Fonts | Georgia for headings, Inter for body text |
@@ -60,28 +58,25 @@ Notable places use terracotta (`#cf795b`) teardrops with white category icons; n
 green (`#459b6b`). Writer places use purple (`#a582d4`) teardrops with a quill, and clusters use
 grey circles with dark counts. Day-plan stops use orange (`#a56824`) numbered teardrops and an orange dotted route; writers' itineraries
 use purple dashed routes with small stop dots. Every pin colour has at least 3:1 contrast on
-the dark map. Place labels use white text on dark translucent rounded boxes (at least 4.5:1).
-The selected place uses a terracotta pin with a ring and a white callout with its name, area,
-optional photo and a keyboard-accessible action to open the panel.
+the dark map. District labels use plain uppercase white text with a dark halo; water labels are italic blue.
+The selected place uses a terracotta pin with a ring (its name label hidden) and a white callout with its serif name, readable kind,
+photo and a keyboard-accessible action to open the panel.
 
-Dark translucent map controls sit in a column at the top right: compass N, locate, 3D, zoom
-and layers. The compass resets bearing and, like 3D, is hidden for Leaflet. Targets are at
-least 44 px and the scale sits at the bottom right. The “View full map” card uses the existing
+Dark translucent map controls sit in a column at the top right: compass with red needle, locate, 3D and a combined zoom pill. A back button closes the selection and restores the city camera. The compass resets bearing and, like 3D, is hidden for Leaflet. Targets are at
+least 44 px and the scale sits at the bottom right. MapLibre's compact attribution starts collapsed. The “View full map” card uses the existing
 external map URL, with the city photo or a map icon. The Leaflet fallback uses EOX imagery
 and keeps its attribution.
 
 ### Place panel and saving
 
-The place panel shows a photo with a close button, serif title and bookmark toggle, kind and
-area, writer card, and one paragraph (AI summary when available, otherwise the description).
-It then offers Add to plan, Save to visit and Share, followed by Wikipedia and OpenStreetMap
-Directions link cards, stored hours when available, and writers' post cards. There are no
-summary/details tabs. Hours can expand when long; no computed “Open now” claim is shown.
-
-The writer card first reports membership in loaded writers' itineraries, using stop QIDs and
-existing source names; otherwise it reports writer mentions with monograms, or “No writer
-mentions yet”. Its arrow scrolls to the posts. Post cards link the title, blog and language;
-a neutral quill tile substitutes for a thumbnail because post images and excerpts are not stored.
+The place card shows a photo carousel only when multiple photos exist, a serif title and
+bookmark, icon metadata with a readable kind (`kind_label`, e.g. tower → Historic Landmark), a serif description and Add to your plan, Save and Share actions.
+Wikipedia and Google Maps direction cards follow. Facts show today's hours for simple OSM
+rules or the raw rule for complex syntax, plus a kind-based best-time suggestion explicitly
+labelled “Tip”. Missing columns are hidden; price is deferred. The lavender From our writers
+card quotes the first existing post title as plain italic text; the blog credit links to the post. See all expands the post list.
+Without mentions it says “No writer mentions yet”. The city card uses the same appearance,
+with Wikivoyage text, credit, link card and planning action. Weather stays in the banner.
 
 Saving shows “Added to your saved places · Undo” in a polite live region on the map. Undo
 removes that place. The header bookmark opens the saved list; choosing an item opens its place
@@ -90,7 +85,7 @@ live inside the Itinerary planner.
 
 - Accessibility rules the audit enforces ([evidence](../tasks/artifacts/redesign/final-verification-2/README.md)): 4.5:1 text and 3:1 icons and field boundaries, focus rings of at least 3:1 that are not clipped by `overflow: hidden` (use an inset ring there, light on dark photo overlays), controls at least 44px, and the current section never shown by colour alone.
 - Spacing scale: 4/8/12/16/24/32px.
-- Icons: Bootstrap Icons only.
+- Icons: Bootstrap Icons, plus one inline bed SVG.
 - Selectors are scoped per component: `.destination-*`, `.weather-*` and `.map-*`; `.trip-*` and
   `.itinerary-*`; `.stay-*` and `.video-*`; `.guide-*` for the city guide. Shared classes use `.tt-*`. Don't add unscoped
   element rules to component stylesheets.
@@ -102,8 +97,7 @@ live inside the Itinerary planner.
 **Page composition.** `index` owns the document, header, `#content-area`, footer and bottom
 navigation. A search replaces `#content-area` with `content_fragment`, which renders:
 `section#overview` (`map_card` with the map and place panel) → `section#itinerary` (`trip_card`
-and `itinerary_body`) → `section#stays` (`stay_card`) → `section#videos` (`video`). The weather
-and guide render in the default panel when a writer map is available, and `weather_display`
+and `itinerary_body`) → `section#stays` (`stay_card`) → `section#videos` (`video`). The guide renders in the default panel when a writer map is available, and `weather_display`
 renders inside `section#overview` before the map with an `h2` title (the page keeps one `h1`).
 Without a writer map, they retain their page fallback. All four anchor targets exist before a plan is generated, and IDs stay unique.
 

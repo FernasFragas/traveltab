@@ -35,9 +35,9 @@ test('an answer that is still loading is not kept, so the routes appear on the n
   assert.equal(app.pins().length, 3);
 });
 
-test('the itineraries legend dot matches the route line colour', () => {
-  const css = readFileSync(new URL('../../../public/redesign/writers-map-layout.css', import.meta.url), 'utf8');
-  assert.match(css, /\.writers-map-layer-itineraries \{ --layer-color: #a582d4; \}/);
+test('the itineraries pill uses the writer token', () => {
+  const css = readFileSync(new URL('../../../public/redesign/map-layers.css', import.meta.url), 'utf8');
+  assert.match(css, /--layer-color: var\(--tt-writer/);
 });
 
 test('a pin opens route details and a safe post link; switching closes them', async () => {
@@ -83,13 +83,14 @@ test('the ready event marks the shell even when the layer is off', async () => {
 test('one route has no picker; switching routes never duplicates markers, lines or the picker', async () => {
   const single = browser({ itineraries: [routeA] }); single.run(); await single.mount(); assert.equal(single.picker(), undefined);
   const app = browser({ itineraries: [routeA, routeB] }); app.run(); await app.mount();
+  assert.equal(app.slot.children.find(c => c.tagName === 'DETAILS').children[0].attrs['aria-label'], "Choose a writer's itinerary");
   assert.deepEqual(app.picker().children.map(o => o.textContent), ['a.example: Trip A', 'b.example: Roteiro B']);
   for (const index of ['1', '0', '1']) {
     app.picker().value = index; app.picker().change();
     assert.equal(app.ids().length, 1);
     assert.equal(app.pins().length, index === '1' ? 2 : 3);
     assert.ok(app.line());
-    assert.equal(app.slot.children.filter(c => c.tagName === 'SELECT').length, 1);
+    assert.equal(app.slot.children.filter(c => c.tagName === 'DETAILS').length, 1);
   }
 });
 
@@ -137,7 +138,7 @@ function browser({ core = true, itineraries = [], features: places = features, f
     calls: () => calls, ids: () => [...groups.keys()],
     pins: () => groups.get('itineraries')?.markers || [],
     line: () => groups.get('itineraries')?.line,
-    picker: () => slot.children.find(c => c.tagName === 'SELECT'),
+    picker: () => slot.children.find(c => c.tagName === 'DETAILS')?.children.find(c => c.tagName === 'SELECT'),
     popup: () => canvas.children.find(c => c.className === 'itinerary-popup') };
 }
 
