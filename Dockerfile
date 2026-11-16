@@ -8,7 +8,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts && npm run vendor
 
 # ---------- Build Stage ----------
-FROM golang:1.27.2-bookworm AS builder
+FROM golang:1.27.3-bookworm AS builder
 
 # SQLite requires CGO; the Go image includes the native C compiler.
 ENV CGO_ENABLED=1 GOOS=linux
